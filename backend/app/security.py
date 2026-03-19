@@ -1,5 +1,12 @@
 import jwt
 from datetime import datetime, timedelta
+import bcrypt
+# Fix for passlib + bcrypt 4.0.0+ incompatibility
+if not hasattr(bcrypt, "__about__"):
+    class About:
+        __version__ = bcrypt.__version__
+    bcrypt.__about__ = About()
+
 from passlib.context import CryptContext
 from app.config import get_settings
 

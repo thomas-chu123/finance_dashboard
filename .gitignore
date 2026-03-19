@@ -1,4 +1,19 @@
-venv
-/temp
-/debug
+venv/
 .env
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+backend.log
+frontend.log
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# Project
+/temp/
+/debug/
