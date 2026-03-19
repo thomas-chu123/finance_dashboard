@@ -43,7 +43,8 @@ const originalConsoleError = console.error
 function sendLog(level, ...args) {
   try {
     const message = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ')
-    fetch('/api/logs', {
+    const apiBase = import.meta.env.DEV ? '' : `${window.location.protocol}//${window.location.hostname}:8005`
+    fetch(`${apiBase}/api/logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

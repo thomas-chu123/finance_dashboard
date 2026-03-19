@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const API_BASE = ''
+const API_BASE = import.meta.env.DEV
+  ? ''
+  : `${window.location.protocol}//${window.location.hostname}:8005`
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
