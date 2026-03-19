@@ -5,9 +5,8 @@ module.exports = {
     {
       name: 'finance-backend',
       cwd: path.resolve(__dirname, './backend'),
-      script: 'uvicorn',
-      args: 'app.main:app --host 0.0.0.0 --port 8005',
-      interpreter: path.resolve(__dirname, './venv/bin/python'),
+      script: path.resolve(__dirname, './venv/bin/python'),
+      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8005',
       watch: false,
       env: {
         PYTHONPATH: path.resolve(__dirname, './backend'),
