@@ -3,11 +3,11 @@ module.exports = {
     {
       name: 'finance-backend',
       cwd: './backend',
-      script: 'uvicorn',
-      args: 'app.main:app --host 0.0.0.0 --port 8005',
-      interpreter: '../venv/bin/python', // 位於專案根目錄的 venv
+      script: '../venv/bin/python',
+      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8005',
       watch: false,
       env: {
+        PYTHONPATH: '.',
         NODE_ENV: 'production',
       },
     },
