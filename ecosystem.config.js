@@ -6,7 +6,7 @@ module.exports = {
       name: 'finance-backend',
       cwd: path.resolve(__dirname, './backend'),
       script: path.resolve(__dirname, './venv/bin/python'),
-      args: '-m uvicorn app.main:app --host 0.0.0.0 --port 8005',
+      args: '-u -m uvicorn app.main:app --host 0.0.0.0 --port 8005 --access-log',
       watch: false,
       env: {
         PYTHONPATH: path.resolve(__dirname, './backend'),
@@ -15,12 +15,9 @@ module.exports = {
     },
     {
       name: 'finance-frontend',
-      script: 'serve',
+      script: path.resolve(__dirname, './frontend/server.cjs'),
       env: {
-        PM2_SERVE_PATH: path.resolve(__dirname, './frontend/dist'),
         PM2_SERVE_PORT: 3100,
-        PM2_SERVE_SPA: 'true',
-        PM2_SERVE_HOMEPAGE: '/index.html'
       }
     },
   ],

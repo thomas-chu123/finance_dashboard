@@ -21,7 +21,10 @@ settings = get_settings()
 
 # Setup backend logger
 logging.basicConfig(
-    handlers=[RotatingFileHandler("backend.log", maxBytes=10485760, backupCount=5)],
+    handlers=[
+        RotatingFileHandler("backend.log", maxBytes=10485760, backupCount=5),
+        logging.StreamHandler()
+    ],
     level=logging.INFO,
     format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
 )
@@ -95,7 +98,7 @@ async def receive_frontend_logs(log: LogMessage):
     if log.details:
         log_text += f" - {log.details}"
     
-    print(f"[FRONTEND_LOG] {log_text}")
+    print(f"[FRONTEND_LOG] {log_text}", flush=True)
     
     if log.level.lower() == "error":
         frontend_logger.error(log_text)
