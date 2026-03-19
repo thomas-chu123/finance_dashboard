@@ -1,6 +1,7 @@
-"""Application configuration using pydantic-settings."""
-from functools import lru_cache
-from pydantic_settings import BaseSettings
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / "subdir".
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 class Settings(BaseSettings):
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     secret_key: str = "your-secret-key-change-in-production"
 
     class Config:
-        env_file = "/Volumes/SSD/PycharmProjects/Fintech/finance_dashboard/.env"
+        env_file = str(BASE_DIR / ".env")
         env_file_encoding = "utf-8"
         case_sensitive = False
         extra = "ignore"
