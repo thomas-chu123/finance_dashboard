@@ -171,11 +171,11 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 
 const auth = useAuthStore()
 const router = useRouter()
-const API_BASE = ''
+// Remove local API_BASE declaration
 
 const symbolSearch = ref('')
 const symbolType = ref('us_etf')

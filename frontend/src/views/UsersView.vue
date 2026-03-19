@@ -81,10 +81,10 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 
 const auth = useAuthStore()
-const API_BASE = ''
+// Remove local API_BASE declaration
 
 const profileForm = reactive({
   display_name: '',

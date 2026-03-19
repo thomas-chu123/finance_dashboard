@@ -201,7 +201,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 
 const auth = useAuthStore()
@@ -270,7 +270,6 @@ const filteredSymbols = computed(() => {
 
 async function fetchAvailableSymbols() {
   try {
-    const API_BASE = ''
     const res = await axios.get(`${API_BASE}/api/market/symbols`, { headers: auth.headers })
     availableSymbols.value = res.data
   } catch (e) {
@@ -282,7 +281,6 @@ async function fetchPrice(symbol, category) {
   if (!symbol) return
   fetchingPrice.value = true
   try {
-    const API_BASE = ''
     const res = await axios.get(`${API_BASE}/api/market/quotes?symbols=${symbol}`, { headers: auth.headers })
     if (res.data && res.data[0]) {
       currentPrice.value = res.data[0].price
@@ -388,7 +386,6 @@ const testingId = ref(null)
 async function testAlert(item) {
   testingId.value = item.id
   try {
-    const API_BASE = ''
     const res = await axios.post(
       `${API_BASE}/api/tracking/${item.id}/test-alert`,
       {},
@@ -420,7 +417,6 @@ async function fetchFundamentals() {
   try {
     const params = new URLSearchParams()
     twSymbols.forEach(s => params.append('symbols', s))
-    const API_BASE = ''
     const res = await axios.get(`${API_BASE}/api/fundamentals/tw?${params.toString()}`, { headers: auth.headers })
     fundamentalsData.value = res.data
   } catch (e) {

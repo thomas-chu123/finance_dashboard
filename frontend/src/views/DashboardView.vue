@@ -214,13 +214,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
 
-const API_BASE = ''
+// Remove local API_BASE declaration
 const quotes = ref([])
 const quotesLoading = ref(false)
 const quotesLastUpdated = ref('')

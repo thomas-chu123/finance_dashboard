@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { useAuthStore } from './auth'
-
-const API_BASE = ''
+import { useAuthStore, API_BASE_URL as API_BASE } from './auth'
 
 export const useTrackingStore = defineStore('tracking', {
   state: () => ({
