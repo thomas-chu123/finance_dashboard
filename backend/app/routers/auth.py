@@ -63,6 +63,29 @@ async def login(body: LoginRequest):
             email=user["email"],
         )
     except Exception as e:
+        import logging
+        logger = logging.getLogger("auth")
+        
+        # Log details about the inputs to help debug "72 bytes" error
+        try:
+            pw_len = len(body.password) if body.password else 0
+            pw_type = type(body.password).__name__
+            user_id = user.get("id") if 'user' in locals() else "unknown"
+            hash_val = user.get("hashed_password") if 'user' in locals() else None
+            hash_type = type(hash_val).__name__ if hash_val else "None"
+            
+            logger.error(f"Login failure for {body.email}: {str(e)}")
+            logger.error(f"Debug Info - PW Len: {pw_len}, PW Type: {pw_type}, Hash Type: {hash_type}, UserID: {user_id}")
+            
+            # If it's the specific bcrypt error, add more context
+            if "72 bytes" in str(e):
+                error_detail = f"Security Error: {str(e)} (PW Len: {pw_len}, Type: {pw_type})"
+                raise HTTPException(status_code=401, detail=error_detail)
+        except HTTPException:
+            raise
+        except Exception as log_e:
+            logger.error(f"Error during failure logging: {log_e}")
+
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=401, detail=str(e))
