@@ -46,4 +46,4 @@ ssh $REMOTE_USER@$REMOTE_HOST << EOF
 EOF
 
 echo "✅ Deployment Successful!"
-echo "📍 Access your application at http://$REMOTE_HOST:3000"
+echo "📍 Access your application at http://$REMOTE_HOST:3100"

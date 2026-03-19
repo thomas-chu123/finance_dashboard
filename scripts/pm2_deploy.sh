@@ -35,5 +35,5 @@ pm2 save
 
 echo "✅ 部署完成！"
 echo "📊 輸入 'pm2 status' 查看運行狀態。"
-echo "📍 Frontend: http://localhost:3000"
+echo "📍 Frontend: http://localhost:3100"
 echo "📍 Backend API: http://localhost:8005/api/health"
