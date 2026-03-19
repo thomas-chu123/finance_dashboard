@@ -17,3 +17,9 @@ frontend/.env.local
 # Project
 /temp/
 /debug/
+backend/app/__pycache__/config.cpython-312.pyc
+backend/app/__pycache__/main.cpython-312.pyc
+backend/app/__pycache__/security.cpython-312.pyc
+backend/app/routers/__pycache__/auth.cpython-312.pyc
+backend/app/routers/__pycache__/backtest.cpython-312.pyc
+backend/app/services/__pycache__/backtest_engine.cpython-312.pyc
