@@ -77,7 +77,7 @@
           <h3>掃描加入</h3>
         </div>
         <div class="qrcode-container">
-          <img src="@/assets/finance_qrcode.png" alt="LINE QR Code" class="qrcode-img" />
+          <img src="../assets/finance_qrcode.png" alt="LINE QR Code" class="qrcode-img" />
           <p class="qrcode-hint">掃描上方 QR Code 加入好友</p>
         </div>
       </div>

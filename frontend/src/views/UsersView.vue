@@ -83,7 +83,7 @@
 
           <div class="profile-sidebar">
             <div class="qrcode-card">
-              <img src="@/assets/finance_qrcode.png" alt="LINE QR Code" class="qrcode-img" />
+              <img src="../assets/finance_qrcode.png" alt="LINE QR Code" class="qrcode-img" />
               <p class="text-xs text-muted text-center mt-8">掃描加入 LINE 投資通知系統</p>
             </div>
           </div>
