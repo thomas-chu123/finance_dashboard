@@ -94,17 +94,21 @@ const auth = useAuthStore()
 const isBound = computed(() => !!auth.profile?.line_user_id)
 const bindingCode = ref('')
 const loadingCode = ref(false)
-
 onMounted(async () => {
   if (!auth.profile) {
     await auth.fetchProfile()
+  }
+  
+  // Auto-generate code if not bound as requested by user
+  if (!isBound.value && !bindingCode.value) {
+    generateCode()
   }
 })
 
 async function generateCode() {
   loadingCode.value = true
   try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8005`
     const res = await axios.post(`${API_BASE_URL}/api/line/binding-code`, {}, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })

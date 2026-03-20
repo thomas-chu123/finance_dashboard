@@ -150,7 +150,7 @@ const loadingCode = ref(false)
 async function generateLineCode() {
   loadingCode.value = true
   try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8005`
     const res = await axios.post(`${API_BASE_URL}/api/line/binding-code`, {}, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
@@ -221,6 +221,11 @@ onMounted(async () => {
   if (!auth.profile) await auth.fetchProfile()
   syncProfile()
   await loadUsers()
+  
+  // Auto-generate LINE binding code if not yet bound
+  if (!auth.profile?.line_user_id && !lineBindingCode.value) {
+    generateLineCode()
+  }
 })
 </script>
 
