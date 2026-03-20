@@ -46,6 +46,11 @@ class LogMessage(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Log current configuration
+    logger = logging.getLogger("app.main")
+    logger.info(f"Allowed CORS origins: {['http://localhost:5173', 'http://localhost:3100', settings.app_base_url]}")
+    logger.info(f"Effective APP_BASE_URL: {settings.app_base_url}")
+    
     start_scheduler()
     yield
     if scheduler.running:
@@ -58,6 +63,21 @@ app = FastAPI(
     version="3.0.0",
     lifespan=lifespan,
 )
+
+# Request logger middleware to debug CORS / Origin issues
+@app.middleware("http")
+async def log_request_origin(request, call_next):
+    origin = request.headers.get("origin")
+    method = request.method
+    path = request.url.path
+    
+    # Log incoming request details for debugging domain/cors issues
+    if path.startswith("/api"):
+        logger = logging.getLogger("app.middleware")
+        logger.info(f"Incoming Request: {method} {path} | Origin: {origin}")
+        
+    response = await call_next(request)
+    return response
 
 app.add_middleware(
     CORSMiddleware,

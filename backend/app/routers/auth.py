@@ -10,11 +10,16 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 @router.post("/register")
 async def register(body: RegisterRequest):
+    import logging
+    logger = logging.getLogger("auth")
+    logger.info(f"Registration attempt for : {body.email}")
+    
     sb = get_supabase()
     try:
         # Check if email exists
         res = sb.table("profiles").select("id").eq("email", body.email).execute()
         if res.data:
+            logger.warning(f"Registration failed: Email {body.email} already exists")
             raise HTTPException(status_code=400, detail="Email already registered")
 
         # Create user profile directly in profiles table
@@ -30,26 +35,39 @@ async def register(body: RegisterRequest):
         
         insert_res = sb.table("profiles").insert(profile_data).execute()
         if not insert_res.data:
+            logger.error(f"Registration failed: Profile creation failed for {body.email}")
             raise HTTPException(status_code=400, detail="Registration failed during profile creation")
             
+        logger.info(f"Registration successful for: {body.email} (ID: {new_user_id})")
         return {"message": "Registration successful", "user_id": new_user_id}
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
+        logger.error(f"Unexpected error during registration for {body.email}: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(body: LoginRequest):
+    import logging
+    logger = logging.getLogger("auth")
+    logger.info(f"Login attempt for: {body.email}")
+    
     sb = get_supabase()
     try:
         res = sb.table("profiles").select("*").eq("email", body.email).execute()
         if not res.data:
+            logger.warning(f"Login failed: User {body.email} not found")
             raise HTTPException(status_code=401, detail="Invalid credentials")
             
         user = res.data[0]
+        logger.info(f"User {body.email} found, verifying password...")
+        
         if not user.get("hashed_password") or not verify_password(body.password, user["hashed_password"]):
+             logger.warning(f"Login failed: Invalid password for {body.email}")
              raise HTTPException(status_code=401, detail="Invalid credentials")
+             
+        logger.info(f"Password verified for {body.email}, generating token...")
              
         # Generate JWT token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

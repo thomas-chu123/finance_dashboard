@@ -20,14 +20,28 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login(email, password) {
-      const res = await axios.post(`${API_BASE}/api/auth/login`, { email, password })
-      this.token = res.data.access_token
-      this.userId = res.data.user_id
-      this.email = res.data.email
-      localStorage.setItem('fd_token', this.token)
-      localStorage.setItem('fd_user_id', this.userId)
-      localStorage.setItem('fd_email', this.email)
-      await this.fetchProfile()
+      console.log(`Attempting login to: ${API_BASE}/api/auth/login`)
+      try {
+        const res = await axios.post(`${API_BASE}/api/auth/login`, { email, password })
+        console.log('Login request successful')
+        this.token = res.data.access_token
+        this.userId = res.data.user_id
+        this.email = res.data.email
+        localStorage.setItem('fd_token', this.token)
+        localStorage.setItem('fd_user_id', this.userId)
+        localStorage.setItem('fd_email', this.email)
+        await this.fetchProfile()
+      } catch (error) {
+        console.error('Login failed:', error.message)
+        if (error.response) {
+          console.error('Error Response:', error.response.status, error.response.data)
+        } else if (error.request) {
+          console.error('No response received (Request sent):', error.request)
+        } else {
+          console.error('Error setting up request:', error.message)
+        }
+        throw error
+      }
     },
 
     async register(email, password, displayName) {

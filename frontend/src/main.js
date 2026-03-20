@@ -42,7 +42,13 @@ const originalConsoleError = console.error
 
 function sendLog(level, ...args) {
   try {
-    const message = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))).join(' ')
+    const message = args.map(arg => {
+      if (arg instanceof Error) {
+        return `${arg.message}\n${arg.stack}`
+      }
+      return (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))
+    }).join(' ')
+    
     const apiBase = import.meta.env.DEV ? '' : `${window.location.protocol}//${window.location.hostname}:8005`
     fetch(`${apiBase}/api/logs`, {
       method: 'POST',
@@ -51,9 +57,16 @@ function sendLog(level, ...args) {
         level: level,
         message: message,
         url: window.location.href,
-        details: navigator.userAgent
+        details: {
+          userAgent: navigator.userAgent,
+          apiBase: apiBase,
+          timestamp: new Date().toISOString()
+        }
       })
-    }).catch(() => {})
+    }).catch(() => {
+        // Fallback to original console to avoid infinite loop
+        originalConsoleLog.apply(console, ['[RemoteLog Failure]', level, message])
+    })
   } catch (err) {
     // Ignore serialization errors
   }
@@ -71,6 +84,10 @@ console.error = function(...args) {
   originalConsoleError.apply(console, args)
   sendLog('error', ...args)
 }
+
+// Initial log to confirm environment
+const initialApiBase = import.meta.env.DEV ? '(Dev Mod)' : `${window.location.protocol}//${window.location.hostname}:8005`
+console.log('Frontend initialized. API Base:', initialApiBase)
 
 const app = createApp(App)
 const pinia = createPinia()
