@@ -45,12 +45,23 @@
         </div>
         <div v-else class="quotes-grid">
           <div v-for="q in quotes" :key="q.symbol" class="quote-card">
-            <div class="quote-symbol">{{ q.symbol }}</div>
-            <div class="quote-name">{{ q.name }}</div>
-            <div class="quote-price" v-if="q.price !== null">
-              {{ formatPrice(q.price) }}
+            <div class="flex justify-between items-start">
+              <div class="quote-symbol">{{ q.symbol }}</div>
+              <div v-if="q.change !== null && q.change !== 0" :class="['quote-arrow', q.change > 0 ? 'text-red' : 'text-green']">
+                {{ q.change > 0 ? '⬆️' : '⬇️' }}
+              </div>
             </div>
-            <div class="quote-price text-muted" v-else>N/A</div>
+            <div class="quote-name">{{ q.name }}</div>
+            <div class="flex justify-between items-end mt-4">
+              <div class="quote-price" v-if="q.price !== null">
+                {{ formatPrice(q.price) }}
+              </div>
+              <div class="quote-price text-muted" v-else>N/A</div>
+              
+              <div v-if="q.change !== null" :class="['quote-delta', q.change > 0 ? 'text-red' : q.change < 0 ? 'text-green' : 'text-muted']">
+                {{ Math.abs(q.change).toFixed(q.price < 10 ? 4 : 2) }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -392,6 +403,24 @@ onUnmounted(() => {
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
+
+.quote-arrow {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.quote-delta {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-red { color: #ff5252 !important; }
+.text-green { color: #4caf50 !important; }
+.justify-between { justify-content: space-between; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+.mt-4 { margin-top: 4px; }
 
 /* ─── Quote Modal (duplicate removed — see global <style> block below) ─── */
 </style>

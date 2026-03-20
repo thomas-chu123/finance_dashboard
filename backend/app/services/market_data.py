@@ -90,32 +90,74 @@ async def fetch_finmind_adjusted_prices(
         return pd.Series(dtype=float)
 
 
-async def get_current_price(symbol: str, category: str) -> Optional[float]:
-    """Fetch current price for a given symbol."""
+async def get_quote_data(symbol: str, category: str) -> dict:
+    """Fetch current price and previous close for a given symbol."""
     yf_symbol = _to_yf_symbol(symbol)
-    # Method 1: fast_info (lightweight, avoids JSONDecodeError)
+    ticker = yf.Ticker(yf_symbol)
+    
+    # Method 1: fast_info (preferred for quotes)
     try:
-        ticker = yf.Ticker(yf_symbol)
         fi = ticker.fast_info
-        price = getattr(fi, "last_price", None) or getattr(fi, "previous_close", None)
-        if price:
-            return float(price)
-    except Exception:
-        pass
-    # Method 2: yf.download 5-day window, take most recent close
-    try:
-        df = yf.download(yf_symbol, period="5d", progress=False, auto_adjust=True)
-        if not df.empty:
-            close = df["Close"]
-            # Handle MultiIndex columns from yf.download
-            if hasattr(close, "columns"):
-                close = close.iloc[:, 0]
-            val = float(close.iloc[-1])
-            if val and val > 0:
-                return val
+        # Try different ways to access fast_info fields
+        last_price = getattr(fi, 'last_price', None)
+        prev_close = getattr(fi, 'previous_close', None)
+        
+        if last_price is not None and prev_close is not None:
+            lp = float(last_price)
+            pc = float(prev_close)
+            return {
+                "symbol": symbol,
+                "price": lp,
+                "prev_close": pc,
+                "change": lp - pc,
+                "success": True
+            }
     except Exception as e:
-        print(f"[MarketData] Download error for {symbol}: {e}")
-    return None
+        logger.warning(f"[MarketData] fast_info failed for {yf_symbol}: {e}")
+
+    # Method 2: history(period="5d") fallback
+    try:
+        # Use history to get the last two closed/partial bars
+        df = await asyncio.to_thread(ticker.history, period="5d")
+        if not df.empty:
+            valid_closes = df["Close"].dropna()
+            if len(valid_closes) >= 2:
+                # Most recent row is current (if open) or today's close (if closed)
+                # Second to last row is the previous day's close
+                cp = float(valid_closes.iloc[-1])
+                pc = float(valid_closes.iloc[-2])
+                return {
+                    "symbol": symbol,
+                    "price": cp,
+                    "prev_close": pc,
+                    "change": cp - pc,
+                    "success": True
+                }
+            elif len(valid_closes) == 1:
+                cp = float(valid_closes.iloc[-1])
+                return {
+                    "symbol": symbol,
+                    "price": cp,
+                    "prev_close": None,
+                    "change": 0.0,
+                    "success": True
+                }
+    except Exception as e:
+        logger.error(f"[MarketData] history fallback failed for {yf_symbol}: {e}")
+
+    return {
+        "symbol": symbol,
+        "price": None,
+        "prev_close": None,
+        "change": 0.0,
+        "success": False
+    }
+
+
+async def get_current_price(symbol: str, category: str) -> Optional[float]:
+    """Fetch current price for a given symbol (backwards compatibility)."""
+    data = await get_quote_data(symbol, category)
+    return data.get("price")
 
 
 async def get_historical_prices(

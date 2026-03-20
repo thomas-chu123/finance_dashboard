@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_supabase
-from app.services.market_data import get_current_price
 from app.services.email_service import send_email, build_alert_email
 from app.services.line_service import send_line_message, build_alert_message
 
@@ -25,7 +24,7 @@ DEFAULT_SYMBOLS = [
 
 async def _fetch_quote(meta: dict) -> dict:
     symbol = meta["symbol"]
-    # Infer category for get_current_price
+    # Infer category for get_quote_data
     sym_upper = symbol.upper().replace(".TW", "").replace(".TWO", "")
     if ".TW" in symbol or ".TWO" in symbol:
         category = "tw_etf"
@@ -38,12 +37,26 @@ async def _fetch_quote(meta: dict) -> dict:
     else:
         category = "us_etf"
     try:
-        price = await get_current_price(symbol, category)
-        return {"symbol": symbol, "name": meta["name"], "price": price,
-                "timestamp": datetime.now(timezone.utc).isoformat(), "error": None}
+        from app.services.market_data import get_quote_data
+        data = await get_quote_data(symbol, category)
+        return {
+            "symbol": symbol,
+            "name": meta["name"],
+            "price": data.get("price"),
+            "change": data.get("change"),
+            "prev_close": data.get("prev_close"),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": None if data.get("success") else "Fetch failed"
+        }
     except Exception as e:
-        return {"symbol": symbol, "name": meta["name"], "price": None,
-                "timestamp": datetime.now(timezone.utc).isoformat(), "error": str(e)}
+        return {
+            "symbol": symbol,
+            "name": meta["name"],
+            "price": None,
+            "change": None,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": str(e)
+        }
 
 
 from pydantic import BaseModel
