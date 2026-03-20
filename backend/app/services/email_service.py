@@ -44,7 +44,7 @@ def build_alert_email(
     tracking_id: str,
 ) -> tuple[str, str]:
     direction_label = "突破" if trigger_direction == "above" else "跌破"
-    subject = f"📊 投資提醒：{name} ({symbol}) 已{direction_label} {trigger_price}"
+    subject = f"📊 投資提醒：{name} ({symbol}) 已{direction_label} {trigger_price:.2f}"
 
     primary = "#1a73e8"
     accent = "#ea4335" if trigger_direction == "below" else "#0f9d58"
@@ -71,9 +71,9 @@ def build_alert_email(
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">類別</td>
                   <td style="padding:8px 0;text-align:right;font-weight:600;">{category.upper()}</td></tr>
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">觸發條件</td>
-                  <td style="padding:8px 0;text-align:right;font-weight:600;color:{accent};">{direction_label} {trigger_price}</td></tr>
+                  <td style="padding:8px 0;text-align:right;font-weight:600;color:{accent};">{direction_label} {trigger_price:.2f}</td></tr>
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">目前價格</td>
-                  <td style="padding:8px 0;text-align:right;font-size:24px;font-weight:700;color:{accent};">{current_price}</td></tr>
+                  <td style="padding:8px 0;text-align:right;font-size:24px;font-weight:700;color:{accent};">{current_price:.2f}</td></tr>
             </table>
           </div>
           <div style="text-align:center;margin-top:24px;">
