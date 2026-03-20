@@ -43,6 +43,17 @@ def _is_taiwan_stock(symbol: str) -> bool:
     return False
 
 
+def get_symbol_currency(symbol: str) -> str:
+    """Identify the currency of a symbol (USD or TWD)."""
+    if _is_taiwan_stock(symbol):
+        return "TWD"
+    if symbol.upper() in ["TAIEX", "^TWII"]:
+        return "TWD"
+    # Exchange rates like TWD=X are USD-based (1 USD = X TWD)
+    # But currently they are symbols themselves.
+    return "USD"
+
+
 def _clean_tw_symbol(symbol: str) -> str:
     """Remove .TW or .TWO for FinMind API."""
     return symbol.split(".")[0]

@@ -114,6 +114,7 @@
               <div class="form-group">
                 <label class="form-label">初始金額 (USD)</label>
                 <input v-model.number="btConfig.initial_amount" type="number" class="form-control" />
+                <div class="text-xs text-muted mt-4">註：若包含台灣資產，系統將自動依歷史匯率換算為美金計價。</div>
               </div>
             </div>
           </div>
@@ -237,8 +238,8 @@
         <div class="grid-2 mb-24" style="gap:24px;">
           <!-- Portfolio growth chart -->
           <div class="card">
-            <div class="card-header"><h3>資產成長曲線</h3></div>
-            <div class="card-body" style="height:300px;">
+            <div class="card-header"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
+            <div class="card-body" style="height:420px;">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
           </div>
@@ -464,16 +465,24 @@ async function runBacktest() {
 const growthChartOption = computed(() => {
   if (!results.value?.portfolio_value_series) return {}
   const dates = Object.keys(results.value.portfolio_value_series)
-  const values = dates.map(d => results.value.portfolio_value_series[d].toFixed(2))
+  const values = dates.map(d => parseFloat(results.value.portfolio_value_series[d]))
 
   const series = [{ 
-    name: '投資組合',
+    name: 'Portfolio 1',
     data: values, 
     type: 'line', 
     smooth: true, 
     symbol: 'none', 
-    lineStyle: { color: '#58a6ff', width: 2.5 }, 
-    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(88,166,255,0.25)' }, { offset: 1, color: 'rgba(88,166,255,0)' }] } } 
+    lineStyle: { color: '#1e40af', width: 2.5 }, // More solid blue like reference
+    areaStyle: { 
+      color: { 
+        type: 'linear', x: 0, y: 0, x2: 0, y2: 1, 
+        colorStops: [
+          { offset: 0, color: 'rgba(30, 64, 175, 0.2)' }, 
+          { offset: 1, color: 'rgba(30, 64, 175, 0)' }
+        ] 
+      } 
+    } 
   }]
 
   // Add benchmark if available
@@ -483,26 +492,58 @@ const growthChartOption = computed(() => {
     if (initialAmt > 0) {
       const bmValues = dates.map(d => {
         const val = bmData[d] || 1
-        return (val * initialAmt).toFixed(2)
+        return parseFloat((val * initialAmt).toFixed(2))
       })
       series.push({
-        name: `基準 ${results.value?.metrics?.benchmark_symbol || 'SPY'}`,
+        name: 'Portfolio 2', // Reference uses Portfolio 1/2 naming style
         data: bmValues,
         type: 'line',
         smooth: true,
         symbol: 'none',
-        lineStyle: { color: '#8b949e', width: 2, type: 'dashed' }
+        lineStyle: { color: '#10b981', width: 2, type: 'solid' } // Teal/Green like reference
       })
     }
   }
 
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: '#8b949e' },
-    grid: { left: 60, right: 20, top: 40, bottom: 40 },
-    legend: { show: true, textStyle: { color: '#8b949e' }, top: 0 },
-    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 10, color: '#8b949e', interval: Math.floor(dates.length / 6) }, axisLine: { lineStyle: { color: '#30363d' } } },
-    yAxis: { type: 'value', axisLabel: { formatter: v => '$' + (v/1000).toFixed(0) + 'k', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } }, scale: true },
+    textStyle: { color: '#8b949e', fontFamily: 'Inter, sans-serif' },
+    grid: { left: 80, right: 40, top: 40, bottom: 80 }, // More space for labels
+    legend: { 
+      show: true, 
+      textStyle: { color: '#8b949e' }, 
+      bottom: '2%', 
+      left: 'center', 
+      orient: 'horizontal',
+      icon: 'roundRect'
+    },
+    xAxis: { 
+      type: 'category', 
+      name: 'Year',
+      nameLocation: 'middle',
+      nameGap: 35,
+      data: dates, 
+      axisLabel: { 
+        fontSize: 10, 
+        color: '#8b949e', 
+        interval: Math.floor(dates.length / 8),
+        formatter: (value) => value.split('-')[0] // Only show year if possible, or keeps as is
+      }, 
+      axisLine: { lineStyle: { color: '#30363d' } },
+      splitLine: { show: false } // Cleaner look like reference
+    },
+    yAxis: { 
+      type: 'log', // Logarithmic scale as requested
+      name: 'Portfolio Balance ($)',
+      nameLocation: 'middle',
+      nameGap: 60,
+      axisLabel: { 
+        formatter: v => '$' + v.toLocaleString(), 
+        color: '#8b949e' 
+      }, 
+      splitLine: { lineStyle: { color: '#21262d' } }, 
+      scale: true 
+    },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => {
       let html = `${p[0].axisValue}<br/>`
       p.forEach(s => { html += `${s.marker} ${s.seriesName}: $${parseFloat(s.value).toLocaleString()}<br/>` })
@@ -518,7 +559,7 @@ const annualReturnChartOption = computed(() => {
   const vals = years.map(y => (results.value.annual_returns[y] * 100).toFixed(2))
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: '#8b949e' },
+    textStyle: { color: '#e6edf3' },
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: { type: 'category', data: years, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } } },
     yAxis: { type: 'value', axisLabel: { formatter: v => v + '%', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } } },
@@ -536,7 +577,7 @@ const drawdownChartOption = computed(() => {
   const vals = dates.map(d => parseFloat(results.value.drawdown_series[d].toFixed(2)))
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: '#8b949e' },
+    textStyle: { color: '#e6edf3' },
     grid: { left: 60, right: 20, top: 10, bottom: 40 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 10, color: '#8b949e', interval: Math.floor(dates.length / 6) }, axisLine: { lineStyle: { color: '#30363d' } } },
     yAxis: { type: 'value', axisLabel: { formatter: v => v + '%', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } }, max: 0 },
