@@ -111,7 +111,7 @@
 
     <!-- Add Modal -->
     <Transition name="fade">
-      <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
+      <div v-if="showAddModal" class="modal-overlay">
         <div class="modal slide-up-enter-active">
           <div class="modal-header">
             <h3>{{ editItem ? '修改追蹤' : '新增追蹤指數' }}</h3>
@@ -129,6 +129,7 @@
                 <option value="tw_etf">台灣 ETF</option>
                 <option value="index">大盤指數</option>
                 <option value="crypto">加密貨幣</option>
+                <option value="exchange">匯率</option>
               </select>
             </div>
             
@@ -222,6 +223,7 @@ const categories = [
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
   { value: 'index', label: '指數' },
+  { value: 'exchange', label: '匯率' },
 ]
 
 const form = reactive({
@@ -247,14 +249,17 @@ if (typeof window !== 'undefined') {
 
 const allSymbols = computed(() => {
   const list = []
-  if (form.category === 'tw_etf') {
+  const cat = form.category
+  if (cat === 'tw_etf') {
     availableSymbols.value.tw_etf.forEach(s => list.push({ ...s, type: 'tw_etf' }))
-  } else if (form.category === 'us_etf') {
+  } else if (cat === 'us_etf') {
     availableSymbols.value.us_etf.forEach(s => list.push({ ...s, type: 'us_etf' }))
-  } else if (form.category === 'index') {
-    availableSymbols.value.index.forEach(s => list.push({ ...s, type: 'index' }))
+  } else if (['index', 'vix', 'oil', 'crypto'].includes(cat)) {
+    // Filter index list by category
+    const indices = availableSymbols.value.index || []
+    indices.filter(s => s.category === cat).forEach(s => list.push({ ...s, type: 'index' }))
   } else {
-    // For VIX/Oil etc, we don't have a list yet, but we can combine or just allow manual entry
+    // Fallback or other
     availableSymbols.value.us_etf.forEach(s => list.push({ ...s, type: 'us_etf' }))
   }
   return list
@@ -320,7 +325,7 @@ const filteredItems = computed(() =>
 )
 
 function categoryBadge(cat) {
-  const map = { vix: 'badge-red', oil: 'badge-yellow', us_etf: 'badge-blue', tw_etf: 'badge-purple', index: 'badge-blue', crypto: 'badge-yellow' }
+  const map = { vix: 'badge-red', oil: 'badge-yellow', us_etf: 'badge-blue', tw_etf: 'badge-purple', index: 'badge-blue', crypto: 'badge-yellow', exchange: 'badge-green' }
   return map[cat] || 'badge-blue'
 }
 

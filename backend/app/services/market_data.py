@@ -279,4 +279,14 @@ def get_index_list() -> list[dict]:
         {"symbol": "^FTSE", "name": "FTSE 100", "category": "index"},
         {"symbol": "^HSI", "name": "Hang Seng Index", "category": "index"},
         {"symbol": "TAIEX", "name": "台灣加權股價指數", "category": "index"},
+        # Crypto symbols
+        {"symbol": "BTC-USD", "name": "Bitcoin (BTC)", "category": "crypto"},
+        {"symbol": "ETH-USD", "name": "Ethereum (ETH)", "category": "crypto"},
+        {"symbol": "SOL-USD", "name": "Solana (SOL)", "category": "crypto"},
+        {"symbol": "USDT-USD", "name": "Tether (USDT)", "category": "crypto"},
+        # Exchange rates
+        {"symbol": "TWD=X", "name": "美元/新台幣", "category": "exchange"},
+        {"symbol": "TWDJPY=X", "name": "新台幣/日圓", "category": "exchange"},
+        {"symbol": "TWDEUR=X", "name": "新台幣/歐元", "category": "exchange"},
+        {"symbol": "CNYTWD=X", "name": "人民幣/新台幣", "category": "exchange"},
     ]

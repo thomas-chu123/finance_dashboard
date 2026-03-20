@@ -83,7 +83,7 @@
 
               <!-- Symbol list -->
               <div class="symbol-list">
-                <div v-for="s in filteredSymbols.slice(0, 500)" :key="s.symbol"
+                <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
                   :class="['symbol-item', { selected: isSelected(s.symbol), disabled: selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
                   <div class="flex-between">
@@ -310,7 +310,7 @@
 
     <!-- Save modal -->
     <Transition name="fade">
-      <div v-if="showSaveModal" class="modal-overlay" @click.self="showSaveModal = false">
+      <div v-if="showSaveModal" class="modal-overlay">
         <div class="modal">
           <div class="modal-header"><h3>儲存回測</h3><button class="modal-close" @click="showSaveModal = false">✕</button></div>
           <div class="modal-body">
@@ -356,6 +356,7 @@ const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
   { value: 'index', label: '指數/原物料' },
+  { value: 'crypto', label: '加密貨幣' },
 ]
 
 const btConfig = reactive({
@@ -411,7 +412,10 @@ async function loadSymbols() {
     const data = res.data
     if (symbolType.value === 'us_etf') availableSymbols.value = data.us_etf || []
     else if (symbolType.value === 'tw_etf') availableSymbols.value = data.tw_etf || []
-    else availableSymbols.value = data.indices || []
+    else if (symbolType.value === 'crypto') {
+      availableSymbols.value = (data.indices || []).filter(s => s.category === 'crypto')
+    }
+    else availableSymbols.value = (data.indices || []).filter(s => s.category !== 'crypto')
   } catch (e) { console.error('Symbol load failed', e) }
 }
 
