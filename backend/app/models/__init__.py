@@ -31,6 +31,8 @@ class TokenResponse(BaseModel):
 class ProfileUpdate(BaseModel):
     display_name: Optional[str] = None
     line_user_id: Optional[str] = None
+    line_binding_code: Optional[str] = None
+    line_binding_expires_at: Optional[str] = None
     notify_email: Optional[bool] = None
     notify_line: Optional[bool] = None
     dashboard_quotes: Optional[List[dict]] = None
@@ -41,6 +43,8 @@ class ProfileResponse(BaseModel):
     email: Optional[str]
     display_name: Optional[str]
     line_user_id: Optional[str]
+    line_binding_code: Optional[str] = None
+    line_binding_expires_at: Optional[str] = None
     notify_email: bool
     notify_line: bool
     is_admin: bool

@@ -38,6 +38,11 @@ const routes = [
         name: 'Users',
         component: () => import('../views/UsersView.vue'),
       },
+      {
+        path: 'line',
+        name: 'Line',
+        component: () => import('../views/LineView.vue'),
+      },
     ],
   },
 ]

@@ -8,6 +8,7 @@ __pycache__/
 *$py.class
 backend.log
 frontend.log
+*.log
 
 # Frontend
 frontend/node_modules/
