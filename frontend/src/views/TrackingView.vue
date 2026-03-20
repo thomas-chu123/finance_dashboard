@@ -254,7 +254,7 @@ const allSymbols = computed(() => {
     availableSymbols.value.tw_etf.forEach(s => list.push({ ...s, type: 'tw_etf' }))
   } else if (cat === 'us_etf') {
     availableSymbols.value.us_etf.forEach(s => list.push({ ...s, type: 'us_etf' }))
-  } else if (['index', 'vix', 'oil', 'crypto'].includes(cat)) {
+  } else if (['index', 'vix', 'oil', 'crypto', 'exchange'].includes(cat)) {
     // Filter index list by category
     const indices = availableSymbols.value.index || []
     indices.filter(s => s.category === cat).forEach(s => list.push({ ...s, type: 'index' }))
