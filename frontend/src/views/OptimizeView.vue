@@ -300,6 +300,11 @@ const efficientFrontierOption = computed(() => {
     (minVolInfo.return * 100).toFixed(2)
   ]
 
+  const assetPoints = (results.value.asset_points || []).map(p => ({
+    name: p.symbol,
+    value: [(p.volatility * 100).toFixed(2), (p.return * 100).toFixed(2)]
+  }))
+
   return {
     backgroundColor: 'transparent',
     tooltip: { 
@@ -310,7 +315,7 @@ const efficientFrontierOption = computed(() => {
       textStyle: { color: '#e6edf3' },
       formatter: p => `風險 (波動率): ${p[0].value[0]}%<br/>預期報酬: ${p[0].value[1]}%` 
     },
-    grid: { left: 50, right: 30, top: 20, bottom: 40 },
+    grid: { left: 50, right: 30, top: 40, bottom: 40 },
     xAxis: { 
       type: 'value', 
       name: '風險 (年化波動率 %)',
@@ -331,9 +336,9 @@ const efficientFrontierOption = computed(() => {
     },
     visualMap: {
       type: 'continuous',
-      dimension: 2, // Color by Sharpe Ratio
+      dimension: 2, 
       min: 0,
-      max: 2, // Approximate typical sharpe max for color scale
+      max: 2, 
       calculable: true,
       orient: 'vertical',
       right: 0,
@@ -352,18 +357,50 @@ const efficientFrontierOption = computed(() => {
         data: frontierPoints
       },
       {
+        name: '個別資產',
+        type: 'scatter',
+        symbolSize: 8,
+        itemStyle: { color: '#8b949e', opacity: 0.6 },
+        label: { 
+          show: true, 
+          position: 'right', 
+          color: '#8b949e', 
+          fontSize: 10, 
+          formatter: '{b}',
+          distance: 5
+        },
+        data: assetPoints,
+        tooltip: { formatter: p => `資產: ${p.name}<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
+      },
+      {
         name: 'Max Sharpe',
         type: 'scatter',
-        symbolSize: 15,
+        symbolSize: 14,
         itemStyle: { color: '#f85149', borderColor: '#fff', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'top',
+          color: '#f85149',
+          fontWeight: 'bold',
+          formatter: '🏆 Max Sharpe',
+          distance: 10
+        },
         data: [maxSharpePoint],
         tooltip: { formatter: p => `🏆 最大夏普點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
       },
       {
         name: 'Min Volatility',
         type: 'scatter',
-        symbolSize: 15,
+        symbolSize: 14,
         itemStyle: { color: '#3fb950', borderColor: '#fff', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'bottom',
+          color: '#3fb950',
+          fontWeight: 'bold',
+          formatter: '🛡️ Min Vol',
+          distance: 10
+        },
         data: [minVolPoint],
         tooltip: { formatter: p => `🛡️ 最小波動點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
       }
