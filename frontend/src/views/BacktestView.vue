@@ -165,10 +165,21 @@
 
           <div v-if="backtestError" class="alert alert-error mb-16">{{ backtestError }}</div>
 
-          <button class="btn btn-primary btn-lg" style="width:100%;" @click="runBacktest"
+          <div v-if="runLoading" class="progress-wrapper mb-16">
+            <div class="progress-info flex-between mb-8">
+              <span class="text-sm fw-600">
+                🚀 {{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
+              </span>
+              <span class="text-xs text-accent fw-700">{{ Math.floor(runProgress) }}%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: runProgress + '%' }"></div>
+            </div>
+          </div>
+
+          <button v-else class="btn btn-primary btn-lg" style="width:100%;" @click="runBacktest"
             :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5">
-            <span v-if="runLoading" class="spinner" style="width:16px;height:16px;"></span>
-            {{ runLoading ? '計算中...' : '🚀 執行回測' }}
+            🚀 執行回測
           </button>
         </div>
       </div>
@@ -336,6 +347,7 @@ const availableSymbols = ref([])
 const selectedItems = ref([])
 const results = ref(null)
 const runLoading = ref(false)
+const runProgress = ref(0)
 const backtestError = ref('')
 const showSaveModal = ref(false)
 const saveName = ref('')
@@ -406,7 +418,20 @@ async function loadSymbols() {
 async function runBacktest() {
   backtestError.value = ''
   runLoading.value = true
+  runProgress.value = 0
   results.value = null
+
+  // Progress simulation
+  const progressInterval = setInterval(() => {
+    if (runProgress.value < 20) {
+      runProgress.value += 2 // Fast start
+    } else if (runProgress.value < 85) {
+      runProgress.value += 0.5 // Normal slow
+    } else if (runProgress.value < 98) {
+      runProgress.value += 0.1 // Crawl
+    }
+  }, 100)
+
   try {
     const res = await axios.post(`${API_BASE}/api/backtest/run`, {
       items: selectedItems.value.map(i => ({ symbol: i.symbol, name: i.name, weight: i.weight, category: i.category })),
@@ -414,13 +439,21 @@ async function runBacktest() {
       end_date: btConfig.end_date,
       initial_amount: btConfig.initial_amount,
     }, { headers: auth.headers })
+    
+    clearInterval(progressInterval)
+    runProgress.value = 100
+    
+    // Give a moment for the 100% state to be visible
+    await new Promise(r => setTimeout(r, 400))
     console.log('[DEBUG] Backtest results:', res.data)
     results.value = res.data
   } catch (e) {
+    clearInterval(progressInterval)
     console.error('[DEBUG] Backtest error:', e)
     backtestError.value = e.response?.data?.detail || e.message
   } finally {
     runLoading.value = false
+    runProgress.value = 0
   }
 }
 
@@ -681,4 +714,34 @@ onMounted(async () => {
 .cat-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.15s; }
 .cat-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
 .align-center { align-items: center; }
+
+/* Progress Bar Styles */
+.progress-wrapper {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  animation: slideUp 0.3s ease-out;
+}
+
+.progress-track {
+  height: 8px;
+  background: var(--bg-base);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+  transition: width 0.2s ease-out;
+  border-radius: 4px;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>

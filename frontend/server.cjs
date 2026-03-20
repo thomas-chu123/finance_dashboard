@@ -29,7 +29,12 @@ const server = http.createServer((req, res) => {
   // Basic logging
   res.on('finish', () => {
     const duration = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+    const taipeiTime = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Asia/Taipei',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).format(new Date());
+    console.log(`[${taipeiTime}] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
   });
 
   let filePath = path.join(DIST_DIR, req.url === '/' ? 'index.html' : req.url);

@@ -162,11 +162,23 @@ async def fetch_tw_etf_list() -> list[dict]:
     try:
         from app.database import get_supabase
         sb = get_supabase()
-        res = sb.table("tw_etf_list").select("symbol, name").order("symbol").execute()
-        if res.data:
+        
+        all_rows = []
+        page_size = 1000
+        start = 0
+        while True:
+            res = sb.table("tw_etf_list").select("symbol, name").order("symbol").range(start, start + page_size - 1).execute()
+            if not res.data:
+                break
+            all_rows.extend(res.data)
+            if len(res.data) < page_size:
+                break
+            start += page_size
+            
+        if all_rows:
             return [
                 {"symbol": row["symbol"], "name": row["name"], "category": "tw_etf"}
-                for row in res.data
+                for row in all_rows
             ]
         logger.warning("[MarketData] tw_etf_list table is empty — triggering one-time sync from TWSE.")
     except Exception as e:
@@ -202,11 +214,23 @@ async def fetch_us_etf_list() -> list[dict]:
     try:
         from app.database import get_supabase
         sb = get_supabase()
-        res = sb.table("us_etf_list").select("symbol, name").order("symbol").execute()
-        if res.data:
+        
+        all_rows = []
+        page_size = 1000
+        start = 0
+        while True:
+            res = sb.table("us_etf_list").select("symbol, name").order("symbol").range(start, start + page_size - 1).execute()
+            if not res.data:
+                break
+            all_rows.extend(res.data)
+            if len(res.data) < page_size:
+                break
+            start += page_size
+            
+        if all_rows:
             return [
                 {"symbol": row["symbol"], "name": row["name"], "category": "us_etf"}
-                for row in res.data
+                for row in all_rows
             ]
         logger.warning("[MarketData] us_etf_list table is empty — triggering one-time sync from NASDAQ.")
     except Exception as e:
