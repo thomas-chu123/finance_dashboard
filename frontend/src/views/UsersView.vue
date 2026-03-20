@@ -16,77 +16,35 @@
         <div v-if="profileMsg" :class="['alert', profileMsg.ok ? 'alert-success' : 'alert-error']" style="margin-bottom:16px;">
           {{ profileMsg.text }}
         </div>
-        <div class="profile-layout">
-          <div class="profile-fields">
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">顯示姓名</label>
-                <input v-model="profileForm.display_name" type="text" class="form-control" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">LINE User ID</label>
-                <div class="flex gap-8">
-                  <input v-model="profileForm.line_user_id" type="text" class="form-control" placeholder="未連結" disabled />
-                  <span v-if="profileForm.line_user_id" class="badge badge-green align-center flex">已綁定</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex gap-24 mt-16">
-              <label class="flex gap-8 align-center" style="cursor:pointer;">
-                <label class="toggle">
-                  <input type="checkbox" v-model="profileForm.notify_email" />
-                  <span class="toggle-slider"></span>
-                </label>
-                <span class="text-sm fw-600">📧 Email 通知</span>
-              </label>
-              <label class="flex gap-8 align-center" style="cursor:pointer;">
-                <label class="toggle">
-                  <input type="checkbox" v-model="profileForm.notify_line" />
-                  <span class="toggle-slider"></span>
-                </label>
-                <span class="text-sm fw-600">💬 LINE 通知</span>
-              </label>
-            </div>
-
-            <!-- LINE Binding Logic integrated here -->
-            <div class="line-binding-section mt-24">
-              <h4 class="mb-12">🔗 LINE 帳號綁定</h4>
-              <div class="flex gap-16 align-start wrap">
-                <div class="binding-controls flex-1">
-                  <div v-if="profileForm.line_user_id" class="mb-16">
-                    <p class="text-sm text-green fw-600 mb-8">✅ 您的帳號已與 LINE 連結</p>
-                    <button class="btn btn-danger btn-sm" @click="unlinkLine">🚫 解除綁定</button>
-                  </div>
-                  <div v-else>
-                    <p class="text-sm text-muted mb-16">
-                      點擊下方按鈕生成綁定碼，並在 LINE 聊天室輸入 <code>bind [綁定碼]</code>。
-                    </p>
-                    <button 
-                      class="btn btn-outline btn-sm mb-16" 
-                      @click="generateLineCode" 
-                      :disabled="loadingCode"
-                    >
-                      {{ loadingCode ? '生成中...' : '✨ 生成綁定碼' }}
-                    </button>
-                  </div>
-                  
-                  <div v-if="lineBindingCode" class="binding-code-box animate-fade-in">
-                    <div class="code-label">您的綁定碼：</div>
-                    <div class="code-value">{{ lineBindingCode }}</div>
-                    <div class="code-expiry">⏱️ 10 分鐘內有效</div>
-                  </div>
-                </div>
-              </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">顯示姓名</label>
+            <input v-model="profileForm.display_name" type="text" class="form-control" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">LINE User ID</label>
+            <div class="flex gap-8">
+              <input v-model="profileForm.line_user_id" type="text" class="form-control" placeholder="未連結" disabled />
+              <span v-if="profileForm.line_user_id" class="badge badge-green align-center flex">已綁定</span>
             </div>
           </div>
-
-          <div class="profile-sidebar">
-            <div class="qrcode-card">
-              <img src="../assets/finance_qrcode.png" alt="LINE QR Code" class="qrcode-img" />
-              <p class="text-xs text-muted text-center mt-8">掃描加入 LINE 投資通知系統</p>
-            </div>
-          </div>
+        </div>
+        
+        <div class="flex gap-24 mt-16">
+          <label class="flex gap-8 align-center" style="cursor:pointer;">
+            <label class="toggle">
+              <input type="checkbox" v-model="profileForm.notify_email" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="text-sm fw-600">📧 Email 通知</span>
+          </label>
+          <label class="flex gap-8 align-center" style="cursor:pointer;">
+            <label class="toggle">
+              <input type="checkbox" v-model="profileForm.notify_line" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="text-sm fw-600">💬 LINE 通知</span>
+          </label>
         </div>
       </div>
     </div>
@@ -144,35 +102,6 @@ const profileMsg = ref(null)
 const users = ref([])
 const usersLoading = ref(false)
 
-const lineBindingCode = ref('')
-const loadingCode = ref(false)
-
-async function generateLineCode() {
-  loadingCode.value = true
-  try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8005`
-    const res = await axios.post(`${API_BASE_URL}/api/line/binding-code`, {}, {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    })
-    lineBindingCode.value = res.data.code
-  } catch (err) {
-    console.error('Failed to generate code:', err)
-    alert('無法生成綁定碼，請稍後再試。')
-  } finally {
-    loadingCode.value = false
-  }
-}
-
-async function unlinkLine() {
-  if (!confirm('確定要解除 LINE 帳號綁定嗎？解除後將無法接收 LINE 通知。')) return
-  try {
-    await auth.updateProfile({ line_user_id: null, notify_line: false })
-    alert('LINE 帳號已解除綁定。')
-  } catch (err) {
-    alert('解除綁定失敗：' + (err.response?.data?.detail || err.message))
-  }
-}
-
 function syncProfile() {
   if (auth.profile) {
     profileForm.display_name = auth.profile.display_name || ''
@@ -221,83 +150,13 @@ onMounted(async () => {
   if (!auth.profile) await auth.fetchProfile()
   syncProfile()
   await loadUsers()
-  
-  // Auto-generate LINE binding code if not yet bound
-  if (!auth.profile?.line_user_id && !lineBindingCode.value) {
-    generateLineCode()
-  }
 })
 </script>
 
 <style scoped>
 .align-center { align-items: center; }
-.profile-layout {
-  display: flex;
-  gap: 32px;
-}
 .profile-fields {
   flex: 1;
 }
-.profile-sidebar {
-  width: 200px;
-  flex-shrink: 0;
-}
-.qrcode-card {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
-  background: var(--bg-app);
-}
-.qrcode-img {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 4px;
-}
-.binding-code-box {
-  background: rgba(139, 92, 246, 0.1);
-  border-radius: 8px;
-  padding: 16px 24px;
-  text-align: center;
-  border: 1px dashed var(--purple);
-  width: fit-content;
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
-}
-.btn-outline {
-  background: transparent;
-  border: 1px solid var(--purple);
-  color: var(--purple);
-}
-.btn-outline:hover {
-  background: rgba(139, 92, 246, 0.1);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
-}
-.code-label {
-  font-size: 0.75rem;
-  color: var(--purple);
-  margin-bottom: 4px;
-}
-.code-value {
-  font-size: 1.5rem;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: var(--purple);
-}
-.code-expiry {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 .wrap { flex-wrap: wrap; }
-@media (max-width: 768px) {
-  .profile-layout { flex-direction: column; }
-  .profile-sidebar { width: 100%; order: -1; }
-  .qrcode-img { width: 150px; margin: 0 auto; display: block; }
-}
 </style>
