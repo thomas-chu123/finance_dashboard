@@ -44,7 +44,7 @@
           <div class="spinner"></div>
         </div>
         <div v-else class="quotes-grid">
-          <div v-for="q in quotes" :key="q.symbol" class="quote-card">
+          <div v-for="q in quotes" :key="q.symbol" class="quote-card" @click="openQuoteUrl(q.symbol)" :title="'前往 Yahoo 股市查看 ' + q.symbol">
             <div class="flex justify-between items-start">
               <div class="quote-symbol">{{ q.symbol }}</div>
               <div v-if="q.change !== null && q.change !== 0" :class="['quote-arrow', q.change > 0 ? 'text-red' : 'text-green']">
@@ -349,6 +349,24 @@ async function fetchQuotes() {
   }
 }
 
+function openQuoteUrl(symbol) {
+  let url = ''
+  const upper = symbol.toUpperCase()
+  // Pattern for Taiwan stocks/ETFs: 4-6 digits, optional letter (e.g., 00751B), optional suffix
+  const isTaiwan = /^\d{4,6}[A-Z]?(\.TW|\.TWO)?$/.test(upper) || upper.endsWith('.TW') || upper.endsWith('.TWO')
+  
+  if (isTaiwan) {
+    let finalSymbol = upper
+    if (!upper.includes('.')) {
+      finalSymbol = upper + '.TW' 
+    }
+    url = `https://tw.stock.yahoo.com/quote/${finalSymbol}`
+  } else {
+    url = `https://finance.yahoo.com/quote/${upper}`
+  }
+  window.open(url, '_blank')
+}
+
 onMounted(async () => {
   await trackingStore.fetchAll()
   await trackingStore.fetchAlertLogs()
@@ -376,11 +394,14 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 14px;
-  transition: border-color 0.2s, transform 0.15s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 .quote-card:hover {
   border-color: var(--accent);
-  transform: translateY(-2px);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .quote-symbol {
@@ -422,9 +443,9 @@ onUnmounted(() => {
 .items-end { align-items: flex-end; }
 .mt-4 { margin-top: 4px; }
 
+
 /* ─── Quote Modal (duplicate removed — see global <style> block below) ─── */
 </style>
-
 
 <!-- Global (non-scoped) styles for Teleported modal overlay -->
 <style>
