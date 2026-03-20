@@ -26,6 +26,9 @@
         <router-link to="/users" class="nav-item" :class="{ active: route.path === '/users' }">
           <span class="icon">👥</span> 使用者管理
         </router-link>
+        <router-link to="/line" class="nav-item" :class="{ active: route.path === '/line' }">
+          <span class="icon">💬</span> LINE 通知設定
+        </router-link>
       </nav>
     </aside>
 
