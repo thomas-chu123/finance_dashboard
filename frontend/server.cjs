@@ -26,16 +26,34 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
   const start = Date.now();
   
-  // Basic logging
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const taipeiTime = new Intl.DateTimeFormat('sv-SE', {
-      timeZone: 'Asia/Taipei',
-      year: 'numeric', month: '2-digit', day: '2-digit',
-      hour: '2-digit', minute: '2-digit', second: '2-digit',
-    }).format(new Date());
-    console.log(`[${taipeiTime}] ${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
-  });
+  // Proxy /api requests to backend
+  if (req.url.startsWith('/api')) {
+    const apiTarget = 'http://localhost:8005';
+    const proxyReq = http.request(apiTarget + req.url, {
+      method: req.method,
+      headers: req.headers
+    }, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode, proxyRes.headers);
+      proxyRes.pipe(res, { end: true });
+      
+      const duration = Date.now() - start;
+      const taipeiTime = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Taipei',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      }).format(new Date());
+      console.log(`[${taipeiTime}] [PROXY] ${req.method} ${req.url} ${proxyRes.statusCode} - ${duration}ms`);
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error(`Proxy Error: ${err.message}`);
+      res.writeHead(502);
+      res.end('Bad Gateway');
+    });
+
+    req.pipe(proxyReq, { end: true });
+    return;
+  }
 
   let filePath = path.join(DIST_DIR, req.url === '/' ? 'index.html' : req.url);
   
