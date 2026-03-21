@@ -65,8 +65,8 @@
 
         <div class="mt-auto pt-6 border-t border-[var(--border-color)]">
           <div class="flex items-center gap-3 px-2">
-            <div class="w-10 h-10 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center border border-zinc-300 dark:border-zinc-700">
-              <span class="text-[var(--text-primary)] font-bold text-lg">{{ userInitials }}</span>
+            <div class="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center border border-brand-600/20 shadow-sm">
+              <span class="text-white font-bold text-lg">{{ userInitials }}</span>
             </div>
             <div class="flex flex-col flex-1 truncate">
               <span class="text-sm font-semibold text-[var(--text-primary)] truncate">{{ userName }}</span>

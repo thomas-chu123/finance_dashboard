@@ -112,9 +112,9 @@
                 </div>
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider whitespace-nowrap text-zinc-900 dark:text-zinc-100">
-                  <Mail v-if="item.notify_channel === 'email' || item.notify_channel === 'both'" class="w-3 h-3 mr-1" />
-                  <MessageCircle v-if="item.notify_channel === 'line' || item.notify_channel === 'both'" class="w-3 h-3 mr-1" :class="{'ml-1': item.notify_channel==='both'}" />
+                <span class="inline-flex items-center gap-1 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                  <Mail v-if="item.notify_channel === 'email' || item.notify_channel === 'both'" class="w-3 h-3" />
+                  <MessageCircle v-if="item.notify_channel === 'line' || item.notify_channel === 'both'" class="w-3 h-3" />
                   {{ channelLabel(item.notify_channel) }}
                 </span>
               </td>
