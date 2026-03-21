@@ -9,7 +9,12 @@
       <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
         <h3>我的設定</h3>
         <button class="btn btn-primary btn-sm" @click="saveProfile" :disabled="profileSaving">
-          {{ profileSaving ? '儲存中...' : '<Save class="w-4 h-4 mr-2 inline" />儲存' }}
+          <template v-if="profileSaving">
+            <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />儲存中...
+          </template>
+          <template v-else>
+            <Save class="w-4 h-4 mr-2 inline" />儲存
+          </template>
         </button>
       </div>
       <div class="p-4 sm:p-6">
@@ -25,25 +30,23 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">LINE User ID</label>
             <div class="flex items-center gap-2">
               <input v-model="profileForm.line_user_id" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" placeholder="未連結" disabled />
-              <span v-if="profileForm.line_user_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 ml-2">已綁定</span>
+              <span v-if="profileForm.line_user_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 ml-2 whitespace-nowrap">已綁定</span>
             </div>
           </div>
         </div>
         
-        <div class="flex gap-24 mt-16">
-          <label class="flex gap-8 align-center" style="cursor:pointer;">
-            <label class="toggle">
-              <input type="checkbox" v-model="profileForm.notify_email" />
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="text-sm fw-600"><Mail class="w-4 h-4 mr-2 inline" />Email 通知</span>
+        <div class="flex gap-8 mt-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" v-model="profileForm.notify_email" class="w-5 h-5 cursor-pointer accent-indigo-600" />
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+              <Mail class="w-4 h-4 mr-1.5" />Email 通知
+            </span>
           </label>
-          <label class="flex gap-8 align-center" style="cursor:pointer;">
-            <label class="toggle">
-              <input type="checkbox" v-model="profileForm.notify_line" />
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="text-sm fw-600"><MessageCircle class="w-4 h-4 mr-2 inline" />LINE 通知</span>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" v-model="profileForm.notify_line" class="w-5 h-5 cursor-pointer accent-indigo-600" />
+            <span class="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+              <MessageCircle class="w-4 h-4 mr-1.5" />LINE 通知
+            </span>
           </label>
         </div>
       </div>

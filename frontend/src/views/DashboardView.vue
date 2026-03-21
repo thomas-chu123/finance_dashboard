@@ -9,7 +9,7 @@
           <RefreshCcw :size="16" />
         </button>
         <button @click="openQuoteModal" class="bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors flex items-center gap-1">
-          <Settings :size="14" /> 自訂報價
+          <Settings :size="14" /> 自訂指數
         </button>
       </div>
     </div>

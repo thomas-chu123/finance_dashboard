@@ -1,12 +1,12 @@
 <template>
   <div>
-    <div class="flex-between mb-24">
-      <h2>回測管理</h2>
-      <div class="flex items-center gap-2">
-        <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="showSaved = !showSaved">
-          <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2 inline" /><FolderOpen v-else class="w-4 h-4 mr-2 inline" />{{ showSaved ? '執行回測' : '已儲存' }}
-        </button>
-      </div>
+    <div class="backtest-header">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white">回測管理</h2>
+      <button class="flex items-center px-4 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm" @click="showSaved = !showSaved">
+        <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
+        <FolderOpen v-else class="w-4 h-4 mr-2" />
+        {{ showSaved ? '執行回測' : '已儲存' }}
+      </button>
     </div>
 
     <!-- Saved portfolios list -->
@@ -71,26 +71,33 @@
               <!-- Quick symbol search -->
               <div class="space-y-1 mb-4">
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">搜尋代碼或名稱</label>
-                <input v-model="symbolSearch" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" placeholder="輸入 0050, SPY, VIX..." @keydown.enter="addSearchSymbol" />
+                <div class="relative">
+                  <input v-model="symbolSearch" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 pr-10" placeholder="輸入 0050, SPY, BTC..." @keydown.enter="addSearchSymbol" />
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <Rocket class="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
               </div>
 
               <!-- Symbol type tabs -->
               <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
                 <button v-for="t in symbolTypes" :key="t.value"
-                  ::class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-transparent text-gray-600 dark:text-gray-400 border-[var(--border-color)] hover:bg-gray-50 dark:hover:bg-gray-800']"
+                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-transparent text-gray-600 dark:text-gray-400 border-[var(--border-color)] hover:bg-gray-50 dark:hover:bg-gray-800']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
               <!-- Symbol list -->
-              <div class="max-h-60 overflow-y-auto border border-[var(--border-color)] rounded-lg">
+              <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-900/50">
                 <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                  ::class="['flex items-center justify-between p-3 cursor-pointer transition-colors border-b border-[var(--border-color)] last:border-0', isSelected(s.symbol) ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-l-indigo-600' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-gray-100 dark:border-gray-800 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
-                  <div>
-                      <span class="font-semibold text-gray-900 dark:text-white">{{ s.symbol }}</span>
-                      <span class="text-sm text-muted" style="margin-left:8px;">{{ s.name }}</span>
-                    </div>
-                    <span v-if="isSelected(s.symbol)" class="text-indigo-600 dark:text-indigo-400"><Check class="w-4 h-4" /></span>
+                  <div class="flex flex-col flex-1 min-w-0 pr-4">
+                    <span class="font-bold text-gray-900 dark:text-white truncate">{{ s.symbol }}</span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ s.name }}</span>
+                  </div>
+                  <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white shadow-sm">
+                    <Check class="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -131,19 +138,35 @@
               <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:16px 0;">
                 請從左側選擇資產
               </div>
-              <div v-for="item in selectedItems" :key="item.symbol" class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg mb-2">
-                <div class="flex items-center justify-between" style="margin-bottom:6px;">
-                  <div>
-                    <span class="font-semibold text-gray-900 dark:text-white">{{ item.symbol }}</span>
-                    <span class="text-xs text-muted" style="margin-left:8px;">{{ item.name }}</span>
+              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-gray-50/80 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl mb-3 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-extrabold text-xs uppercase">
+                      {{ item.symbol.substring(0, 2) }}
+                    </div>
+                    <div class="flex flex-col">
+                      <div class="font-bold text-gray-900 dark:text-white leading-tight">{{ item.symbol }}</div>
+                      <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                    </div>
                   </div>
-                  <div class="flex gap-8 align-center">
-                    <span class="fw-600 text-accent">{{ item.weight.toFixed(1) }}%</span>
-                    <button class="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" style="padding:2px 8px;" @click="removeSymbol(item.symbol)"><X class="w-4 h-4" /></button>
+                  <div class="flex items-center gap-4">
+                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ item.weight.toFixed(0) }}%</span>
+                    <button class="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                      <X class="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                <input v-model.number="item.weight" type="range" min="1" max="100" step="1"
-                  @input="adjustWeights(item.symbol, item.weight)" />
+                <div class="w-full">
+                  <input 
+                    v-model.number="item.weight" 
+                    type="range" 
+                    min="1" 
+                    max="100" 
+                    step="1"
+                    class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    @input="adjustWeights(item.symbol, item.weight)" 
+                  />
+                </div>
               </div>
 
               <div v-if="selectedItems.length > 1" class="mt-16 flex gap-8">
@@ -184,56 +207,73 @@
       </div>
 
       <!-- Results -->
-      <div v-if="results" class="mt-6">
-        <div class="flex-between mb-16">
-          <h3>回測結果 <span class="text-sm text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span></h3>
-          <div class="flex items-center gap-2">
-            <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="addAllToTracking"><Activity class="w-4 h-4 mr-2 inline" />加入追蹤</button>
-            <button class="px-3 py-1.5 text-sm font-medium text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors rounded-lg" @click="showSaveModal = true"><Save class="w-4 h-4 mr-2 inline" />儲存回測</button>
+      <div v-if="results" class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-8">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            回測結果 
+            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
+          </h3>
+          <div class="flex items-center gap-3">
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm" @click="addAllToTracking">
+              <Activity class="w-4 h-4 mr-2" />加入追蹤
+            </button>
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm" @click="showSaveModal = true">
+              <Save class="w-4 h-4 mr-2" />儲存回測
+            </button>
           </div>
         </div>
 
         <!-- Metrics -->
-        <div class="grid-4 mb-24" v-if="results?.metrics">
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">CAGR 年化報酬</div>
-            <div :class="['stat-value', (results.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600']">{{ results.metrics.cagr }}%</div>
+        <div class="metrics-grid mb-8">
+          <!-- CAGR -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
+            <div :class="['text-xl font-bold', (results.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600']">
+              {{ results.metrics.cagr }}%
+            </div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Sharpe Ratio</div>
-            <div class="stat-value text-accent">{{ results.metrics.sharpe_ratio }}</div>
+          <!-- Sharpe -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">SHARPE RATIO</div>
+            <div class="text-xl font-bold text-indigo-600 dark:text-indigo-400">{{ results.metrics.sharpe_ratio }}</div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Sortino Ratio</div>
-            <div class="stat-value text-purple">{{ results.metrics.sortino_ratio }}</div>
+          <!-- Sortino -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">SORTINO RATIO</div>
+            <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results.metrics.sortino_ratio }}</div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Beta</div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ results.metrics.beta }}</div>
+          <!-- Beta -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">BETA</div>
+            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ results.metrics.beta }}</div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">最大回撤</div>
-            <div class="stat-value text-emerald-600">{{ results.metrics.max_drawdown }}%</div>
+          <!-- Max Drawdown -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">MAX DRAWDOWN</div>
+            <div class="text-xl font-bold text-emerald-600">{{ results.metrics.max_drawdown }}%</div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">年化標準差</div>
-            <div class="text-2xl font-bold text-gray-900 dark:text-white">{{ results.metrics.annual_std }}%</div>
+          <!-- Volatility -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">VOLATILITY (STD)</div>
+            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ results.metrics.annual_std }}%</div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">VaR (95%)</div>
-            <div class="stat-value text-yellow">{{ results.metrics.var_95 }}%</div>
+          <!-- VaR -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">VAR (95%)</div>
+            <div class="text-xl font-bold text-orange-500">{{ results.metrics.var_95 }}%</div>
           </div>
-          <div class="bg-white dark:bg-gray-800/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">期末資產</div>
-            <div class="stat-value text-rose-600">${{ (results.metrics.final_amount || 0).toLocaleString() }}</div>
-            <div class="stat-change" :class="(results.metrics.total_return || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600'">
-              總報酬 {{ results.metrics.total_return }}%
+          <!-- Final Amount -->
+          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">FINAL AMOUNT</div>
+            <div class="text-xl font-bold text-rose-600">${{ (results.metrics.final_amount || 0).toLocaleString() }}</div>
+            <div class="text-[10px] font-medium" :class="(results.metrics.total_return || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600'">
+              RETURN: {{ results.metrics.total_return }}%
             </div>
           </div>
         </div>
 
         <!-- Charts -->
-        <div class="grid-2 mb-24" style="gap:24px;">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-24">
           <!-- Portfolio growth chart -->
           <div class="glass-card">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
@@ -396,6 +436,15 @@ function equalizeWeights() {
   selectedItems.value.forEach((item, idx) => {
     item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
   })
+}
+
+function adjustWeights(symbol, newWeight) {
+  const item = selectedItems.value.find(i => i.symbol === symbol)
+  if (!item) return
+  
+  // Basic logic: just update this one. 
+  // For a better UX, we could adjust others proportionally, but let's keep it simple for now.
+  item.weight = newWeight
 }
 
 function addSearchSymbol() {
@@ -746,5 +795,35 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.backtest-header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.symbol-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+}
+
+.metrics-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1rem !important;
+}
+
+@media (min-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+</style>
 
 

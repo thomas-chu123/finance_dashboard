@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="flex-between mb-24">
-      <h2>投資組合最佳化</h2>
-      <div class="text-sm text-muted">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+    <div class="optimize-header mb-6">
+      <h2 class="text-xl font-bold text-gray-900 dark:text-white">投資組合最佳化</h2>
+      <div class="text-sm text-gray-500 dark:text-gray-400">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
     </div>
 
     <!-- Optimization Config -->
@@ -21,20 +21,22 @@
             <!-- Symbol type tabs -->
             <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
               <button v-for="t in symbolTypes" :key="t.value"
-                ::class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-transparent text-gray-600 dark:text-gray-400 border-[var(--border-color)] hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-transparent text-gray-600 dark:text-gray-400 border-[var(--border-color)] hover:bg-gray-50 dark:hover:bg-gray-800']"
                 @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
             </div>
 
             <!-- Symbol list -->
-            <div class="max-h-60 overflow-y-auto border border-[var(--border-color)] rounded-lg mb-4">
-              <div v-for="s in filteredSymbols.slice(0, 20)" :key="s.symbol"
-                ::class="['flex items-center justify-between p-3 cursor-pointer transition-colors border-b border-[var(--border-color)] last:border-0', isSelected(s.symbol) ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-l-indigo-600' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+            <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-900/50 mb-4">
+              <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
+                :class="['px-4 py-3 cursor-pointer transition-all border-b border-gray-100 dark:border-gray-800 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                 @click="toggleSymbol(s)">
-                <div>
-                    <span class="font-semibold text-gray-900 dark:text-white">{{ s.symbol }}</span>
-                    <span class="text-sm text-muted" style="margin-left:8px;">{{ s.name }}</span>
-                  </div>
-                  <span v-if="isSelected(s.symbol)" class="text-indigo-600 dark:text-indigo-400"><Check class="w-4 h-4" /></span>
+                <div class="flex flex-col flex-1 min-w-0 pr-4">
+                  <span class="font-bold text-gray-900 dark:text-white truncate">{{ s.symbol }}</span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ s.name }}</span>
+                </div>
+                <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white shadow-sm">
+                  <Check class="w-3.5 h-3.5" />
+                </div>
               </div>
             </div>
 
@@ -51,16 +53,18 @@
           </div>
         </div>
 
-        <!-- Date range -->
+      <!-- Date range -->
         <div class="glass-card">
-          <div class="card-body grid-2">
-            <div class="space-y-1 mb-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">回測開始日期</label>
-              <input v-model="optConfig.start_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
-            </div>
-            <div class="space-y-1 mb-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">結束日期</label>
-              <input v-model="optConfig.end_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+          <div class="p-4 sm:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-1 mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">回測開始日期</label>
+                <input v-model="optConfig.start_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+              </div>
+              <div class="space-y-1 mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">結束日期</label>
+                <input v-model="optConfig.end_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+              </div>
             </div>
           </div>
         </div>
@@ -76,8 +80,12 @@
             </p>
             <button class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runOptimization"
               :disabled="runLoading || selectedItems.length < 2 || selectedItems.length > 10">
-              <Loader2 v-if="runLoading" class="w-4 h-4 mr-2 inline animate-spin" />
-              {{ runLoading ? '模型計算中...' : '<Dna class="w-4 h-4 mr-2 inline" />開始最佳化分析' }}
+              <template v-if="runLoading">
+                <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />模型計算中...
+              </template>
+              <template v-else>
+                <Dna class="w-4 h-4 mr-2 inline" />開始最佳化分析
+              </template>
             </button>
             <div v-if="selectedItems.length < 2" class="text-red text-sm mt-8">請至少選擇 2 個資產進行分析</div>
           </div>
@@ -90,17 +98,17 @@
     <div v-if="results" class="mt-32">
       <h3 class="mb-4">最佳化分析結果</h3>
 
-      <div class="grid-2 mb-24" style="gap:24px;">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <!-- Max Sharpe Portfolio -->
         <div class="glass-card" style="border: 1px solid var(--accent);">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between" style="background:var(--accent-glow);">
-            <div class="flex-between w-full" style="width:100%;">
+            <div class="optimize-header w-full">
               <h3 class="text-indigo-600 dark:text-indigo-400"><Trophy class="w-5 h-5 mr-2 inline" />最大夏普值組合 (Max Sharpe)</h3>
               <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
             </div>
           </div>
           <div class="p-4 sm:p-6">
-            <div class="grid-3 mb-16">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <div class="text-xs text-muted">預期年化報酬</div>
                 <div class="fw-600 text-rose-600">{{ (results.max_sharpe.return * 100).toFixed(2) }}%</div>
@@ -123,13 +131,13 @@
         <!-- Min Volatility Portfolio -->
         <div class="glass-card" style="border: 1px solid var(--green);">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between" style="background:rgba(63, 185, 80, 0.1);">
-             <div class="flex-between w-full" style="width:100%;">
+             <div class="optimize-header w-full">
               <h3 class="text-emerald-600 dark:text-emerald-400"><Shield class="w-5 h-5 mr-2 inline" />最小波動率組合 (Min Volatility)</h3>
               <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
             </div>
           </div>
           <div class="p-4 sm:p-6">
-            <div class="grid-3 mb-16">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <div class="text-xs text-muted">預期年化報酬</div>
                 <div class="fw-600 text-rose-600">{{ (results.min_volatility.return * 100).toFixed(2) }}%</div>
@@ -430,5 +438,22 @@ onMounted(() => {
   loadSymbols()
 })
 </script>
+
+<style scoped>
+.optimize-header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.symbol-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+}
+</style>
 
 

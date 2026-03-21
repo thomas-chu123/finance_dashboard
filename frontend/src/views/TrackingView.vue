@@ -259,7 +259,7 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import {
-  Plus, Loader2, BarChart2, TrendingUp, X, ArrowUpRight, ArrowDownRight,
+  Plus, Loader2, BarChart2, TrendingUp, TrendingDown, X, ArrowUpRight, ArrowDownRight,
   Mail, MessageCircle, Edit2, Bell, Trash2, PlusCircle, AlertCircle
 } from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'

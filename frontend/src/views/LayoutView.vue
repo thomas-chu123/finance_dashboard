@@ -5,8 +5,8 @@
       class="fixed inset-y-0 left-0 z-50 w-64 bg-[var(--bg-sidebar)] border-r border-[var(--border-color)] transition-transform duration-300 lg:relative lg:translate-x-0"
       :class="!isSidebarOpen ? '-translate-x-full' : ''"
     >
-      <div class="flex flex-col h-full p-6">
-        <div class="flex items-center gap-2 mb-10 px-2">
+      <div class="flex flex-col h-full p-4">
+        <div class="flex items-center gap-2 mb-8 px-2">
           <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
             <Globe class="text-white dark:text-black" :size="20" />
           </div>
@@ -15,48 +15,48 @@
           </span>
         </div>
 
-        <nav class="flex-1 space-y-2">
-          <div class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-4 mb-2">主選單</div>
+        <nav class="flex-1 space-y-1">
+          <div class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2">主選單</div>
           
           <router-link to="/" custom v-slot="{ href, navigate, isExactActive }">
-            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group', isExactActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
+            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group', isExactActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
               <LayoutDashboard :size="20" :class="['transition-colors', isExactActive ? 'text-emerald-500 dark:text-emerald-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span class="font-medium text-sm">總覽</span>
             </a>
           </router-link>
 
           <router-link to="/tracking" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
+            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
               <TrendingUp :size="20" :class="['transition-colors', isActive ? 'text-emerald-500 dark:text-emerald-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span class="font-medium text-sm">指數追蹤</span>
             </a>
           </router-link>
 
           <router-link to="/backtest" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
+            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
               <RefreshCcw :size="20" :class="['transition-colors', isActive ? 'text-emerald-500 dark:text-emerald-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span class="font-medium text-sm">回測管理</span>
             </a>
           </router-link>
 
           <router-link to="/optimize" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
+            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
               <Target :size="20" :class="['transition-colors', isActive ? 'text-emerald-500 dark:text-emerald-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span class="font-medium text-sm">投資組合最佳化</span>
             </a>
           </router-link>
 
-          <div class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-4 mb-2 mt-6">系統</div>
+          <div class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">系統</div>
           
           <router-link to="/users" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
+            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
               <Users :size="20" :class="['transition-colors', isActive ? 'text-emerald-500 dark:text-emerald-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span class="font-medium text-sm">使用者管理</span>
             </a>
           </router-link>
 
           <router-link to="/line" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
+            <a :href="href" @click="navigate" :class="['flex items-center gap-3 w-full px-3 py-2.5 rounded-lg transition-all duration-200 group', isActive ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']">
               <MessageCircle :size="20" :class="['transition-colors', isActive ? 'text-emerald-500 dark:text-emerald-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span class="font-medium text-sm">LINE 通知</span>
             </a>
@@ -80,7 +80,7 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-[var(--bg-main)]">
       <!-- Header -->
-      <header class="h-16 flex-shrink-0 border-b border-[var(--border-color)] flex items-center justify-between px-6 bg-[var(--bg-header)] backdrop-blur-md sticky top-0 z-40">
+      <header class="h-14 flex-shrink-0 border-b border-[var(--border-color)] flex items-center justify-between px-6 bg-[var(--bg-header)] backdrop-blur-md sticky top-0 z-40">
         <div class="flex items-center gap-4 flex-1">
           <button 
             @click="isSidebarOpen = !isSidebarOpen"
