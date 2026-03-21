@@ -104,13 +104,13 @@ import QrcodeVue from 'qrcode.vue'
 const auth = useAuthStore()
 const isBound = computed(() => !!auth.profile?.line_user_id)
 const bindingCode = ref('')
-const botId = ref('')
 const loadingCode = ref(false)
 
 const qrCodeUrl = computed(() => {
-  if (!botId.value || !bindingCode.value) return ''
+  if (!bindingCode.value) return ''
+  const botBasicId = '@295pqnho'
   // Format: https://line.me/R/oaMessage/{bot_id}/?{message}
-  return `https://line.me/R/oaMessage/${botId.value}/?bind%20${bindingCode.value}`
+  return `https://line.me/R/oaMessage/${botBasicId}/?bind%20${bindingCode.value}`
 })
 
 onMounted(async () => {
@@ -131,9 +131,6 @@ async function generateCode() {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     bindingCode.value = res.data.code
-    if (res.data.bot_id) {
-      botId.value = res.data.bot_id
-    }
   } catch (err) {
     console.error('Failed to generate code:', err)
     alert('無法生成綁定碼，請稍後再試。')
