@@ -53,7 +53,7 @@ export const useAuthStore = defineStore('auth', {
     async fetchProfile() {
       if (!this.token) return
       try {
-        const res = await axios.get(`${API_BASE}/api/users/me`, { headers: this.headers })
+        const res = await axios.get(`${API_BASE}/api/users/me?_t=${Date.now()}`, { headers: this.headers })
         this.profile = res.data
       } catch (e) {
         console.error('Profile fetch failed', e)
