@@ -1,43 +1,43 @@
 <template>
-  <div class="login-page">
-    <div class="login-bg">
-      <div class="glow glow-1"></div>
-      <div class="glow glow-2"></div>
-    </div>
-
-    <div class="login-card">
-      <div class="login-logo">
-        <div class="logo-icon">📊</div>
-        <h1 class="logo-text">Finance Dashboard</h1>
-        <p class="logo-sub">Investment Tracking & Backtesting</p>
+  <div class="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#121214]">
+    <div class="relative z-10 w-full max-w-[420px] p-6">
+      <div class="text-center mb-10">
+        <div class="flex justify-center mb-6">
+          <div class="p-4 bg-[#00df81]/10 rounded-[1.25rem]">
+            <Activity class="w-10 h-10 text-[#00df81]" :stroke-width="2" />
+          </div>
+        </div>
+        <h1 class="text-[2rem] leading-tight font-bold bg-gradient-to-r from-[#00df81] to-[#38bdf8] bg-clip-text text-transparent pb-1 tracking-tight">Finance Dashboard</h1>
+        <p class="text-zinc-400 text-sm mt-3 font-medium tracking-wide">Investment Tracking & Backtesting</p>
       </div>
 
-      <div class="tabs">
-        <button :class="['tab', { active: mode === 'login' }]" @click="mode = 'login'">登入</button>
-        <button :class="['tab', { active: mode === 'register' }]" @click="mode = 'register'">註冊</button>
+      <!-- Segmented Control for Tabs -->
+      <div class="flex mb-8 p-1.5 bg-[#18181b] rounded-2xl">
+        <button :class="['flex-1 py-3 font-bold text-[15px] rounded-xl transition-all duration-200', mode === 'login' ? 'bg-[#27272a] text-[#00df81] shadow-sm' : 'text-zinc-500 hover:text-zinc-300']" @click="mode = 'login'">登入</button>
+        <button :class="['flex-1 py-3 font-bold text-[15px] rounded-xl transition-all duration-200', mode === 'register' ? 'bg-[#27272a] text-[#00df81] shadow-sm' : 'text-zinc-500 hover:text-zinc-300']" @click="mode = 'register'">註冊</button>
       </div>
 
-      <div v-if="error" class="alert alert-error">{{ error }}</div>
+      <div v-if="error" class="bg-rose-500/10 text-rose-500 p-3 rounded-xl mb-6 text-sm font-bold border border-rose-500/20 flex items-center justify-center">{{ error }}</div>
 
-      <form @submit.prevent="handleSubmit" class="login-form">
-        <div v-if="mode === 'register'" class="form-group">
-          <label class="form-label">姓名</label>
-          <input v-model="form.displayName" type="text" class="form-control" placeholder="您的姓名" />
+      <form @submit.prevent="handleSubmit" class="flex flex-col">
+        <div v-if="mode === 'register'" class="space-y-2 mb-6 text-left">
+          <label class="block text-[13px] font-bold text-zinc-400">姓名</label>
+          <input v-model="form.displayName" type="text" class="w-full bg-[#18181b] border border-[#27272a] text-zinc-100 text-[15px] rounded-xl focus:ring-1 focus:ring-[#00df81] focus:border-[#00df81] block p-3.5 outline-none transition-all placeholder:text-zinc-500" placeholder="您的姓名" />
         </div>
 
-        <div class="form-group">
-          <label class="form-label">電子郵件</label>
-          <input v-model="form.email" type="email" class="form-control" placeholder="example@email.com" required />
+        <div class="space-y-2 mb-6 text-left">
+          <label class="block text-[13px] font-bold text-zinc-400">電子郵件</label>
+          <input v-model="form.email" type="email" class="w-full bg-[#18181b] border border-[#27272a] text-zinc-100 text-[15px] rounded-xl focus:ring-1 focus:ring-[#00df81] focus:border-[#00df81] block p-3.5 outline-none transition-all placeholder:text-zinc-500" placeholder="example@email.com" required />
         </div>
 
-        <div class="form-group">
-          <label class="form-label">密碼</label>
-          <input v-model="form.password" type="password" class="form-control" placeholder="••••••••" required minlength="6" />
+        <div class="space-y-2 mb-10 text-left">
+          <label class="block text-[13px] font-bold text-zinc-400">密碼</label>
+          <input v-model="form.password" type="password" class="w-full bg-[#18181b] border border-[#27272a] text-zinc-100 text-[15px] rounded-xl focus:ring-1 focus:ring-[#00df81] focus:border-[#00df81] block p-3.5 outline-none transition-all placeholder:text-zinc-500" placeholder="••••••••" required minlength="6" />
         </div>
 
-        <button type="submit" class="btn btn-primary btn-lg w-full" :disabled="loading">
-          <span v-if="loading" class="spinner" style="width:16px;height:16px;"></span>
-          {{ loading ? '處理中...' : (mode === 'login' ? '登入' : '建立帳號') }}
+        <button type="submit" class="w-full flex h-[52px] items-center justify-center gap-2 bg-[#00df81] hover:bg-[#00c974] text-white font-bold text-[17px] rounded-2xl transition-all shadow-[0_4px_20px_rgba(0,223,129,0.35)] hover:shadow-[0_4px_25px_rgba(0,223,129,0.5)] select-none" :disabled="loading">
+          <Loader2 v-if="loading" class="w-5 h-5 animate-spin" />
+          {{ loading ? '處理中...' : (mode === 'login' ? '登入' : '註冊') }}
         </button>
       </form>
     </div>
@@ -48,6 +48,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { Activity, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -78,87 +79,16 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.login-bg { position: absolute; inset: 0; }
-
-.glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.25;
-  animation: float 8s ease-in-out infinite;
-}
-
-.glow-1 {
-  width: 500px;
-  height: 500px;
-  background: var(--accent);
-  top: -100px;
-  left: -100px;
-}
-
-.glow-2 {
-  width: 400px;
-  height: 400px;
-  background: var(--purple);
-  bottom: -100px;
-  right: -100px;
-  animation-delay: -4s;
-}
-
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-30px); }
 }
 
-.login-card {
-  position: relative;
-  z-index: 1;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 40px;
-  width: 100%;
-  max-width: 420px;
-  backdrop-filter: blur(20px);
-  box-shadow: var(--shadow);
+.animate-float {
+  animation: float 8s ease-in-out infinite;
 }
 
-.login-logo { text-align: center; margin-bottom: 28px; }
-.logo-icon { font-size: 2.5rem; margin-bottom: 8px; }
-.logo-text {
-  font-size: 1.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, var(--accent), var(--purple));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.animate-delay-\[-4s\] {
+  animation-delay: -4s;
 }
-.logo-sub { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
-
-.tabs { display: flex; gap: 0; margin-bottom: 24px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
-.tab {
-  flex: 1;
-  padding: 9px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.tab.active { background: var(--accent); color: white; }
-
-.login-form { display: flex; flex-direction: column; gap: 0; }
-.w-full { width: 100%; justify-content: center; margin-top: 8px; }
 </style>

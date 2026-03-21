@@ -1,53 +1,60 @@
 <template>
-  <div>
-    <div class="flex-between mb-24">
-      <h2>指數追蹤管理</h2>
-      <button class="btn btn-primary" @click="showAddModal = true">＋ 新增追蹤</button>
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">指數追蹤管理</h2>
+      <button class="flex items-center justify-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black text-sm font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20" @click="showAddModal = true">
+        <Plus class="w-4 h-4 mr-2" />
+        新增追蹤
+      </button>
     </div>
 
     <!-- Filter tabs -->
-    <div class="flex-between mb-16 align-end">
-      <div class="category-tabs">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex flex-wrap gap-2">
         <button v-for="cat in categories" :key="cat.value"
-          :class="['cat-tab', { active: activeCategory === cat.value }]"
+          :class="['px-4 py-1.5 rounded-full text-sm font-bold transition-colors border', activeCategory === cat.value ? 'bg-emerald-500 border-emerald-500 text-white dark:text-black shadow-sm' : 'bg-transparent border-[var(--border-color)] text-zinc-500 hover:border-emerald-500 hover:text-emerald-500']"
           @click="activeCategory = cat.value">
           {{ cat.label }}
         </button>
       </div>
       <div>
-        <button class="btn btn-ghost btn-sm" @click="fetchFundamentals" :disabled="loadingFundamentals">
-          <span v-if="loadingFundamentals" class="spinner" style="width:14px;height:14px;"></span>
-          {{ loadingFundamentals ? '載入中...' : '📊 載入台股基本面數據' }}
+        <button class="flex items-center px-3 py-1.5 text-sm font-bold text-zinc-500 hover:text-[var(--text-primary)] transition-colors" @click="fetchFundamentals" :disabled="loadingFundamentals">
+          <Loader2 v-if="loadingFundamentals" class="w-4 h-4 mr-2 animate-spin text-emerald-500" />
+          <BarChart2 v-else class="w-4 h-4 mr-2" />
+          {{ loadingFundamentals ? '載入中...' : '載入台股基本面數據' }}
         </button>
       </div>
     </div>
 
     <!-- Fundamentals Dashboard (Optional) -->
-    <div v-if="Object.keys(fundamentalsData).length > 0" class="card mb-24" style="border-left: 3px solid var(--purple);">
-      <div class="card-header">
-        <h3>台股基本面 (TWSE)</h3>
-        <button class="btn btn-ghost btn-sm" @click="fundamentalsData = {}">✕</button>
+    <div v-if="Object.keys(fundamentalsData).length > 0" class="glass-card border-l-4 border-emerald-500">
+      <div class="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
+        <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center">
+          <TrendingUp class="w-5 h-5 mr-2 text-emerald-500" />
+          台股基本面 (TWSE)
+        </h3>
+        <button class="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" @click="fundamentalsData = {}">
+          <X class="w-5 h-5" />
+        </button>
       </div>
-      <div class="card-body">
-        <div class="grid-4" style="gap:16px;">
-          <div v-for="(data, sym) in fundamentalsData" :key="sym" class="stat-card" style="padding:16px;">
-            <div class="flex-between mb-8">
-              <span class="fw-600">{{ sym }}</span>
-              <span class="text-xs text-muted">{{ data.name }}</span>
+      <div class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div v-for="(data, sym) in fundamentalsData" :key="sym" class="bg-white dark:bg-zinc-900/50 rounded-xl p-4 border border-[var(--border-color)]/50 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-bold text-[var(--text-primary)] text-sm tracking-tight">{{ sym }}</span>
+            <span class="text-xs text-zinc-500 truncate max-w-[100px]">{{ data.name }}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-sm">
+            <div>
+              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">本益比</div>
+              <div class="font-bold font-mono text-[var(--text-primary)]">{{ data.pe_ratio }}</div>
             </div>
-            <div class="grid-3 text-sm">
-              <div>
-                <div class="text-muted text-xs">本益比</div>
-                <div class="fw-600">{{ data.pe_ratio }}</div>
-              </div>
-              <div>
-                <div class="text-muted text-xs">殖利率</div>
-                <div class="fw-600 text-green">{{ data.dividend_yield }}%</div>
-              </div>
-              <div>
-                <div class="text-muted text-xs">淨值比</div>
-                <div class="fw-600">{{ data.pb_ratio }}</div>
-              </div>
+            <div>
+              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">殖利率</div>
+              <div class="font-bold font-mono text-emerald-600 dark:text-emerald-400">{{ data.dividend_yield }}%</div>
+            </div>
+            <div>
+              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">淨值比</div>
+              <div class="font-bold font-mono text-[var(--text-primary)]">{{ data.pb_ratio }}</div>
             </div>
           </div>
         </div>
@@ -55,52 +62,78 @@
     </div>
 
     <!-- Table -->
-    <div class="card">
-      <div v-if="trackingStore.loading" class="loading-center"><div class="spinner"></div></div>
-      <div v-else-if="!filteredItems.length" style="padding:48px;text-align:center;color:var(--text-muted);">
-        <div style="font-size:2rem;margin-bottom:12px;">📭</div>
-        <div>此類別尚無追蹤項目</div>
+    <div class="glass-card rounded-2xl overflow-hidden">
+      <div v-if="trackingStore.loading" class="flex justify-center items-center py-20">
+        <Loader2 class="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
-      <div v-else class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>代碼</th><th>名稱</th><th>類別</th><th>目前價格</th>
-              <th>觸發方向</th><th>觸發價格</th><th>通知方式</th><th>狀態</th><th>操作</th>
+      <div v-else-if="!filteredItems.length" class="py-20 text-center text-zinc-500">
+        <div class="text-4xl mb-4 opacity-50">📭</div>
+        <div class="text-lg">此類別尚無追蹤項目</div>
+      </div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest bg-zinc-50 dark:bg-zinc-900/30 border-b border-[var(--border-color)]">
+            <tr class="text-xs text-zinc-500 dark:text-zinc-400 border-b border-[var(--border-color)]">
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">代碼</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">名稱</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">類別</th>
+              <th class="px-4 py-4 text-right font-medium whitespace-nowrap">目前價格</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">觸發規則</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">通知方式</th>
+              <th class="px-4 py-4 text-center font-medium whitespace-nowrap">狀態</th>
+              <th class="px-4 py-4 text-center font-medium whitespace-nowrap">操作</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="item in filteredItems" :key="item.id">
-              <td><span class="fw-600 text-accent">{{ item.symbol }}</span></td>
-              <td>{{ item.name }}</td>
-              <td><span :class="['badge', categoryBadge(item.category)]">{{ item.category.toUpperCase() }}</span></td>
-              <td>
-                <span v-if="item.current_price" class="fw-600">{{ item.current_price.toLocaleString() }}</span>
-                <span v-else class="text-muted">—</span>
+          <tbody class="divide-y divide-[var(--border-color)]">
+            <tr v-for="item in filteredItems" :key="item.id" class="hover:bg-zinc-100 dark:hover:bg-zinc-800/30 transition-colors">
+              <td class="px-4 py-4">
+                <span class="font-bold text-sm tracking-tight text-emerald-600 dark:text-emerald-400">{{ item.symbol }}</span>
               </td>
-              <td>
-                <span v-if="item.trigger_direction" :class="item.trigger_direction === 'above' ? 'text-green' : 'text-red'">
-                  {{ item.trigger_direction === 'above' ? '↑ 突破' : '↓ 跌破' }}
+              <td class="px-4 py-4 text-sm text-[var(--text-primary)] font-medium">{{ item.name }}</td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider whitespace-nowrap', categoryBadgeInfo(item.category).class]">
+                  {{ categoryBadgeInfo(item.category).label }}
                 </span>
               </td>
-              <td>{{ item.trigger_price || '—' }}</td>
-              <td>
-                <span class="badge badge-blue">{{ channelLabel(item.notify_channel) }}</span>
+              <td class="px-4 py-4 text-right">
+                <span v-if="item.current_price" class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ item.current_price.toLocaleString() }}</span>
+                <span v-else class="text-zinc-500">—</span>
               </td>
-              <td>
-                <label class="toggle">
-                  <input type="checkbox" :checked="item.is_active" @change="toggleActive(item)" />
-                  <span class="toggle-slider"></span>
+              <td class="px-4 py-4">
+                <div class="flex items-center space-x-2">
+                  <span v-if="item.trigger_direction" :class="['flex items-center text-[11px] font-bold tracking-wider uppercase', item.trigger_direction === 'above' ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400']">
+                    <TrendingUp v-if="item.trigger_direction === 'above'" class="w-3 h-3 mr-1" />
+                    <TrendingDown v-else class="w-3 h-3 mr-1" />
+                    {{ item.trigger_direction === 'above' ? '突破' : '跌破' }}
+                  </span>
+                  <span class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ item.trigger_price || '—' }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider whitespace-nowrap bg-zinc-200 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 border border-[var(--border-color)]">
+                  <Mail v-if="item.notify_channel === 'email' || item.notify_channel === 'both'" class="w-3 h-3 mr-1" />
+                  <MessageCircle v-if="item.notify_channel === 'line' || item.notify_channel === 'both'" class="w-3 h-3 mr-1" :class="{'ml-1': item.notify_channel==='both'}" />
+                  {{ channelLabel(item.notify_channel) }}
+                </span>
+              </td>
+              <td class="px-4 py-4 text-center">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" :checked="item.is_active" @change="toggleActive(item)" class="sr-only peer">
+                  <div class="w-9 h-5 bg-zinc-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-emerald-500"></div>
                 </label>
               </td>
-              <td>
-                <div class="flex gap-8">
-                  <button class="btn btn-ghost btn-sm" @click="openEdit(item)">✏️</button>
-                  <button class="btn btn-ghost btn-sm" :disabled="testingId === item.id" @click="testAlert(item)" title="测試通知">
-                    <span v-if="testingId === item.id" class="spinner" style="width:12px;height:12px;"></span>
-                    <span v-else>🔔</span>
+              <td class="px-4 py-4 text-right">
+                <div class="flex items-center justify-end space-x-2">
+                  <button class="p-1.5 text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors rounded-md hover:bg-emerald-50 dark:hover:bg-zinc-800" @click="openEdit(item)" title="編輯">
+                    <Edit2 class="w-4 h-4" />
                   </button>
-                  <button class="btn btn-danger btn-sm" @click="confirmDelete(item)">🗑️</button>
+                  <button class="p-1.5 text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors rounded-md hover:bg-amber-50 dark:hover:bg-zinc-800" :disabled="testingId === item.id" @click="testAlert(item)" title="测試通知">
+                    <Loader2 v-if="testingId === item.id" class="w-4 h-4 animate-spin" />
+                    <Bell v-else class="w-4 h-4" />
+                  </button>
+                  <button class="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-zinc-800" @click="confirmDelete(item)" title="刪除">
+                    <Trash2 class="w-4 h-4" />
+                  </button>
                 </div>
               </td>
             </tr>
@@ -109,20 +142,39 @@
       </div>
     </div>
 
-    <!-- Add Modal -->
-    <Transition name="fade">
-      <div v-if="showAddModal" class="modal-overlay">
-        <div class="modal slide-up-enter-active">
-          <div class="modal-header">
-            <h3>{{ editItem ? '修改追蹤' : '新增追蹤指數' }}</h3>
-            <button class="modal-close" @click="closeModal">✕</button>
+    <!-- Add/Edit Modal -->
+    <Transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-150"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+        <div class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
+        
+        <div class="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden ring-2 ring-emerald-500/50 dark:ring-emerald-500/30">
+          <div class="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
+            <h3 class="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center">
+              <PlusCircle v-if="!editItem" class="w-5 h-5 mr-2 text-emerald-500" />
+              <Edit2 v-else class="w-5 h-5 mr-2 text-emerald-500" />
+              {{ editItem ? '修改追蹤' : '新增追蹤指數' }}
+            </h3>
+            <button class="text-zinc-400 hover:text-zinc-500 dark:hover:text-zinc-300 transition-colors" @click="closeModal">
+              <X class="w-5 h-5" />
+            </button>
           </div>
-          <div class="modal-body">
-            <div v-if="modalError" class="alert alert-error">{{ modalError }}</div>
+          
+          <div class="p-6 space-y-4 max-h-[calc(100vh-10rem)] overflow-y-auto">
+            <div v-if="modalError" class="p-3 text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400 rounded-lg flex items-start">
+              <AlertCircle class="w-4 h-4 mr-2 mt-0.5 shrink-0" />
+              {{ modalError }}
+            </div>
 
-            <div class="form-group">
-              <label class="form-label">類別</label>
-              <select v-model="form.category" class="form-control" @change="symbolSearch = ''; form.symbol = ''; form.name = ''; currentPrice = null">
+            <div>
+              <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">類別</label>
+              <select v-model="form.category" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3" @change="symbolSearch = ''; form.symbol = ''; form.name = ''; currentPrice = null">
                 <option value="vix">VIX (波動指數)</option>
                 <option value="oil">石油期貨</option>
                 <option value="us_etf">美國 ETF</option>
@@ -133,63 +185,65 @@
               </select>
             </div>
             
-            <div v-if="currentPrice !== null || fetchingPrice" class="mb-16">
-              <span class="text-xs text-muted">目前價格: </span>
-              <span v-if="fetchingPrice" class="spinner" style="width:12px;height:12px;display:inline-block;vertical-align:middle;"></span>
-              <span v-else class="fw-600 text-accent">{{ currentPrice.toLocaleString() }}</span>
+            <div v-if="currentPrice !== null || fetchingPrice" class="flex items-center p-3 bg-zinc-50 dark:bg-zinc-900/50 border border-[var(--border-color)] rounded-lg">
+              <span class="text-sm font-medium text-zinc-500 dark:text-zinc-400 mr-2">目前價格: </span>
+              <Loader2 v-if="fetchingPrice" class="w-4 h-4 text-emerald-500 animate-spin" />
+              <span v-else class="text-lg font-bold tracking-tight text-[var(--text-primary)]">{{ currentPrice.toLocaleString() }}</span>
             </div>
 
-            <div class="form-group" style="position:relative;">
-              <label class="form-label">代碼 / Symbol</label>
-              <div class="input-with-dropdown">
-                <input v-model="symbolSearch" type="text" class="form-control" 
+            <div class="relative">
+              <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">代碼 / Symbol</label>
+              <div class="relative input-with-dropdown">
+                <input v-model="symbolSearch" type="text" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3" 
                   placeholder="輸入或選擇代碼..." :disabled="!!editItem"
                   @input="onSymbolInput" @focus="showSymbolDropdown = true" />
                 
-                <div v-if="showSymbolDropdown && filteredSymbols.length" class="dropdown-list">
-                  <div v-for="s in filteredSymbols" :key="s.symbol" class="dropdown-item" @click="selectSymbol(s)">
-                    <span class="fw-600">{{ s.symbol }}</span>
-                    <span class="text-xs text-muted" style="margin-left:8px;">{{ s.name }}</span>
+                <div v-if="showSymbolDropdown && filteredSymbols.length" class="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-900 border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-auto">
+                  <div v-for="s in filteredSymbols" :key="s.symbol" class="px-4 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 cursor-pointer border-b border-[var(--border-color)] last:border-0" @click="selectSymbol(s)">
+                    <div class="font-bold text-[var(--text-primary)]">{{ s.symbol }}</div>
+                    <div class="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">{{ s.name }}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">名稱</label>
-              <input v-model="form.name" type="text" class="form-control" placeholder="例: 元大台灣50" />
+            <div>
+              <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">名稱</label>
+              <input v-model="form.name" type="text" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3" placeholder="例: 元大台灣50" />
             </div>
 
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">觸發方向</label>
-                <select v-model="form.trigger_direction" class="form-control" style="height: 38px;">
-                  <option value="above">↑ 突破 (漲到)</option>
-                  <option value="below">↓ 跌破 (跌到)</option>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">觸發方向</label>
+                <select v-model="form.trigger_direction" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3">
+                  <option value="above" class="text-rose-600 font-bold">↑ 突破 (漲到)</option>
+                  <option value="below" class="text-emerald-600 font-bold">↓ 跌破 (跌到)</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label class="form-label">觸發價格</label>
-                <input v-model.number="form.trigger_price" type="number" step="0.01" class="form-control" placeholder="選填" style="height: 38px;" />
+              <div>
+                <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">觸發價格</label>
+                <input v-model.number="form.trigger_price" type="number" step="0.01" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3" placeholder="選填" />
               </div>
             </div>
 
-            <div class="form-group">
-              <label class="form-label">通知方式</label>
-              <select v-model="form.notify_channel" class="form-control">
+            <div>
+              <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">通知方式</label>
+              <select v-model="form.notify_channel" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3">
                 <option value="email">📧 Email</option>
                 <option value="line">💬 LINE</option>
                 <option value="both">📧💬 Email + LINE</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">備註 (選填)</label>
-              <input v-model="form.notes" type="text" class="form-control" placeholder="備注..." />
+            <div>
+              <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">備註 (選填)</label>
+              <input v-model="form.notes" type="text" class="w-full h-10 bg-white dark:bg-zinc-900 border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block px-3" placeholder="備注..." />
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-ghost" @click="closeModal">取消</button>
-            <button class="btn btn-primary" @click="handleSave" :disabled="saving">
+          
+          <div class="px-6 py-4 border-t border-[var(--border-color)] bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-end space-x-3">
+            <button class="px-4 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-transparent" @click="closeModal">取消</button>
+            <button class="flex items-center justify-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white dark:text-black text-sm font-bold rounded-lg transition-all shadow-lg shadow-emerald-500/20" @click="handleSave" :disabled="saving">
+              <Loader2 v-if="saving" class="w-4 h-4 mr-2 animate-spin" />
               {{ saving ? '儲存中...' : (editItem ? '更新' : '新增') }}
             </button>
           </div>
@@ -202,6 +256,10 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
+import {
+  Plus, Loader2, BarChart2, TrendingUp, X, ArrowUpRight, ArrowDownRight,
+  Mail, MessageCircle, Edit2, Bell, Trash2, PlusCircle, AlertCircle
+} from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 
@@ -324,13 +382,21 @@ const filteredItems = computed(() =>
     : trackingStore.items.filter(i => i.category === activeCategory.value)
 )
 
-function categoryBadge(cat) {
-  const map = { vix: 'badge-red', oil: 'badge-yellow', us_etf: 'badge-blue', tw_etf: 'badge-purple', index: 'badge-blue', crypto: 'badge-yellow', exchange: 'badge-green' }
-  return map[cat] || 'badge-blue'
+function categoryBadgeInfo(cat) {
+  const map = {
+    vix: { label: 'VIX', class: 'bg-rose-500 text-white border border-rose-600' },
+    oil: { label: '石油', class: 'bg-amber-500 text-white border border-amber-600' },
+    us_etf: { label: '美股', class: 'bg-blue-500 text-white border border-blue-600' },
+    tw_etf: { label: '台股', class: 'bg-purple-500 text-white border border-purple-600' },
+    index: { label: '大盤', class: 'bg-violet-500 text-white border border-violet-600' },
+    crypto: { label: '加密', class: 'bg-emerald-500 text-white border border-emerald-600' },
+    exchange: { label: '匯率', class: 'bg-cyan-500 text-white border border-cyan-600' }
+  }
+  return map[cat] || { label: cat.toUpperCase(), class: 'bg-zinc-500 text-white border border-zinc-600' }
 }
 
 function channelLabel(ch) {
-  const map = { email: '📧 Email', line: '💬 LINE', both: '📧💬 兩者' }
+  const map = { email: 'Email', line: 'LINE', both: 'Email + LINE' }
   return map[ch] || ch
 }
 
@@ -438,44 +504,5 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.align-end { align-items: flex-end; }
-.category-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-.cat-tab {
-  padding: 6px 16px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.cat-tab:hover { color: var(--text-primary); border-color: var(--accent); }
-.cat-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-.input-with-dropdown { position: relative; }
-.dropdown-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-top: 4px;
-  max-height: 200px;
-  overflow-y: auto;
-  z-index: 100;
-  box-shadow: var(--shadow);
-}
-.dropdown-item {
-  padding: 10px 12px;
-  cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
-.dropdown-item:last-child { border-bottom: none; }
-.dropdown-item:hover { background: var(--bg-glass); }
+/* Removed old scoped styling; using global Tailwind CSS classes now */
 </style>

@@ -5,27 +5,27 @@
     </div>
 
     <!-- My profile -->
-    <div class="card mb-24">
-      <div class="card-header">
+    <div class="glass-card mb-6">
+      <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
         <h3>我的設定</h3>
         <button class="btn btn-primary btn-sm" @click="saveProfile" :disabled="profileSaving">
-          {{ profileSaving ? '儲存中...' : '💾 儲存' }}
+          {{ profileSaving ? '儲存中...' : '<Save class="w-4 h-4 mr-2 inline" />儲存' }}
         </button>
       </div>
-      <div class="card-body">
-        <div v-if="profileMsg" :class="['alert', profileMsg.ok ? 'alert-success' : 'alert-error']" style="margin-bottom:16px;">
+      <div class="p-4 sm:p-6">
+        <div v-if="profileMsg" ::class="['p-4 mb-4 text-sm rounded-lg', profileMsg.ok ? 'bg-emerald-50 text-emerald-800 dark:bg-gray-800 dark:text-emerald-400' : 'bg-red-50 text-red-800 dark:bg-gray-800 dark:text-red-400']" style="margin-bottom:16px;">
           {{ profileMsg.text }}
         </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">顯示姓名</label>
-            <input v-model="profileForm.display_name" type="text" class="form-control" />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-1 mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">顯示姓名</label>
+            <input v-model="profileForm.display_name" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
           </div>
-          <div class="form-group">
-            <label class="form-label">LINE User ID</label>
-            <div class="flex gap-8">
-              <input v-model="profileForm.line_user_id" type="text" class="form-control" placeholder="未連結" disabled />
-              <span v-if="profileForm.line_user_id" class="badge badge-green align-center flex">已綁定</span>
+          <div class="space-y-1 mb-4">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">LINE User ID</label>
+            <div class="flex items-center gap-2">
+              <input v-model="profileForm.line_user_id" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" placeholder="未連結" disabled />
+              <span v-if="profileForm.line_user_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400 ml-2">已綁定</span>
             </div>
           </div>
         </div>
@@ -36,41 +36,41 @@
               <input type="checkbox" v-model="profileForm.notify_email" />
               <span class="toggle-slider"></span>
             </label>
-            <span class="text-sm fw-600">📧 Email 通知</span>
+            <span class="text-sm fw-600"><Mail class="w-4 h-4 mr-2 inline" />Email 通知</span>
           </label>
           <label class="flex gap-8 align-center" style="cursor:pointer;">
             <label class="toggle">
               <input type="checkbox" v-model="profileForm.notify_line" />
               <span class="toggle-slider"></span>
             </label>
-            <span class="text-sm fw-600">💬 LINE 通知</span>
+            <span class="text-sm fw-600"><MessageCircle class="w-4 h-4 mr-2 inline" />LINE 通知</span>
           </label>
         </div>
       </div>
     </div>
 
     <!-- Admin: user list (only if admin) -->
-    <div v-if="auth.profile?.is_admin" class="card">
-      <div class="card-header">
-        <h3>所有使用者 <span class="badge badge-yellow" style="margin-left:8px;">管理員</span></h3>
-        <button class="btn btn-ghost btn-sm" @click="loadUsers">🔄 重新整理</button>
+    <div v-if="auth.profile?.is_admin" class="glass-card">
+      <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+        <h3>所有使用者 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400" style="margin-left:8px;">管理員</span></h3>
+        <button class="flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="loadUsers"><RefreshCw class="w-4 h-4 mr-2" />重新整理</button>
       </div>
-      <div v-if="usersLoading" class="loading-center"><div class="spinner"></div></div>
-      <div v-else class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>Email</th><th>姓名</th><th>LINE</th><th>Email通知</th><th>LINE通知</th><th>角色</th><th>操作</th></tr>
+      <div v-if="usersLoading" class="flex justify-center items-center p-12"><Loader2 class="w-8 h-8 text-indigo-600 animate-spin" /></div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50/50 dark:bg-gray-800/50 border-b border-[var(--border-color)]">
+            <tr class="text-gray-500 dark:text-gray-400"><th class="px-6 py-4 font-medium">Email</th><th class="px-6 py-4 font-medium">姓名</th><th class="px-6 py-4 font-medium">LINE</th><th class="px-6 py-4 font-medium">Email通知</th><th class="px-6 py-4 font-medium">LINE通知</th><th class="px-6 py-4 font-medium">角色</th><th class="px-6 py-4 font-medium">操作</th></tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
             <tr v-for="u in users" :key="u.id">
-              <td>{{ u.email }}</td>
-              <td>{{ u.display_name || '—' }}</td>
-              <td><span v-if="u.line_user_id" class="badge badge-green">已設定</span><span v-else class="text-muted">—</span></td>
-              <td><span :class="['badge', u.notify_email ? 'badge-green' : 'badge-red']">{{ u.notify_email ? '是' : '否' }}</span></td>
-              <td><span :class="['badge', u.notify_line ? 'badge-green' : 'badge-red']">{{ u.notify_line ? '是' : '否' }}</span></td>
-              <td><span :class="['badge', u.is_admin ? 'badge-yellow' : 'badge-blue']">{{ u.is_admin ? '管理員' : '一般' }}</span></td>
-              <td>
-                <button class="btn btn-ghost btn-sm" @click="toggleAdmin(u)" v-if="u.id !== auth.userId">
+              <td class="px-6 py-4">{{ u.email }}</td>
+              <td class="px-6 py-4">{{ u.display_name || '—' }}</td>
+              <td class="px-6 py-4"><span v-if="u.line_user_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400">已設定</span><span v-else class="text-gray-500 dark:text-gray-400">—</span></td>
+              <td class="px-6 py-4"><span ::class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', u.notify_email ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400']">{{ u.notify_email ? '是' : '否' }}</span></td>
+              <td class="px-6 py-4"><span ::class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', u.notify_line ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400']">{{ u.notify_line ? '是' : '否' }}</span></td>
+              <td class="px-6 py-4"><span ::class="['inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium', u.is_admin ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400']">{{ u.is_admin ? '管理員' : '一般' }}</span></td>
+              <td class="px-6 py-4">
+                <button class="flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="toggleAdmin(u)" v-if="u.id !== auth.userId">
                   {{ u.is_admin ? '撤銷管理員' : '設為管理員' }}
                 </button>
               </td>
@@ -84,6 +84,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
+import { Save, Mail, MessageCircle, RefreshCw, Loader2 } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 
@@ -153,10 +154,4 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-.align-center { align-items: center; }
-.profile-fields {
-  flex: 1;
-}
-.wrap { flex-wrap: wrap; }
-</style>
+

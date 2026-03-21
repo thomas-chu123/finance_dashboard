@@ -1,54 +1,54 @@
 <template>
-  <div class="line-view">
-    <div class="header-section">
-      <h1 class="page-title">LINE 通知設定</h1>
-      <p class="page-subtitle">透過 LINE 接收即時投資提醒，掌握市場脈動</p>
+  <div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">LINE 通知設定</h1>
+      <p class="text-gray-500 dark:text-gray-400">透過 LINE 接收即時投資提醒，掌握市場脈動</p>
     </div>
 
-    <div class="content-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Status Card -->
-      <div class="card status-card" :class="{ bound: isBound }">
-        <div class="card-header">
-          <span class="icon">{{ isBound ? '✅' : '⏳' }}</span>
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-[var(--border-color)] shadow-sm transition-all hover:shadow-md" :class="{ 'border-l-4 border-l-emerald-500': isBound }">
+        <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <span class="icon"><CheckCircle2 v-if="isBound" class="w-5 h-5 text-emerald-500" /><Loader2 v-else class="w-5 h-5 text-amber-500 animate-spin" /></span>
           <h3>目前狀態</h3>
         </div>
-        <div class="status-content">
-          <div v-if="isBound" class="status-badge bound">已綁定</div>
-          <div v-else class="status-badge unbound">未綁定</div>
-          <p v-if="isBound" class="status-text">
+        <div class="p-6">
+          <div v-if="isBound" class="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 mb-4">已綁定</div>
+          <div v-else class="inline-block px-4 py-1.5 rounded-full text-sm font-semibold bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-500 mb-4">未綁定</div>
+          <p v-if="isBound" class="text-gray-600 dark:text-gray-400 leading-relaxed">
             您的帳號已成功連結至 LINE。您將會收到價格觸發通知。
           </p>
-          <p v-else class="status-text">
+          <p v-else class="text-gray-600 dark:text-gray-400 leading-relaxed">
             您尚未連結 LINE 帳號，請按照下方的步驟進行綁定。
           </p>
-          <div v-if="isBound && auth.profile?.line_user_id" class="line-id-box">
-            <span class="label">LINE User ID:</span>
-            <span class="value">{{ auth.profile.line_user_id }}</span>
+          <div v-if="isBound && auth.profile?.line_user_id" class="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg font-mono text-sm">
+            <span class="text-gray-500 dark:text-gray-400 mr-2">LINE User ID:</span>
+            <span class="text-indigo-600 dark:text-indigo-400 break-all">{{ auth.profile.line_user_id }}</span>
           </div>
         </div>
       </div>
 
       <!-- Binding Steps Card -->
-      <div class="card steps-card">
-        <div class="card-header">
-          <span class="icon">🔗</span>
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-[var(--border-color)] shadow-sm transition-all hover:shadow-md md:row-span-2">
+        <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <LinkIcon class="w-5 h-5 text-gray-500 font-semibold" />
           <h3>綁定步驟</h3>
         </div>
-        <div class="steps-content">
-          <div class="step-item">
-            <div class="step-num">1</div>
-            <div class="step-desc">
-              <strong>掃描 QR Code</strong>
-              <p>使用手機 LINE 掃描右側 QR Code 加入「投資通知系統」好友。</p>
+        <div class="p-6">
+          <div class="flex gap-4 mb-6">
+            <div class="w-7 h-7 shrink-0 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 rounded-full flex items-center justify-center font-bold">1</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <strong class="block mb-1 text-gray-900 dark:text-white text-base">掃描 QR Code</strong>
+              <p class="m-0 text-gray-600 dark:text-gray-400 mt-1">使用手機 LINE 掃描右側 QR Code 加入「投資通知系統」好友。</p>
             </div>
           </div>
-          <div class="step-item">
-            <div class="step-num">2</div>
-            <div class="step-desc">
-              <strong>生成綁定碼</strong>
-              <p>點擊下方的按鈕生成一組 6 位數的暫時性綁定碼。</p>
+          <div class="flex gap-4 mb-6">
+            <div class="w-7 h-7 shrink-0 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 rounded-full flex items-center justify-center font-bold">2</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <strong class="block mb-1 text-gray-900 dark:text-white text-base">生成綁定碼</strong>
+              <p class="m-0 text-gray-600 dark:text-gray-400 mt-1">點擊下方的按鈕生成一組 6 位數的暫時性綁定碼。</p>
               <button 
-                class="btn btn-primary btn-generate" 
+                class="px-4 py-2 mt-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" 
                 @click="generateCode" 
                 :disabled="loadingCode"
               >
@@ -56,39 +56,39 @@
               </button>
             </div>
           </div>
-          <div v-if="bindingCode" class="binding-code-display animate-fade-in">
-            <div class="code-label">您的綁定碼（10 分鐘內有效）</div>
-            <div class="code-value">{{ bindingCode }}</div>
+          <div v-if="bindingCode" class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-5 rounded-xl text-center my-4 animate-[fadeIn_0.4s_ease-out]">
+            <div class="text-xs opacity-90 mb-2">您的綁定碼（10 分鐘內有效）</div>
+            <div class="text-3xl font-extrabold tracking-[0.25em]">{{ bindingCode }}</div>
             <p style="font-size: 0.85rem; margin-top: 12px; opacity: 0.8;">請掃描右側 QR Code，將自動帶入綁定指令</p>
           </div>
-          <div class="step-item">
-            <div class="step-num">3</div>
-            <div class="step-desc">
-              <strong>在 LINE 中輸入命令</strong>
-              <p>在 LINE 聊天室中輸入：<code class="command-text">bind {{ bindingCode || 'XXXXXX' }}</code></p>
+          <div class="flex gap-4 mb-6">
+            <div class="w-7 h-7 shrink-0 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 rounded-full flex items-center justify-center font-bold">3</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <strong class="block mb-1 text-gray-900 dark:text-white text-base">在 LINE 中輸入命令</strong>
+              <p class="m-0 text-gray-600 dark:text-gray-400 mt-1">在 LINE 聊天室中輸入：<code class="bg-gray-100 dark:bg-gray-900 px-2 py-0.5 rounded text-indigo-600 dark:text-indigo-400 font-semibold">bind {{ bindingCode || 'XXXXXX' }}</code></p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- QR Code Card -->
-      <div class="card qrcode-card">
-        <div class="card-header">
-          <span class="icon">📷</span>
+      <div class="bg-white dark:bg-gray-800 rounded-xl border border-[var(--border-color)] shadow-sm transition-all hover:shadow-md text-center">
+        <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <QrCode class="w-5 h-5 text-gray-500 font-semibold" />
           <h3>掃描加入與綁定</h3>
         </div>
-        <div class="qrcode-container">
+        <div class="p-4 flex flex-col items-center">
           <qrcode-vue
             v-if="qrCodeUrl"
             :value="qrCodeUrl"
             :size="200"
             level="M"
-            class="qrcode-img"
+            class="mb-3 border-4 border-white rounded-lg shadow-sm"
           />
-          <div v-else class="qrcode-placeholder">
+          <div v-else class="w-[200px] h-[200px] mb-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
             <p>請先點擊左側「生成綁定碼」</p>
           </div>
-          <p class="qrcode-hint">使用 LINE 掃描，加入好友並自動預填綁定指令</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400 text-center">使用 LINE 掃描，加入好友並自動預填綁定指令</p>
         </div>
       </div>
     </div>
@@ -100,6 +100,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore, API_BASE_URL } from '../stores/auth'
 import axios from 'axios'
 import QrcodeVue from 'qrcode.vue'
+import { CheckCircle2, Loader2, Link as LinkIcon, QrCode } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const isBound = computed(() => !!auth.profile?.line_user_id)
@@ -168,230 +169,8 @@ async function generateCode() {
 </script>
 
 <style scoped>
-.line-view {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.header-section {
-  margin-bottom: 32px;
-}
-
-.page-title {
-  font-size: 1.85rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 8px 0;
-}
-
-.page-subtitle {
-  color: var(--text-muted);
-  font-size: 1rem;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 24px;
-}
-
-.card {
-  background: var(--bg-card);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: 12px;
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.status-card.bound {
-  border-left: 4px solid var(--success);
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  margin-bottom: 16px;
-}
-
-.status-badge.bound {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success);
-}
-
-.status-badge.unbound {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning);
-}
-
-.status-text {
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-
-.line-id-box {
-  margin-top: 16px;
-  padding: 12px;
-  background: var(--bg-app);
-  border-radius: 8px;
-  font-family: monospace;
-  font-size: 0.85rem;
-}
-
-.line-id-box .label {
-  color: var(--text-muted);
-  margin-right: 8px;
-}
-
-.line-id-box .value {
-  color: var(--purple);
-}
-
-.steps-card {
-  grid-row: span 2;
-}
-
-.step-item {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.step-num {
-  width: 28px;
-  height: 28px;
-  background: var(--purple-light);
-  color: var(--purple);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.step-desc strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--text-primary);
-}
-
-.step-desc p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.btn-generate {
-  margin-top: 12px;
-  padding: 8px 16px;
-}
-
-.binding-code-display {
-  background: linear-gradient(135deg, var(--purple) 0%, #6366f1 100%);
-  color: white;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  margin: 16px 0 24px 0;
-}
-
-.code-label {
-  font-size: 0.8rem;
-  opacity: 0.9;
-  margin-bottom: 8px;
-}
-
-.code-value {
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: 4px;
-}
-
-.command-text {
-  background: var(--bg-app);
-  padding: 2px 8px;
-  border-radius: 4px;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.qrcode-card {
-  text-align: center;
-}
-
-.qrcode-container {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.qrcode-img {
-  margin-bottom: 12px;
-  border: 4px solid white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.qrcode-placeholder {
-  width: 200px;
-  height: 200px;
-  margin-bottom: 12px;
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.qrcode-hint {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out;
-}
-
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@media (max-width: 768px) {
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-  .steps-card {
-    grid-row: auto;
-  }
 }
 </style>
