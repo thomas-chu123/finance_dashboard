@@ -59,6 +59,7 @@
           <div v-if="bindingCode" class="binding-code-display animate-fade-in">
             <div class="code-label">您的綁定碼（10 分鐘內有效）</div>
             <div class="code-value">{{ bindingCode }}</div>
+            <p style="font-size: 0.85rem; margin-top: 12px; opacity: 0.8;">請掃描右側 QR Code，將自動帶入綁定指令</p>
           </div>
           <div class="step-item">
             <div class="step-num">3</div>
@@ -74,11 +75,20 @@
       <div class="card qrcode-card">
         <div class="card-header">
           <span class="icon">📷</span>
-          <h3>掃描加入</h3>
+          <h3>掃描加入與綁定</h3>
         </div>
         <div class="qrcode-container">
-          <img src="../assets/finance_qrcode.png" alt="LINE QR Code" class="qrcode-img" />
-          <p class="qrcode-hint">掃描上方 QR Code 加入好友</p>
+          <qrcode-vue
+            v-if="qrCodeUrl"
+            :value="qrCodeUrl"
+            :size="200"
+            level="M"
+            class="qrcode-img"
+          />
+          <div v-else class="qrcode-placeholder">
+            <p>請先點擊左側「生成綁定碼」</p>
+          </div>
+          <p class="qrcode-hint">使用 LINE 掃描，加入好友並自動預填綁定指令</p>
         </div>
       </div>
     </div>
@@ -87,13 +97,22 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore, API_BASE_URL } from '../stores/auth'
 import axios from 'axios'
+import QrcodeVue from 'qrcode.vue'
 
 const auth = useAuthStore()
 const isBound = computed(() => !!auth.profile?.line_user_id)
 const bindingCode = ref('')
+const botId = ref('')
 const loadingCode = ref(false)
+
+const qrCodeUrl = computed(() => {
+  if (!botId.value || !bindingCode.value) return ''
+  // Format: https://line.me/R/oaMessage/{bot_id}/?{message}
+  return `https://line.me/R/oaMessage/${botId.value}/?bind%20${bindingCode.value}`
+})
+
 onMounted(async () => {
   if (!auth.profile) {
     await auth.fetchProfile()
@@ -108,11 +127,13 @@ onMounted(async () => {
 async function generateCode() {
   loadingCode.value = true
   try {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8005`
     const res = await axios.post(`${API_BASE_URL}/api/line/binding-code`, {}, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     bindingCode.value = res.data.code
+    if (res.data.bot_id) {
+      botId.value = res.data.bot_id
+    }
   } catch (err) {
     console.error('Failed to generate code:', err)
     alert('無法生成綁定碼，請稍後再試。')
@@ -302,14 +323,29 @@ async function generateCode() {
 
 .qrcode-container {
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .qrcode-img {
-  width: 180px;
-  height: 180px;
   margin-bottom: 12px;
-  border: 1px solid var(--border);
+  border: 4px solid white;
   border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.qrcode-placeholder {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 12px;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
 }
 
 .qrcode-hint {

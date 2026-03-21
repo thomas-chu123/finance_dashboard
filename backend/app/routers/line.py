@@ -27,7 +27,7 @@ class LineWebhookRequest(BaseModel):
 
 @router.post("/binding-code")
 async def generate_binding_code(authorization: str = Header(default="")):
-    """Generate a 6-digit binding code for the current user."""
+    """Generate a 6-digit binding code for the current user and return bot info."""
     user_id = get_user_id(authorization)
     sb = get_supabase()
     
@@ -45,7 +45,11 @@ async def generate_binding_code(authorization: str = Header(default="")):
         if not res.data:
             raise HTTPException(status_code=500, detail="Failed to save binding code")
             
-        return {"code": code, "expires_at": expires_at}
+        return {
+            "code": code, 
+            "expires_at": expires_at,
+            "bot_id": settings.line_bot_user_id
+        }
     except Exception as e:
         logger.error(f"Error generating binding code: {e}")
         raise HTTPException(status_code=500, detail=str(e))
