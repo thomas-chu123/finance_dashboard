@@ -96,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore, API_BASE_URL } from '../stores/auth'
 import axios from 'axios'
 import QrcodeVue from 'qrcode.vue'
@@ -122,7 +122,34 @@ onMounted(async () => {
   if (!isBound.value && !bindingCode.value) {
     generateCode()
   }
+
+  // Start polling
+  startPolling()
 })
+
+onUnmounted(() => {
+  stopPolling()
+})
+
+let pollInterval = null
+
+function startPolling() {
+  stopPolling()
+  pollInterval = setInterval(async () => {
+    if (!isBound.value) {
+      await auth.fetchProfile()
+    } else {
+      stopPolling()
+    }
+  }, 3000)
+}
+
+function stopPolling() {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+    pollInterval = null
+  }
+}
 
 async function generateCode() {
   loadingCode.value = true
