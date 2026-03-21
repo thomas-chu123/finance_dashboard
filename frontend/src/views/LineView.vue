@@ -20,7 +20,7 @@
           <h3>目前狀態</h3>
         </div>
         <div class="p-6">
-          <span v-if="profile?.line_user_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-500 border border-brand-500/20">
+          <span v-if="isBound" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-500 border border-brand-500/20">
             <CheckCircle2 class="w-3.5 h-3.5" />已綁定
           </span>
           <div v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-amber-500/10 text-amber-500 mb-4 gap-1.5 border border-amber-500/20">

@@ -112,7 +112,7 @@
                 </div>
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center gap-1 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                <span class="inline-flex items-center gap-1 bg-white dark:bg-white text-zinc-950 dark:text-zinc-950 border border-zinc-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-sm">
                   <Mail v-if="item.notify_channel === 'email' || item.notify_channel === 'both'" class="w-3 h-3" />
                   <MessageCircle v-if="item.notify_channel === 'line' || item.notify_channel === 'both'" class="w-3 h-3" />
                   {{ channelLabel(item.notify_channel) }}
