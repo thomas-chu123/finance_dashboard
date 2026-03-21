@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="optimize-header mb-6">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">投資組合最佳化</h2>
-      <div class="text-sm text-gray-500 dark:text-gray-400">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+      <h2 class="text-xl font-bold text-[var(--text-primary)]">投資組合最佳化</h2>
+      <div class="text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
     </div>
 
     <!-- Optimization Config -->
@@ -10,32 +10,32 @@
       <!-- Left: config -->
       <div>
         <div class="glass-card mb-4">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between"><h3>選擇資產 (最少 2 個, 最多 10 個)</h3></div>
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最少 2 個, 最多 10 個)</h3></div>
           <div class="p-4 sm:p-6">
             <!-- Quick symbol search -->
             <div class="space-y-1 mb-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">搜尋代碼或名稱</label>
-              <input v-model="symbolSearch" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" placeholder="輸入 0050, SPY..." @keydown.enter="addSearchSymbol" />
+              <label class="block text-sm font-medium text-[var(--text-muted)]">搜尋代碼或名稱</label>
+              <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="輸入 0050, SPY..." @keydown.enter="addSearchSymbol" />
             </div>
 
             <!-- Symbol type tabs -->
             <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
               <button v-for="t in symbolTypes" :key="t.value"
-                :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-transparent text-gray-600 dark:text-gray-400 border-[var(--border-color)] hover:bg-gray-50 dark:hover:bg-gray-800']"
+                :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                 @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
             </div>
 
             <!-- Symbol list -->
-            <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-900/50 mb-4">
+            <div class="max-h-64 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 mb-4">
               <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                :class="['px-4 py-3 cursor-pointer transition-all border-b border-gray-100 dark:border-gray-800 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                 @click="toggleSymbol(s)">
                 <div class="flex flex-col flex-1 min-w-0 pr-4">
-                  <span class="font-bold text-gray-900 dark:text-white truncate">{{ s.symbol }}</span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ s.name }}</span>
+                  <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                  <span class="text-xs text-[var(--text-muted)] truncate">{{ s.name }}</span>
                 </div>
-                <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white shadow-sm">
-                  <Check class="w-3.5 h-3.5" />
+                <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-500 text-white shadow-sm">
+                  <Check class="w-4 h-4" />
                 </div>
               </div>
             </div>
@@ -44,7 +44,7 @@
             <div v-if="selectedItems.length > 0">
               <div class="text-xs text-muted mb-8">已選擇 ({{ selectedItems.length }}/10)</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300">
+                <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                   {{ item.symbol }}
                   <span style="cursor:pointer;opacity:0.6;" @click="removeSymbol(item.symbol)"><X class="w-3 h-3" /></span>
                 </div>
@@ -58,12 +58,12 @@
           <div class="p-4 sm:p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-1 mb-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">回測開始日期</label>
-                <input v-model="optConfig.start_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+                <label class="block text-sm font-medium text-[var(--text-muted)]">回測開始日期</label>
+                <input v-model="optConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
               </div>
               <div class="space-y-1 mb-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">結束日期</label>
-                <input v-model="optConfig.end_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+                <label class="block text-sm font-medium text-[var(--text-muted)]">結束日期</label>
+                <input v-model="optConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
               </div>
             </div>
           </div>
@@ -74,11 +74,11 @@
       <div>
         <div class="glass-card mb-4">
           <div class="p-4 sm:p-6" style="display:flex;flex-direction:column;justify-content:center;min-height:200px;text-align:center;">
-            <p class="text-muted mb-16">
+            <p class="text-[var(--text-muted)] mb-16">
               系統將根據選定資產的歷史走勢，計算並建構出 <strong>效率前緣 (Efficient Frontier)</strong>。<br>
               提供「最大夏普值 (最高性價比)」與「最小波動率 (最穩健)」兩種最佳權重組合。
             </p>
-            <button class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runOptimization"
+            <button class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runOptimization"
               :disabled="runLoading || selectedItems.length < 2 || selectedItems.length > 10">
               <template v-if="runLoading">
                 <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />模型計算中...
@@ -90,7 +90,7 @@
             <div v-if="selectedItems.length < 2" class="text-red text-sm mt-8">請至少選擇 2 個資產進行分析</div>
           </div>
         </div>
-        <div v-if="optError" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ optError }}</div>
+        <div v-if="optError" class="p-4 mb-4 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
       </div>
     </div>
 
@@ -101,24 +101,24 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <!-- Max Sharpe Portfolio -->
         <div class="glass-card" style="border: 1px solid var(--accent);">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between" style="background:var(--accent-glow);">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:var(--accent-glow);">
             <div class="optimize-header w-full">
-              <h3 class="text-indigo-600 dark:text-indigo-400"><Trophy class="w-5 h-5 mr-2 inline" />最大夏普值組合 (Max Sharpe)</h3>
-              <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
+              <h3 class="text-brand-500"><Trophy class="w-5 h-5 mr-2 inline" />最大夏普值組合 (Max Sharpe)</h3>
+              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
             </div>
           </div>
           <div class="p-4 sm:p-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <div class="text-xs text-muted">預期年化報酬</div>
+                <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
                 <div class="fw-600 text-rose-600">{{ (results.max_sharpe.return * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">年化波動率</div>
-                <div class="font-semibold text-gray-900 dark:text-white">{{ (results.max_sharpe.volatility * 100).toFixed(2) }}%</div>
+                <div class="text-xs text-[var(--text-muted)]">年化波動率</div>
+                <div class="font-semibold text-[var(--text-primary)]">{{ (results.max_sharpe.volatility * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">夏普值</div>
+                <div class="text-xs text-[var(--text-muted)]">夏普值</div>
                 <div class="fw-600 text-accent">{{ results.max_sharpe.sharpe.toFixed(3) }}</div>
               </div>
             </div>
@@ -130,24 +130,24 @@
 
         <!-- Min Volatility Portfolio -->
         <div class="glass-card" style="border: 1px solid var(--green);">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between" style="background:rgba(63, 185, 80, 0.1);">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(63, 185, 80, 0.1);">
              <div class="optimize-header w-full">
-              <h3 class="text-emerald-600 dark:text-emerald-400"><Shield class="w-5 h-5 mr-2 inline" />最小波動率組合 (Min Volatility)</h3>
-              <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
+              <h3 class="text-brand-600"><Shield class="w-5 h-5 mr-2 inline" />最小波動率組合 (Min Volatility)</h3>
+              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
             </div>
           </div>
           <div class="p-4 sm:p-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <div class="text-xs text-muted">預期年化報酬</div>
+                <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
                 <div class="fw-600 text-rose-600">{{ (results.min_volatility.return * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">年化波動率</div>
-                <div class="font-semibold text-gray-900 dark:text-white">{{ (results.min_volatility.volatility * 100).toFixed(2) }}%</div>
+                <div class="text-xs text-[var(--text-muted)]">年化波動率</div>
+                <div class="font-semibold text-[var(--text-primary)]">{{ (results.min_volatility.volatility * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">夏普值</div>
+                <div class="text-xs text-[var(--text-muted)]">夏普值</div>
                 <div class="fw-600 text-accent">{{ results.min_volatility.sharpe.toFixed(3) }}</div>
               </div>
             </div>
@@ -160,9 +160,9 @@
 
       <!-- Efficient Frontier Chart -->
       <div class="glass-card mb-6">
-        <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+        <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
           <h3>效率前緣 (Efficient Frontier)</h3>
-          <span class="text-sm text-muted">顯示在相同風險下能產生的最高預期報酬</span>
+          <span class="text-sm text-[var(--text-muted)]">顯示在相同風險下能產生的最高預期報酬</span>
         </div>
         <div class="p-4 sm:p-6" style="height:400px;">
           <v-chart :option="efficientFrontierOption" autoresize />
@@ -266,14 +266,14 @@ function createPieOption(portfolioData) {
     .map(([sym, w]) => ({ name: sym, value: w.toFixed(2) }))
   
   return {
-    tooltip: { trigger: 'item', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: '{b}: {c}%' },
+    tooltip: { trigger: 'item', backgroundColor: 'rgba(22, 27, 34, 0.9)', borderColor: 'rgba(48, 54, 61, 0.8)', textStyle: { color: '#e6edf3' }, formatter: '{b}: {c}%' },
     series: [
       {
         type: 'pie',
         radius: ['40%', '70%'],
         avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 10, borderColor: '#0d1117', borderWidth: 2 },
-        label: { show: true, formatter: '{b}\n{c}%', color: '#e6edf3' },
+        itemStyle: { borderRadius: 10, borderColor: 'transparent', borderWidth: 2 },
+        label: { show: true, formatter: '{b}\n{c}%', color: 'inherit' },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
         data: data
       }
@@ -317,8 +317,8 @@ const efficientFrontierOption = computed(() => {
     tooltip: { 
       trigger: 'axis', 
       axisPointer: { type: 'cross' },
-      backgroundColor: '#161b22', 
-      borderColor: '#30363d', 
+      backgroundColor: 'rgba(22, 27, 34, 0.9)', 
+      borderColor: 'rgba(48, 54, 61, 0.8)', 
       textStyle: { color: '#e6edf3' },
       formatter: p => `風險 (波動率): ${p[0].value[0]}%<br/>預期報酬: ${p[0].value[1]}%` 
     },
@@ -329,7 +329,7 @@ const efficientFrontierOption = computed(() => {
       nameLocation: 'middle',
       nameGap: 25,
       axisLabel: { color: '#8b949e' },
-      splitLine: { lineStyle: { color: '#21262d' } },
+      splitLine: { lineStyle: { color: 'rgba(139, 148, 158, 0.1)' } },
       scale: true
     },
     yAxis: { 
@@ -338,7 +338,7 @@ const efficientFrontierOption = computed(() => {
       nameLocation: 'middle',
       nameGap: 40,
       axisLabel: { color: '#8b949e' },
-      splitLine: { lineStyle: { color: '#21262d' } },
+      splitLine: { lineStyle: { color: 'rgba(139, 148, 158, 0.1)' } },
       scale: true
     },
     visualMap: {

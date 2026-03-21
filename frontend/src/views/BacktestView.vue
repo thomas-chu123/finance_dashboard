@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="backtest-header">
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white">回測管理</h2>
-      <button class="flex items-center px-4 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm" @click="showSaved = !showSaved">
+      <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
+      <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved">
         <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
         <FolderOpen v-else class="w-4 h-4 mr-2" />
         {{ showSaved ? '執行回測' : '已儲存' }}
@@ -17,29 +17,28 @@
       </div>
       <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div v-for="p in savedPortfolios" :key="p.id" class="glass-card">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <div>
-              <div class="font-semibold text-gray-900 dark:text-white">{{ p.name }}</div>
+              <div class="font-semibold text-[var(--text-primary)]">{{ p.name }}</div>
               <div class="text-sm text-muted">{{ p.start_date }} → {{ p.end_date }}</div>
             </div>
             <div class="flex items-center gap-2">
-              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" @click="loadSaved(p)">載入</button>
-              <button class="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
+              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" @click="loadSaved(p)">載入</button>
+              <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
             </div>
           </div>
           <div class="p-4 sm:p-6" v-if="p.results_json?.metrics">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">CAGR</div>
-                <div class="fw-600" :class="(p.results_json.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600'">{{ p.results_json.metrics.cagr }}%</div>
+                <div class="fw-600" :class="(p.results_json.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">{{ p.results_json.metrics.cagr }}%</div>
               </div>
               <div>
                 <div class="text-xs text-muted">Sharpe</div>
                 <div class="fw-600 text-accent">{{ p.results_json.metrics.sharpe_ratio }}</div>
               </div>
               <div>
-                <div class="text-xs text-muted">Max DD</div>
-                <div class="fw-600 text-emerald-600">{{ p.results_json.metrics.max_drawdown }}%</div>
+                <div class="fw-600 text-brand-600">{{ p.results_json.metrics.max_drawdown }}%</div>
               </div>
             </div>
             <div class="mt-4">
@@ -51,7 +50,7 @@
               </div>
             </div>
             <div class="mt-4">
-              <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" style="width:100%;" @click="addToTracking(p.items)">
+              <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="addToTracking(p.items)">
                 <Activity class="w-4 h-4 mr-2 inline" />一鍵加入追蹤
               </button>
             </div>
@@ -66,15 +65,15 @@
         <!-- Left: config -->
         <div>
           <div class="glass-card mb-4">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between"><h3>選擇資產 (最多 10 個)</h3></div>
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最多 10 個)</h3></div>
             <div class="p-4 sm:p-6">
               <!-- Quick symbol search -->
               <div class="space-y-1 mb-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">搜尋代碼或名稱</label>
+                <label class="block text-sm font-medium text-muted">搜尋代碼或名稱</label>
                 <div class="relative">
-                  <input v-model="symbolSearch" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 pr-10" placeholder="輸入 0050, SPY, BTC..." @keydown.enter="addSearchSymbol" />
+                  <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 pr-10" placeholder="輸入 0050, SPY, BTC..." @keydown.enter="addSearchSymbol" />
                   <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <Rocket class="w-4 h-4 text-gray-400" />
+                    <Rocket class="w-4 h-4 text-muted" />
                   </div>
                 </div>
               </div>
@@ -82,20 +81,20 @@
               <!-- Symbol type tabs -->
               <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
                 <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-transparent text-gray-600 dark:text-gray-400 border-[var(--border-color)] hover:bg-gray-50 dark:hover:bg-gray-800']"
+                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
               <!-- Symbol list -->
-              <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-xl bg-white/50 dark:bg-gray-900/50">
+              <div class="max-h-64 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50">
                 <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-gray-100 dark:border-gray-800 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-gray-50/80 dark:hover:bg-gray-800/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-50/50 dark:bg-brand-900/20' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
                   <div class="flex flex-col flex-1 min-w-0 pr-4">
-                    <span class="font-bold text-gray-900 dark:text-white truncate">{{ s.symbol }}</span>
-                    <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ s.name }}</span>
+                    <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                    <span class="text-xs text-muted truncate">{{ s.name }}</span>
                   </div>
-                  <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-indigo-600 text-white shadow-sm">
+                  <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-500 text-white shadow-sm">
                     <Check class="w-3.5 h-3.5" />
                   </div>
                 </div>
@@ -108,17 +107,17 @@
             <div class="p-4 sm:p-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-1 mb-4">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">開始日期</label>
-                  <input v-model="btConfig.start_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+                  <label class="block text-sm font-medium text-muted">開始日期</label>
+                  <input v-model="btConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
                 <div class="space-y-1 mb-4">
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">結束日期</label>
-                  <input v-model="btConfig.end_date" type="date" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+                  <label class="block text-sm font-medium text-muted">結束日期</label>
+                  <input v-model="btConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
               </div>
               <div class="space-y-1 mb-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">初始金額 (USD)</label>
-                <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" />
+                <label class="block text-sm font-medium text-muted">初始金額 (USD)</label>
+                <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 <div class="text-xs text-muted mt-4">註：若包含台灣資產，系統將自動依歷史匯率換算為美金計價。</div>
               </div>
             </div>
@@ -128,9 +127,9 @@
         <!-- Right: selected + weights -->
         <div>
           <div class="glass-card mb-4">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
               <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
-              <div class="text-sm" :class="totalWeight === 100 ? 'text-emerald-600' : 'text-rose-600'">
+              <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
                 總權重: {{ totalWeight.toFixed(1) }}%
               </div>
             </div>
@@ -138,20 +137,20 @@
               <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:16px 0;">
                 請從左側選擇資產
               </div>
-              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-gray-50/80 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl mb-3 shadow-sm">
+              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-extrabold text-xs uppercase">
+                    <div class="w-10 h-10 rounded-lg bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-500 dark:text-brand-400 font-extrabold text-xs uppercase">
                       {{ item.symbol.substring(0, 2) }}
                     </div>
                     <div class="flex flex-col">
-                      <div class="font-bold text-gray-900 dark:text-white leading-tight">{{ item.symbol }}</div>
-                      <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                      <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                      <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
                     </div>
                   </div>
                   <div class="flex items-center gap-4">
-                    <span class="text-lg font-bold text-indigo-600 dark:text-indigo-400">{{ item.weight.toFixed(0) }}%</span>
-                    <button class="p-1.5 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                    <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                    <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
                       <X class="w-4 h-4" />
                     </button>
                   </div>
@@ -163,14 +162,14 @@
                     min="1" 
                     max="100" 
                     step="1"
-                    class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500"
                     @input="adjustWeights(item.symbol, item.weight)" 
                   />
                 </div>
               </div>
 
               <div v-if="selectedItems.length > 1" class="mt-16 flex gap-8">
-                <button class="px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
                   <Scale class="w-4 h-4 mr-2 inline" />平均分配
                 </button>
                 <button class="px-3 py-1.5 text-sm font-medium text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors rounded-lg" style="flex:1;" @click="showSaveModal = true">
@@ -187,19 +186,19 @@
 
           <div v-if="backtestError" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ backtestError }}</div>
 
-          <div v-if="runLoading" class="bg-white dark:bg-gray-800 border border-[var(--border-color)] rounded-xl p-4 mb-4 shadow-sm animate-pulse">
+          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 mb-4 shadow-sm animate-pulse">
             <div class="flex justify-between items-center mb-2">
-              <span class="text-sm fw-600">
+              <span class="text-sm fw-600 text-[var(--text-primary)]">
                 <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
               </span>
               <span class="text-xs text-accent fw-700">{{ Math.floor(runProgress) }}%</span>
             </div>
-            <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative">
-              <div class="h-full bg-indigo-600 rounded-full transition-all duration-300" :style="{ width: runProgress + '%' }"></div>
+            <div class="h-2 bg-[var(--bg-sidebar)] rounded-full overflow-hidden relative">
+              <div class="h-full bg-brand-500 rounded-full transition-all duration-300" :style="{ width: runProgress + '%' }"></div>
             </div>
           </div>
 
-          <button v-else class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runBacktest"
+          <button v-else class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runBacktest"
             :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5">
             <Play class="w-4 h-4 mr-2 inline" />執行回測
           </button>
@@ -207,17 +206,17 @@
       </div>
 
       <!-- Results -->
-      <div v-if="results" class="mt-8 border-t border-gray-200 dark:border-gray-700 pt-8">
+      <div v-if="results" class="mt-8 border-t border-[var(--border-color)] pt-8">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
-            <span class="text-sm font-normal text-gray-500 dark:text-gray-400">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
+            <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
           <div class="flex items-center gap-3">
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm" @click="addAllToTracking">
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="addAllToTracking">
               <Activity class="w-4 h-4 mr-2" />加入追蹤
             </button>
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-sm" @click="showSaveModal = true">
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
               <Save class="w-4 h-4 mr-2" />儲存回測
             </button>
           </div>
@@ -226,47 +225,47 @@
         <!-- Metrics -->
         <div class="metrics-grid mb-8">
           <!-- CAGR -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
-            <div :class="['text-xl font-bold', (results.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600']">
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
+            <div :class="['text-xl font-bold', (results.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
               {{ results.metrics.cagr }}%
             </div>
           </div>
           <!-- Sharpe -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">SHARPE RATIO</div>
-            <div class="text-xl font-bold text-indigo-600 dark:text-indigo-400">{{ results.metrics.sharpe_ratio }}</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SHARPE RATIO</div>
+            <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results.metrics.sharpe_ratio }}</div>
           </div>
           <!-- Sortino -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">SORTINO RATIO</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SORTINO RATIO</div>
             <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results.metrics.sortino_ratio }}</div>
           </div>
           <!-- Beta -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">BETA</div>
-            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ results.metrics.beta }}</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">BETA</div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results.metrics.beta }}</div>
           </div>
           <!-- Max Drawdown -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">MAX DRAWDOWN</div>
-            <div class="text-xl font-bold text-emerald-600">{{ results.metrics.max_drawdown }}%</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">MAX DRAWDOWN</div>
+            <div class="text-xl font-bold text-brand-600">{{ results.metrics.max_drawdown }}%</div>
           </div>
           <!-- Volatility -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">VOLATILITY (STD)</div>
-            <div class="text-xl font-bold text-gray-900 dark:text-white">{{ results.metrics.annual_std }}%</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VOLATILITY (STD)</div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results.metrics.annual_std }}%</div>
           </div>
           <!-- VaR -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">VAR (95%)</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VAR (95%)</div>
             <div class="text-xl font-bold text-orange-500">{{ results.metrics.var_95 }}%</div>
           </div>
           <!-- Final Amount -->
-          <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 font-bold">FINAL AMOUNT</div>
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">FINAL AMOUNT</div>
             <div class="text-xl font-bold text-rose-600">${{ (results.metrics.final_amount || 0).toLocaleString() }}</div>
-            <div class="text-[10px] font-medium" :class="(results.metrics.total_return || 0) >= 0 ? 'text-rose-600' : 'text-emerald-600'">
+            <div class="text-[10px] font-medium" :class="(results.metrics.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
               RETURN: {{ results.metrics.total_return }}%
             </div>
           </div>
@@ -276,7 +275,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-24">
           <!-- Portfolio growth chart -->
           <div class="glass-card">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
             <div class="p-4 sm:p-6" style="height:420px;">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
@@ -284,7 +283,7 @@
 
           <!-- Annual returns -->
           <div class="glass-card">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between"><h3>年度報酬率</h3></div>
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>年度報酬率</h3></div>
             <div class="p-4 sm:p-6" style="height:300px;">
               <v-chart :option="annualReturnChartOption" autoresize style="height:100%;" />
             </div>
@@ -293,18 +292,18 @@
 
         <!-- Asset contributions -->
         <div class="glass-card mb-6">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between"><h3>各資產貢獻度</h3></div>
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度</h3></div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-              <thead class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50/50 dark:bg-gray-800/50 border-b border-[var(--border-color)]">
-                <tr class="text-gray-500 dark:text-gray-400"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">權重</th><th class="px-6 py-4 font-medium">報酬貢獻 (USD)</th></tr>
+              <thead class="text-xs text-muted uppercase bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
+                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">權重</th><th class="px-6 py-4 font-medium">報酬貢獻 (USD)</th></tr>
               </thead>
-              <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+              <tbody class="divide-y divide-[var(--border-color)]/20">
                 <tr v-for="(contrib, symbol) in (results.asset_contributions || {})" :key="symbol">
                   <td class="fw-600 text-accent">{{ symbol }}</td>
                   <td class="px-6 py-4">{{ contrib.name }}</td>
                   <td class="px-6 py-4">{{ contrib.weight }}%</td>
-                  <td :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-emerald-600 font-bold'">
+                  <td :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
                     ${{ (contrib.return_contribution || 0).toLocaleString() }}
                   </td>
                 </tr>
@@ -315,9 +314,9 @@
 
         <!-- Drawdown chart -->
         <div class="glass-card mb-6" v-if="results.drawdown_series">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>回撤曲線 (Drawdown)</h3>
-            <span class="text-sm text-muted">最大回撤：<span class="text-emerald-600 fw-600">{{ results.metrics.max_drawdown }}%</span></span>
+            <span class="text-sm text-muted">最大回撤：<span class="text-brand-600 fw-600">{{ results.metrics.max_drawdown }}%</span></span>
           </div>
           <div class="p-4 sm:p-6" style="height:240px;">
             <v-chart :option="drawdownChartOption" autoresize style="height:100%;" />
@@ -326,7 +325,7 @@
 
         <!-- Monthly Returns Heatmap -->
         <div class="glass-card mb-6" v-if="results.monthly_returns">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>月度報酬率熱力圖</h3>
           </div>
           <div class="p-4 sm:p-6" style="height:320px;">
@@ -336,7 +335,7 @@
 
         <!-- Correlation heatmap -->
         <div class="glass-card" v-if="results.correlation_matrix && results.available_symbols?.length > 1">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-gray-900 dark:text-white flex items-center justify-between">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>相關性熱力圖</h3>
             <span class="text-xs text-muted">1.0 = 完全正相關 · -1.0 = 完全負相關</span>
           </div>
@@ -350,17 +349,17 @@
     <!-- Save modal -->
     <Transition name="fade">
       <div v-if="showSaveModal" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-          <div class="px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center font-semibold text-gray-900 dark:text-white"><h3>儲存回測</h3><button class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors" @click="showSaveModal = false"><X class="w-4 h-4" /></button></div>
+        <div class="bg-[var(--bg-main)] rounded-xl shadow-xl w-full max-w-md overflow-hidden ring-1 ring-[var(--border-color)]">
+          <div class="px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center font-semibold text-[var(--text-primary)]"><h3>儲存回測</h3><button class="text-muted hover:text-[var(--text-primary)] transition-colors" @click="showSaveModal = false"><X class="w-4 h-4" /></button></div>
           <div class="p-6">
             <div class="space-y-1 mb-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">回測名稱</label>
-              <input v-model="saveName" type="text" class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5" placeholder="例: 台美混合 2020-2024" />
+              <label class="block text-sm font-medium text-muted">回測名稱</label>
+              <input v-model="saveName" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="例: 台美混合 2020-2024" />
             </div>
           </div>
-          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-3">
-            <button class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors border border-transparent" @click="showSaveModal = false">取消</button>
-            <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" @click="saveBacktest">儲存</button>
+          <div class="px-6 py-4 bg-[var(--bg-sidebar)] flex justify-end gap-3">
+            <button class="px-4 py-2 text-sm font-medium text-muted hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showSaveModal = false">取消</button>
+            <button class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" @click="saveBacktest">儲存</button>
           </div>
         </div>
       </div>
