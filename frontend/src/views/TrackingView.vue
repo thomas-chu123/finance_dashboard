@@ -31,7 +31,7 @@
       <div class="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
         <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center">
           <TrendingUp class="w-5 h-5 mr-2 text-emerald-500" />
-          台股基本面 (TWSE)
+          台股基本面 (TWSE/TPEx)
         </h3>
         <button class="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" @click="fundamentalsData = {}">
           <X class="w-5 h-5" />
@@ -50,7 +50,9 @@
             </div>
             <div>
               <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">殖利率</div>
-              <div class="font-bold font-mono text-emerald-600 dark:text-emerald-400">{{ data.dividend_yield }}%</div>
+              <div class="font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                {{ data.dividend_yield }}{{ data.dividend_yield !== 'N/A' ? '%' : '' }}
+              </div>
             </div>
             <div>
               <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">淨值比</div>
