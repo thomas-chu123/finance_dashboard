@@ -44,7 +44,7 @@
             <div v-if="selectedItems.length > 0">
               <div class="text-xs text-muted mb-8">已選擇 ({{ selectedItems.length }}/10)</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
+                <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" :style="{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#16a34a' }">
                   {{ item.symbol }}
                   <span style="cursor:pointer;opacity:0.6;" @click="removeSymbol(item.symbol)"><X class="w-3 h-3" /></span>
                 </div>
@@ -100,8 +100,8 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <!-- Max Sharpe Portfolio -->
-        <div class="glass-card" style="border: 1px solid var(--accent);">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:var(--accent-glow);">
+        <div class="glass-card" style="border: 3px solid #f85149;">
+          <div class="p-4 border-b-2 border-[#f85149] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(248, 81, 73, 0.08);">
             <div class="optimize-header w-full">
               <h3 class="text-brand-500"><Trophy class="w-5 h-5 mr-2 inline" />最大夏普值組合 (Max Sharpe)</h3>
               <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
@@ -129,8 +129,8 @@
         </div>
 
         <!-- Min Volatility Portfolio -->
-        <div class="glass-card" style="border: 1px solid var(--green);">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(63, 185, 80, 0.1);">
+        <div class="glass-card" style="border: 3px solid #3fb950;">
+          <div class="p-4 border-b-2 border-[#3fb950] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(63, 185, 80, 0.12);">
              <div class="optimize-header w-full">
               <h3 class="text-brand-600"><Shield class="w-5 h-5 mr-2 inline" />最小波動率組合 (Min Volatility)</h3>
               <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
@@ -160,7 +160,7 @@
 
       <!-- Efficient Frontier Chart -->
       <div class="glass-card mb-6">
-        <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
+        <div class="p-4 border-b-2 border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
           <h3>效率前緣 (Efficient Frontier)</h3>
           <span class="text-sm text-[var(--text-muted)]">顯示在相同風險下能產生的最高預期報酬</span>
         </div>
@@ -380,6 +380,20 @@ const efficientFrontierOption = computed(() => {
         tooltip: { formatter: p => `資產: ${p.name}<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
       },
       {
+        name: 'Max Sharpe 圓圈',
+        type: 'scatter',
+        symbolSize: 17.5,
+        itemStyle: { 
+          color: 'transparent', 
+          borderColor: '#f85149', 
+          borderWidth: 2,
+          opacity: 0.8
+        },
+        label: { show: false },
+        data: [maxSharpePoint],
+        tooltip: { show: false }
+      },
+      {
         name: 'Max Sharpe',
         type: 'scatter',
         symbolSize: 14,
@@ -394,6 +408,20 @@ const efficientFrontierOption = computed(() => {
         },
         data: [maxSharpePoint],
         tooltip: { formatter: p => `🏆 最大夏普點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
+      },
+      {
+        name: 'Min Volatility 圓圈',
+        type: 'scatter',
+        symbolSize: 17.5,
+        itemStyle: { 
+          color: 'transparent', 
+          borderColor: '#3fb950', 
+          borderWidth: 2,
+          opacity: 0.8
+        },
+        label: { show: false },
+        data: [minVolPoint],
+        tooltip: { show: false }
       },
       {
         name: 'Min Volatility',
