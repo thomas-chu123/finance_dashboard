@@ -213,7 +213,7 @@
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
           <div class="flex items-center gap-3">
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="addAllToTracking">
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
               <Activity class="w-4 h-4 mr-2" />加入追蹤
             </button>
             <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
@@ -710,11 +710,11 @@ const monthlyReturnsHeatmapOption = computed(() => {
   return {
     backgroundColor: 'transparent',
     textStyle: { color: '#8b949e' },
-    grid: { left: 50, right: 20, top: 20, bottom: 50 },
+    grid: { left: 50, right: 20, top: 20, bottom: 100 },
     xAxis: { type: 'category', data: years, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     yAxis: { type: 'category', data: months, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     visualMap: {
-      min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 0,
+      min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 20,
       inRange: { color: ['#3fb950', '#161b22', '#f85149'] },
       textStyle: { color: '#8b949e' }, formatter: v => v + '%'
     },
