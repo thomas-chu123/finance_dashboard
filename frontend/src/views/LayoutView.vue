@@ -51,48 +51,36 @@
         <nav class="flex-1 space-y-1">
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2">主選單</div>
           
-          <router-link to="/" custom v-slot="{ href, navigate, isExactActive }">
-            <a :href="href" @click="navigate; closeSidebarOnMobile()" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isExactActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '總覽' : ''">
-              <LayoutDashboard :size="20" :class="['flex-shrink-0 transition-colors', isExactActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">總覽</span>
-            </a>
+          <router-link to="/" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="總覽" @click="handleMenuItemClick('/')">
+            <LayoutDashboard :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">總覽</span>
           </router-link>
 
-          <router-link to="/tracking" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '指數追蹤' : ''">
-              <TrendingUp :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">指數追蹤</span>
-            </a>
+          <router-link to="/tracking" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/tracking' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="指數追蹤" @click="handleMenuItemClick('/tracking')">
+            <TrendingUp :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/tracking' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">指數追蹤</span>
           </router-link>
 
-          <router-link to="/backtest" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '回測管理' : ''">
-              <RefreshCcw :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">回測管理</span>
-            </a>
+          <router-link to="/backtest" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/backtest' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="回測管理" @click="handleMenuItemClick('/backtest')">
+            <RefreshCcw :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/backtest' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">回測管理</span>
           </router-link>
 
-          <router-link to="/optimize" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '投資組合最佳化' : ''">
-              <Target :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">投資組合最佳化</span>
-            </a>
+          <router-link to="/optimize" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/optimize' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="投資組合最佳化" @click="handleMenuItemClick('/optimize')">
+            <Target :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/optimize' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">投資組合最佳化</span>
           </router-link>
 
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">系統</div>
           
-          <router-link to="/users" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '使用者管理' : ''">
-              <Users :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用者管理</span>
-            </a>
+          <router-link to="/users" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/users' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="使用者管理" @click="handleMenuItemClick('/users')">
+            <Users :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/users' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用者管理</span>
           </router-link>
 
-          <router-link to="/line" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? 'LINE 通知' : ''">
-              <MessageCircle :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">LINE 通知</span>
-            </a>
+          <router-link to="/line" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/line' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="LINE 通知" @click="handleMenuItemClick('/line')">
+            <MessageCircle :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/line' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">LINE 通知</span>
           </router-link>
         </nav>
 
@@ -222,6 +210,15 @@ function closeSidebarOnMobile() {
   if (window.innerWidth < 1024) {
     isSidebarOpen.value = false
   }
+}
+
+// 直接關閉菜單的函數（用在點擊菜單項時）
+function handleMenuItemClick(routePath) {
+  if (window.innerWidth < 1024) {
+    isSidebarOpen.value = false
+  }
+  
+  router.push(routePath)
 }
 
 // 切換sidebar折疊狀態（桌面版）
