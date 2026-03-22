@@ -16,7 +16,18 @@
 
     <!-- Market Overview Ticker -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
-      <div v-for="q in quotes" :key="q.symbol" @click="openQuoteUrl(q.symbol)" class="glass-card p-3.5 rounded-xl flex items-center justify-between cursor-pointer hover:border-brand-500/50 transition-colors group">
+      <div v-for="(q, idx) in quotes" :key="q.symbol" 
+           @click="handleQuoteClick($event, q.symbol)" 
+           class="glass-card p-3.5 rounded-xl flex items-center justify-between cursor-grab active:cursor-grabbing hover:border-brand-500/50 transition-all group"
+           draggable="true"
+           @dragstart="handleQuoteDragStart($event, idx)"
+           @dragend="handleQuoteDragEnd($event)"
+           @dragenter="handleQuoteDragEnter($event, idx)"
+           @dragover="handleQuoteDragOver($event)"
+           @dragleave="handleQuoteDragLeave($event)"
+           @drop="handleQuoteDropTarget($event, idx)"
+           :class="{'drag-over': quoteDragOverIndex === idx && isQuoteDragging}"
+      >
         <div class="flex flex-col pr-3 overflow-hidden">
           <span class="text-xs font-bold text-[var(--text-primary)] group-hover:text-brand-600 dark:group-hover:text-brand-400 truncate">{{ q.name }}</span>
           <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mt-0.5">{{ q.symbol }}</span>
@@ -43,96 +54,135 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
       
-      <!-- Main Content Area -->
+      <!-- Main Content Area - Draggable Cards (v-for driven by cardOrder) -->
       <div class="xl:col-span-3 space-y-6">
-        
-        <!-- Recent Tracking Table -->
-        <div class="glass-card rounded-2xl overflow-hidden">
-          <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-            <h3 class="font-bold text-lg text-[var(--text-primary)]">追蹤中的指數</h3>
-            <router-link to="/tracking" class="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline flex items-center gap-1">
-              查看全部 <ChevronRight :size="14" />
-            </router-link>
-          </div>
-          <div class="overflow-x-auto">
-            <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
-            <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
-              尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
-            </div>
-            <div v-else class="min-w-[600px]">
-              <div class="grid grid-cols-6 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
-                <div class="col-span-1">代碼</div>
-                <div class="col-span-2">名稱 / 類別</div>
-                <div class="col-span-1">目前價格</div>
-                <div class="col-span-1">觸發門檻</div>
-                <div class="col-span-1">狀態</div>
-              </div>
-              <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-6 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
-                <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
-                <div class="col-span-2 flex flex-col">
-                  <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
-                  <span class="text-[10px] text-zinc-500 uppercase mt-0.5">{{ item.category }}</span>
-                </div>
-                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</div>
-                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">
-                  <span v-if="item.trigger_price">
-                    <TrendingUp v-if="item.trigger_direction === 'above'" :size="12" class="inline text-rose-500 mb-0.5" />
-                    <TrendingDown v-else :size="12" class="inline text-brand-500 mb-0.5" />
-                    {{ item.trigger_price }}
-                  </span>
-                  <span v-else class="text-zinc-500">—</span>
-                </div>
-                <div class="col-span-1">
-                  <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', item.is_active ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
-                    {{ item.is_active ? '啟用' : '停用' }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Alert Logs Table -->
-        <div class="glass-card rounded-2xl overflow-hidden">
-          <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-            <h3 class="font-bold text-lg text-[var(--text-primary)]">最近通知記錄</h3>
-          </div>
-          <div class="overflow-x-auto">
-            <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
-            <div v-else class="min-w-[600px]">
-              <div class="grid grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
-                <div class="col-span-2 flex items-center gap-1">時間 <Clock :size="12" /></div>
-                <div class="col-span-1">代碼</div>
-                <div class="col-span-1">觸發價</div>
-                <div class="col-span-1">實際價</div>
-                <div class="col-span-1">方式</div>
-                <div class="col-span-1">狀態</div>
+        <template v-for="cardId in mainContentCards" :key="cardId">
+
+          <!-- Tracking Table Card -->
+          <div
+            v-if="cardId === 'tracking-table'"
+            class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
+            draggable="true"
+            @dragstart="handleDragStart($event, getCardIndex(cardId))"
+            @dragend="handleDragEnd($event)"
+            @dragenter="handleDragEnter($event, getCardIndex(cardId))"
+            @dragover="handleDragOver($event)"
+            @dragleave="handleDragLeave($event)"
+            @drop="handleCardDrop($event, getCardIndex(cardId))"
+            :class="{ 'drag-over': dragOverIndex === getCardIndex(cardId) && isDragging }"
+            data-card-id="tracking-table"
+          >
+            <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
+              <h3 class="font-bold text-lg text-[var(--text-primary)]">📊 追蹤中的指數</h3>
+              <router-link to="/tracking" class="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline flex items-center gap-1">
+                查看全部 <ChevronRight :size="14" />
+              </router-link>
+            </div>
+            <div class="overflow-x-auto">
+              <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
+              <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
+                尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
               </div>
-              <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
-                <div class="col-span-2 text-[11px] text-zinc-500">{{ formatDate(log.created_at) }}</div>
-                <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
-                <div class="col-span-1 font-mono text-sm text-zinc-500">{{ log.trigger_price }}</div>
-                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
-                <div class="col-span-1">
-                  <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider">{{ log.channel }}</span>
+              <div v-else class="min-w-[600px]">
+                <div class="grid grid-cols-6 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
+                  <div class="col-span-1">代碼</div>
+                  <div class="col-span-2">名稱 / 類別</div>
+                  <div class="col-span-1">目前價格</div>
+                  <div class="col-span-1">觸發門檻</div>
+                  <div class="col-span-1">狀態</div>
                 </div>
-                <div class="col-span-1">
-                  <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', log.status === 'sent' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
-                    {{ log.status }}
-                  </span>
+                <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-6 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                  <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
+                  <div class="col-span-2 flex flex-col">
+                    <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
+                    <span class="text-[10px] text-zinc-500 uppercase mt-0.5">{{ item.category }}</span>
+                  </div>
+                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</div>
+                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">
+                    <span v-if="item.trigger_price">
+                      <TrendingUp v-if="item.trigger_direction === 'above'" :size="12" class="inline text-rose-500 mb-0.5" />
+                      <TrendingDown v-else :size="12" class="inline text-brand-500 mb-0.5" />
+                      {{ item.trigger_price }}
+                    </span>
+                    <span v-else class="text-zinc-500">—</span>
+                  </div>
+                  <div class="col-span-1">
+                    <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', item.is_active ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
+                      {{ item.is_active ? '啟用' : '停用' }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
+          <!-- Alert Logs Card -->
+          <div
+            v-if="cardId === 'alert-logs'"
+            class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
+            draggable="true"
+            @dragstart="handleDragStart($event, getCardIndex(cardId))"
+            @dragend="handleDragEnd($event)"
+            @dragenter="handleDragEnter($event, getCardIndex(cardId))"
+            @dragover="handleDragOver($event)"
+            @dragleave="handleDragLeave($event)"
+            @drop="handleCardDrop($event, getCardIndex(cardId))"
+            :class="{ 'drag-over': dragOverIndex === getCardIndex(cardId) && isDragging }"
+            data-card-id="alert-logs"
+          >
+            <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
+              <h3 class="font-bold text-lg text-[var(--text-primary)]">🔔 最近通知記錄</h3>
+            </div>
+            <div class="overflow-x-auto">
+              <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
+              <div v-else class="min-w-[600px]">
+                <div class="grid grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
+                  <div class="col-span-2 flex items-center gap-1">時間 <Clock :size="12" /></div>
+                  <div class="col-span-1">代碼</div>
+                  <div class="col-span-1">觸發價</div>
+                  <div class="col-span-1">實際價</div>
+                  <div class="col-span-1">方式</div>
+                  <div class="col-span-1">狀態</div>
+                </div>
+                <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                  <div class="col-span-2 text-[11px] text-zinc-500">{{ formatDate(log.created_at) }}</div>
+                  <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
+                  <div class="col-span-1 font-mono text-sm text-zinc-500">{{ log.trigger_price }}</div>
+                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
+                  <div class="col-span-1">
+                    <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider">{{ log.channel }}</span>
+                  </div>
+                  <div class="col-span-1">
+                    <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', log.status === 'sent' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
+                      {{ log.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </template>
       </div>
 
-      <!-- Sidebar Widgets -->
+      <!-- Sidebar Widgets - Draggable -->
       <div class="space-y-6">
         
-        <!-- System Status Summary -->
-        <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20">
+        <!-- System Status Card (Draggable) -->
+        <div 
+          v-if="dashboardStore.cardOrder.includes('status-sidebar')"
+          class="glass-card rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20 cursor-grab active:cursor-grabbing transition-all"
+          draggable="true"
+          @dragstart="handleDragStart($event, getCardIndex('status-sidebar'))"
+          @dragend="handleDragEnd($event)"
+          @dragenter="handleDragEnter($event, getCardIndex('status-sidebar'))"
+          @dragover="handleDragOver($event)"
+          @dragleave="handleDragLeave($event)"
+          @drop="handleCardDrop($event, getCardIndex('status-sidebar'))"
+          :class="{ 'opacity-50': isDragging && dragOverIndex === getCardIndex('status-sidebar') }"
+          data-card-id="status-sidebar"
+        >
           <h3 class="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-2">
             <Activity :size="16" /> 系統運作狀態
           </h3>
@@ -268,6 +318,9 @@
               </div>
               <div v-if="!selectedQuotes.length" class="text-center text-zinc-500 p-8 text-xs">尚未加入任何標的</div>
             </div>
+            <div class="text-[10px] text-zinc-400 p-2 text-center bg-[var(--bg-main)]/30 border-t border-[var(--border-color)]">
+              💡 提示：您可以在首頁直接拖曳卡片來變更順序
+            </div>
           </div>
         </div>
 
@@ -290,12 +343,71 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { useDashboardStore } from '../stores/dashboard'
+import { useDragDrop } from '../composables/useDragDrop'
+import preferencesAPI from '../api/preferences'
 import {
   TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
+const dashboardStore = useDashboardStore()
+
+// Main dashboard cards drag & drop
+const { handleDragStart, handleDragEnd, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, dragOverIndex, isDragging } = useDragDrop()
+
+// Quote cards drag & drop
+const {
+  handleDragStart: handleQuoteDragStart,
+  handleDragEnd: _handleQuoteDragEnd,
+  handleDragEnter: handleQuoteDragEnter,
+  handleDragOver: handleQuoteDragOver,
+  handleDragLeave: handleQuoteDragLeave,
+  handleDrop: handleQuoteLocalDrop,
+  dragOverIndex: quoteDragOverIndex,
+  isDragging: isQuoteDragging
+} = useDragDrop()
+
+// Prevent click navigation immediately after a drag
+let lastQuoteDragEndTime = 0
+function handleQuoteDragEnd(event) {
+  _handleQuoteDragEnd(event)
+  lastQuoteDragEndTime = Date.now()
+}
+
+function handleQuoteClick(event, symbol) {
+  // If drag ended less than 200ms ago, it was a drag, not a click
+  if (Date.now() - lastQuoteDragEndTime < 200) {
+    event.preventDefault()
+    return
+  }
+  openQuoteUrl(symbol)
+}
+
+async function handleQuoteDropTarget(event, toIndex) {
+  const result = handleQuoteLocalDrop(event, toIndex)
+  if (result) {
+    const { fromIndex, toIndex: finalToIndex } = result
+    
+    // Update local UI immediately
+    const item = quotes.value.splice(fromIndex, 1)[0]
+    quotes.value.splice(finalToIndex, 0, item)
+    
+    // Sync to backend profile
+    if (auth.token) {
+      const profileQuotes = [...(auth.profile?.dashboard_quotes || DEFAULT_SYMBOLS)]
+      const pItem = profileQuotes.splice(fromIndex, 1)[0]
+      profileQuotes.splice(finalToIndex, 0, pItem)
+      
+      try {
+        await auth.updateProfile({ dashboard_quotes: profileQuotes })
+      } catch (e) {
+        console.error('Failed to save quote order:', e)
+      }
+    }
+  }
+}
 
 const quotes = ref([])
 const quotesLoading = ref(false)
@@ -434,6 +546,16 @@ function openQuoteUrl(symbol) {
 }
 
 onMounted(async () => {
+  // 加載卡片順序
+  dashboardStore.loadFromLocalStorage()
+  if (auth.token) {
+    try {
+      await dashboardStore.loadCardOrder(auth.token)
+    } catch (e) {
+      console.warn('Failed to load card order from server, using local storage')
+    }
+  }
+  
   await trackingStore.fetchAll()
   await trackingStore.fetchAlertLogs()
   await fetchQuotes()
@@ -443,4 +565,54 @@ onMounted(async () => {
 onUnmounted(() => {
   if (quotesTimer) clearInterval(quotesTimer)
 })
+
+/**
+ * 處理卡片拖放完成
+ * @param {Event} event - 拖放事件
+ * @param {number} toIndex - 放置目標索引
+ */
+async function handleCardDrop(event, toIndex) {
+  const result = handleDrop(event, toIndex)
+  if (result) {
+    dashboardStore.moveCard(result.fromIndex, result.toIndex)
+    
+    // 保存到後端
+    if (auth.token) {
+      try {
+        await dashboardStore.saveCardOrder(auth.token)
+      } catch (e) {
+        console.error('Failed to save card order:', e)
+      }
+    }
+  }
+}
+
+/**
+ * 主要內容區的卡片 ID 清單，依 cardOrder 排序（排除 sidebar）
+ * Bug 1 修正：透過 computed 讓 v-for 能響應 cardOrder 的變化
+ */
+const MAIN_CARD_IDS = ['tracking-table', 'alert-logs']
+const mainContentCards = computed(() =>
+  dashboardStore.cardOrder.filter(id => MAIN_CARD_IDS.includes(id))
+)
+
+/**
+ * 取得卡片在 cardOrder 中的真實索引（供 moveCard 使用）
+ */
+function getCardIndex(cardId) {
+  return dashboardStore.cardOrder.indexOf(cardId)
+}
 </script>
+
+<style scoped>
+/* 拖放視覺反饋樣式 */
+.drag-over {
+  border: 2px solid rgb(var(--color-brand-500)) !important;
+  background-color: rgb(59 130 246 / 0.05) !important;
+}
+
+/* 拖動中的卡片透明度 */
+.dragging {
+  opacity: 0.5;
+}
+</style>
