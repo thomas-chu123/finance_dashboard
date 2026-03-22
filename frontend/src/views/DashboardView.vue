@@ -16,7 +16,18 @@
 
     <!-- Market Overview Ticker -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
-      <div v-for="q in quotes" :key="q.symbol" @click="openQuoteUrl(q.symbol)" class="glass-card p-3.5 rounded-xl flex items-center justify-between cursor-pointer hover:border-brand-500/50 transition-colors group">
+      <div v-for="(q, idx) in quotes" :key="q.symbol" 
+           @click="handleQuoteClick($event, q.symbol)" 
+           class="glass-card p-3.5 rounded-xl flex items-center justify-between cursor-grab active:cursor-grabbing hover:border-brand-500/50 transition-all group"
+           draggable="true"
+           @dragstart="handleQuoteDragStart($event, idx)"
+           @dragend="handleQuoteDragEnd($event)"
+           @dragenter="handleQuoteDragEnter($event, idx)"
+           @dragover="handleQuoteDragOver($event)"
+           @dragleave="handleQuoteDragLeave($event)"
+           @drop="handleQuoteDropTarget($event, idx)"
+           :class="{'drag-over': quoteDragOverIndex === idx && isQuoteDragging}"
+      >
         <div class="flex flex-col pr-3 overflow-hidden">
           <span class="text-xs font-bold text-[var(--text-primary)] group-hover:text-brand-600 dark:group-hover:text-brand-400 truncate">{{ q.name }}</span>
           <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mt-0.5">{{ q.symbol }}</span>
@@ -299,6 +310,9 @@
               </div>
               <div v-if="!selectedQuotes.length" class="text-center text-zinc-500 p-8 text-xs">尚未加入任何標的</div>
             </div>
+            <div class="text-[10px] text-zinc-400 p-2 text-center bg-[var(--bg-main)]/30 border-t border-[var(--border-color)]">
+              💡 提示：您可以在首頁直接拖曳卡片來變更順序
+            </div>
           </div>
         </div>
 
@@ -331,7 +345,61 @@ import {
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
 const dashboardStore = useDashboardStore()
+
+// Main dashboard cards drag & drop
 const { handleDragStart, handleDragEnd, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, dragOverIndex, isDragging } = useDragDrop()
+
+// Quote cards drag & drop
+const {
+  handleDragStart: handleQuoteDragStart,
+  handleDragEnd: _handleQuoteDragEnd,
+  handleDragEnter: handleQuoteDragEnter,
+  handleDragOver: handleQuoteDragOver,
+  handleDragLeave: handleQuoteDragLeave,
+  handleDrop: handleQuoteLocalDrop,
+  dragOverIndex: quoteDragOverIndex,
+  isDragging: isQuoteDragging
+} = useDragDrop()
+
+// Prevent click navigation immediately after a drag
+let lastQuoteDragEndTime = 0
+function handleQuoteDragEnd(event) {
+  _handleQuoteDragEnd(event)
+  lastQuoteDragEndTime = Date.now()
+}
+
+function handleQuoteClick(event, symbol) {
+  // If drag ended less than 200ms ago, it was a drag, not a click
+  if (Date.now() - lastQuoteDragEndTime < 200) {
+    event.preventDefault()
+    return
+  }
+  openQuoteUrl(symbol)
+}
+
+async function handleQuoteDropTarget(event, toIndex) {
+  const result = handleQuoteLocalDrop(event, toIndex)
+  if (result) {
+    const { fromIndex, toIndex: finalToIndex } = result
+    
+    // Update local UI immediately
+    const item = quotes.value.splice(fromIndex, 1)[0]
+    quotes.value.splice(finalToIndex, 0, item)
+    
+    // Sync to backend profile
+    if (auth.token) {
+      const profileQuotes = [...(auth.profile?.dashboard_quotes || DEFAULT_SYMBOLS)]
+      const pItem = profileQuotes.splice(fromIndex, 1)[0]
+      profileQuotes.splice(finalToIndex, 0, pItem)
+      
+      try {
+        await auth.updateProfile({ dashboard_quotes: profileQuotes })
+      } catch (e) {
+        console.error('Failed to save quote order:', e)
+      }
+    }
+  }
+}
 
 const quotes = ref([])
 const quotesLoading = ref(false)
