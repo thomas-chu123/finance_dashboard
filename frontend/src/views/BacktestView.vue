@@ -2,7 +2,7 @@
   <div>
     <div class="backtest-header">
       <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
-      <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved">
+      <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-900 dark:text-gray-900 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved">
         <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
         <FolderOpen v-else class="w-4 h-4 mr-2" />
         {{ showSaved ? '執行回測' : '已儲存' }}
@@ -15,7 +15,7 @@
         <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
         尚無已儲存的回測
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div v-for="p in savedPortfolios" :key="p.id" class="glass-card">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <div>
@@ -27,8 +27,8 @@
               <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
             </div>
           </div>
-          <div class="p-4 sm:p-6" v-if="p.results_json?.metrics">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" style="gap:12px;">
+          <div class="p-3 sm:p-4" v-if="p.results_json?.metrics">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">CAGR</div>
                 <div class="fw-600" :class="(p.results_json.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">{{ p.results_json.metrics.cagr }}%</div>
@@ -41,15 +41,15 @@
                 <div class="fw-600 text-brand-600">{{ p.results_json.metrics.max_drawdown }}%</div>
               </div>
             </div>
-            <div class="mt-4">
-              <div class="text-xs text-muted mb-12">組合資產</div>
+            <div class="mt-3">
+              <div class="text-xs text-muted mb-2">組合資產</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
                 <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
             </div>
-            <div class="mt-4">
+            <div class="mt-3">
               <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="addToTracking(p.items)">
                 <Activity class="w-4 h-4 mr-2 inline" />一鍵加入追蹤
               </button>
@@ -61,14 +61,14 @@
 
     <!-- Backtest runner -->
     <div v-else>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" style="gap:24px;">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
         <!-- Left: config -->
         <div>
-          <div class="glass-card mb-4">
+          <div class="glass-card mb-2">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最多 10 個)</h3></div>
-            <div class="p-4 sm:p-6">
+            <div class="p-3 sm:p-4">
               <!-- Quick symbol search -->
-              <div class="space-y-1 mb-4">
+              <div class="space-y-1 mb-2">
                 <label class="block text-sm font-medium text-muted">搜尋代碼或名稱</label>
                 <div class="relative">
                   <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 pr-10" placeholder="輸入 0050, SPY, BTC..." @keydown.enter="addSearchSymbol" />
@@ -79,16 +79,16 @@
               </div>
 
               <!-- Symbol type tabs -->
-              <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
+              <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
                 <button v-for="t in symbolTypes" :key="t.value"
                   :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
               <!-- Symbol list -->
-              <div class="max-h-64 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50">
+              <div class="max-h-40 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50">
                 <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-[#f0fdf4] dark:bg-brand-900/20' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
                   <div class="flex flex-col flex-1 min-w-0 pr-4">
                     <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
@@ -104,18 +104,18 @@
 
           <!-- Date range + amount -->
           <div class="glass-card">
-            <div class="p-4 sm:p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-1 mb-4">
+            <div class="p-3 sm:p-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="space-y-1 mb-2">
                   <label class="block text-sm font-medium text-muted">開始日期</label>
                   <input v-model="btConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
-                <div class="space-y-1 mb-4">
+                <div class="space-y-1 mb-2">
                   <label class="block text-sm font-medium text-muted">結束日期</label>
                   <input v-model="btConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
               </div>
-              <div class="space-y-1 mb-4">
+              <div class="space-y-1 mb-2">
                 <label class="block text-sm font-medium text-muted">初始金額 (USD)</label>
                 <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 <div class="text-xs text-muted mt-4">註：若包含台灣資產，系統將自動依歷史匯率換算為美金計價。</div>
@@ -126,21 +126,21 @@
 
         <!-- Right: selected + weights -->
         <div>
-          <div class="glass-card mb-4">
+          <div class="glass-card mb-2">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
               <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
               <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
                 總權重: {{ totalWeight.toFixed(1) }}%
               </div>
             </div>
-            <div class="p-4 sm:p-6">
-              <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:16px 0;">
+            <div class="p-3 sm:p-4">
+              <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
                 請從左側選擇資產
               </div>
               <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-[#dcfce7] dark:bg-brand-900/40 flex items-center justify-center text-brand-500 dark:text-brand-400 font-extrabold text-xs uppercase">
+                    <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
                       {{ item.symbol.substring(0, 2) }}
                     </div>
                     <div class="flex flex-col">
@@ -168,25 +168,25 @@
                 </div>
               </div>
 
-              <div v-if="selectedItems.length > 1" class="mt-16 flex gap-8">
-                <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
+              <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
                   <Scale class="w-4 h-4 mr-2 inline" />平均分配
                 </button>
-                <button class="px-3 py-1.5 text-sm font-medium text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors rounded-lg" style="flex:1;" @click="showSaveModal = true">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="showSaveModal = true">
                   <Save class="w-4 h-4 mr-2 inline" />儲存組合
                 </button>
               </div>
               <div v-else-if="selectedItems.length === 1" class="mt-4">
-                <button class="px-3 py-1.5 text-sm font-medium text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors rounded-lg" style="width:100%;" @click="showSaveModal = true">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="showSaveModal = true">
                   <Save class="w-4 h-4 mr-2 inline" />儲存組合
                 </button>
               </div>
             </div>
           </div>
 
-          <div v-if="backtestError" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ backtestError }}</div>
+          <div v-if="backtestError" class="p-3 mb-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ backtestError }}</div>
 
-          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 mb-4 shadow-sm animate-pulse">
+          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 mb-3 shadow-sm animate-pulse">
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm fw-600 text-[var(--text-primary)]">
                 <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
@@ -206,8 +206,8 @@
       </div>
 
       <!-- Results -->
-      <div v-if="results" class="mt-8 border-t border-[var(--border-color)] pt-8">
-        <div class="flex items-center justify-between mb-6">
+      <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6">
+        <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
@@ -223,7 +223,7 @@
         </div>
 
         <!-- Metrics -->
-        <div class="metrics-grid mb-8">
+        <div class="metrics-grid mb-6">
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
@@ -272,11 +272,11 @@
         </div>
 
         <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-24">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-12">
           <!-- Portfolio growth chart -->
           <div class="glass-card">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
-            <div class="p-4 sm:p-6" style="height:420px;">
+            <div class="p-3 sm:p-4" style="height:360px;">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
           </div>
@@ -284,14 +284,14 @@
           <!-- Annual returns -->
           <div class="glass-card">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>年度報酬率</h3></div>
-            <div class="p-4 sm:p-6" style="height:300px;">
+            <div class="p-3 sm:p-4" style="height:260px;">
               <v-chart :option="annualReturnChartOption" autoresize style="height:100%;" />
             </div>
           </div>
         </div>
 
         <!-- Asset contributions -->
-        <div class="glass-card mb-6">
+        <div class="glass-card mb-2">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度</h3></div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
@@ -586,7 +586,7 @@ const growthChartOption = computed(() => {
         interval: Math.floor(dates.length / 8),
         formatter: (value) => value.split('-')[0]
       }, 
-      axisLine: { lineStyle: { color: '#30363d' } },
+      axisLine: { lineStyle: { color: 'transparent' } },
       splitLine: { show: false }
     },
     yAxis: { 
@@ -599,13 +599,11 @@ const growthChartOption = computed(() => {
       axisLabel: { 
         formatter: v => '$' + v.toLocaleString(), 
         color: '#8b949e' 
-      }, 
-      splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } }, 
-      minorTick: { show: true },
-      minorSplitLine: { 
-        show: true, 
-        lineStyle: { color: '#21262d', opacity: 0.2 } 
-      }
+      },
+      axisLine: { lineStyle: { color: '#30363d', width: 1 } },
+      splitLine: { lineStyle: { color: '#2d333b', type: 'solid' } },
+      minorTick: { show: false },
+      minorSplitLine: { show: false }
     },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => {
       let html = `${p[0].axisValue}<br/>`

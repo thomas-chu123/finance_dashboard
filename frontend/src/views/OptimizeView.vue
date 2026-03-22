@@ -6,29 +6,29 @@
     </div>
 
     <!-- Optimization Config -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" style="gap:24px;">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
       <!-- Left: config -->
       <div>
-        <div class="glass-card mb-4">
+        <div class="glass-card mb-2">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最少 2 個, 最多 10 個)</h3></div>
-          <div class="p-4 sm:p-6">
+          <div class="p-3 sm:p-4">
             <!-- Quick symbol search -->
-            <div class="space-y-1 mb-4">
+            <div class="space-y-1 mb-2">
               <label class="block text-sm font-medium text-[var(--text-muted)]">搜尋代碼或名稱</label>
               <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="輸入 0050, SPY..." @keydown.enter="addSearchSymbol" />
             </div>
 
             <!-- Symbol type tabs -->
-            <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
+            <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
               <button v-for="t in symbolTypes" :key="t.value"
                 :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                 @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
             </div>
 
             <!-- Symbol list -->
-            <div class="max-h-64 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 mb-4">
+            <div class="max-h-40 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 mb-3">
               <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                 @click="toggleSymbol(s)">
                 <div class="flex flex-col flex-1 min-w-0 pr-4">
                   <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
@@ -42,7 +42,7 @@
 
             <!-- Selected list -->
             <div v-if="selectedItems.length > 0">
-              <div class="text-xs text-muted mb-8">已選擇 ({{ selectedItems.length }}/10)</div>
+              <div class="text-xs text-muted mb-4">已選擇 ({{ selectedItems.length }}/10)</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
                 <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" :style="{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#16a34a' }">
                   {{ item.symbol }}
@@ -55,13 +55,13 @@
 
       <!-- Date range -->
         <div class="glass-card">
-          <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="space-y-1 mb-4">
+          <div class="p-3 sm:p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="space-y-1 mb-2">
                 <label class="block text-sm font-medium text-[var(--text-muted)]">回測開始日期</label>
                 <input v-model="optConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
               </div>
-              <div class="space-y-1 mb-4">
+              <div class="space-y-1 mb-2">
                 <label class="block text-sm font-medium text-[var(--text-muted)]">結束日期</label>
                 <input v-model="optConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
               </div>
@@ -72,10 +72,12 @@
 
       <!-- Right: Action area -->
       <div>
-        <div class="glass-card mb-4">
-          <div class="p-4 sm:p-6" style="display:flex;flex-direction:column;justify-content:center;min-height:200px;text-align:center;">
-            <p class="text-[var(--text-muted)] mb-16">
-              系統將根據選定資產的歷史走勢，計算並建構出 <strong>效率前緣 (Efficient Frontier)</strong>。<br>
+        <div class="glass-card mb-2">
+          <div class="p-3 sm:p-4" style="display:flex;flex-direction:column;justify-content:center;min-height:180px;text-align:center;">
+            <p class="text-[var(--text-muted)] mb-3" style="font-size: 0.8rem; line-height: 1.5;">
+              系統將根據選定資產的歷史走勢，計算並建構出 <strong>效率前緣 (Efficient Frontier)</strong>。
+            </p>
+            <p class="text-[var(--text-muted)] mb-6" style="font-size: 0.8rem; line-height: 1.5;">
               提供「最大夏普值 (最高性價比)」與「最小波動率 (最穩健)」兩種最佳權重組合。
             </p>
             <button class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runOptimization"
@@ -90,15 +92,15 @@
             <div v-if="selectedItems.length < 2" class="text-red text-sm mt-8">請至少選擇 2 個資產進行分析</div>
           </div>
         </div>
-        <div v-if="optError" class="p-4 mb-4 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
+        <div v-if="optError" class="p-3 mb-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
       </div>
     </div>
 
     <!-- Results Section -->
-    <div v-if="results" class="mt-32">
-      <h3 class="mb-4">最佳化分析結果</h3>
+    <div v-if="results" class="mt-16">
+      <h3 class="mb-2">最佳化分析結果</h3>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <!-- Max Sharpe Portfolio -->
         <div class="glass-card" style="border: 3px solid #f85149;">
           <div class="p-4 border-b-2 border-[#f85149] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(248, 81, 73, 0.08);">
@@ -107,8 +109,8 @@
               <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
             </div>
           </div>
-          <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="p-3 sm:p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
                 <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
                 <div class="fw-600 text-rose-600">{{ (results.max_sharpe.return * 100).toFixed(2) }}%</div>
@@ -136,8 +138,8 @@
               <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
             </div>
           </div>
-          <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="p-3 sm:p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
                 <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
                 <div class="fw-600 text-rose-600">{{ (results.min_volatility.return * 100).toFixed(2) }}%</div>
@@ -159,12 +161,12 @@
       </div>
 
       <!-- Efficient Frontier Chart -->
-      <div class="glass-card mb-6">
+      <div class="glass-card mb-2">
         <div class="p-4 border-b-2 border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
           <h3>效率前緣 (Efficient Frontier)</h3>
           <span class="text-sm text-[var(--text-muted)]">顯示在相同風險下能產生的最高預期報酬</span>
         </div>
-        <div class="p-4 sm:p-6" style="height:400px;">
+        <div class="p-3 sm:p-4" style="height:380px;">
           <v-chart :option="efficientFrontierOption" autoresize />
         </div>
       </div>
