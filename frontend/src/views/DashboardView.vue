@@ -160,7 +160,7 @@
         
         <!-- System Status Card (Draggable) -->
         <div 
-          v-if="isCardVisible('status-sidebar')"
+          v-if="dashboardStore.cardOrder.includes('status-sidebar')"
           class="glass-card rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20 cursor-grab active:cursor-grabbing transition-all"
           draggable="true"
           @dragstart="handleDragStart($event, getCardIndex('status-sidebar'))"
