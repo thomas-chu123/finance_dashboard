@@ -254,9 +254,17 @@
                   <span class="font-bold text-[var(--text-primary)]">{{ item.symbol }}</span>
                   <span class="text-[10px] text-zinc-500 truncate">{{ item.name }}</span>
                 </div>
-                <button class="text-rose-400 hover:text-rose-600 p-1 opacity-50 group-hover:opacity-100 transition-opacity" @click="removeQuote(idx)" title="移除">
-                  <X :size="14" />
-                </button>
+                <div class="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button class="text-zinc-400 hover:text-brand-500 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed" @click="moveQuote(idx, -1)" :disabled="idx === 0" title="上移">
+                    <ArrowUp :size="14" />
+                  </button>
+                  <button class="text-zinc-400 hover:text-brand-500 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed" @click="moveQuote(idx, 1)" :disabled="idx === selectedQuotes.length - 1" title="下移">
+                    <ArrowDown :size="14" />
+                  </button>
+                  <button class="text-rose-400 hover:text-rose-600 p-1 rounded transition-colors" @click="removeQuote(idx)" title="移除">
+                    <X :size="14" />
+                  </button>
+                </div>
               </div>
               <div v-if="!selectedQuotes.length" class="text-center text-zinc-500 p-8 text-xs">尚未加入任何標的</div>
             </div>
@@ -283,7 +291,7 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import {
-  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check
+  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -358,6 +366,13 @@ function addQuote(item) {
 
 function removeQuote(idx) {
   selectedQuotes.value.splice(idx, 1)
+}
+
+function moveQuote(idx, direction) {
+  const newIdx = idx + direction
+  if (newIdx < 0 || newIdx >= selectedQuotes.value.length) return
+  const items = selectedQuotes.value
+  ;[items[idx], items[newIdx]] = [items[newIdx], items[idx]]
 }
 
 async function saveQuotes() {
