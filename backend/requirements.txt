@@ -17,3 +17,4 @@ python-multipart==0.0.20
 redis>=4.2.0,<5.0.0
 fastapi-cache2[redis]==0.2.2
 PyJWT
+beautifulsoup4==4.12.3

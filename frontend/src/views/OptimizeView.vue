@@ -1,68 +1,70 @@
 <template>
   <div>
-    <div class="flex-between mb-24">
-      <h2>投資組合最佳化</h2>
-      <div class="text-sm text-muted">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+    <div class="optimize-header mb-6">
+      <h2 class="text-xl font-bold text-[var(--text-primary)]">投資組合最佳化</h2>
+      <div class="text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
     </div>
 
     <!-- Optimization Config -->
-    <div class="grid-2" style="gap:24px;">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
       <!-- Left: config -->
       <div>
-        <div class="card mb-16">
-          <div class="card-header"><h3>選擇資產 (最少 2 個, 最多 10 個)</h3></div>
-          <div class="card-body">
+        <div class="glass-card mb-2">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最少 2 個, 最多 10 個)</h3></div>
+          <div class="p-3 sm:p-4">
             <!-- Quick symbol search -->
-            <div class="form-group">
-              <label class="form-label">搜尋代碼或名稱</label>
-              <input v-model="symbolSearch" type="text" class="form-control" placeholder="輸入 0050, SPY..." @keydown.enter="addSearchSymbol" />
+            <div class="space-y-1 mb-2">
+              <label class="block text-sm font-medium text-[var(--text-muted)]">搜尋代碼或名稱</label>
+              <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="輸入 0050, SPY..." @keydown.enter="addSearchSymbol" />
             </div>
 
             <!-- Symbol type tabs -->
-            <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
+            <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
               <button v-for="t in symbolTypes" :key="t.value"
-                :class="['cat-tab', { active: symbolType === t.value }]"
+                :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                 @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
             </div>
 
             <!-- Symbol list -->
-            <div class="symbol-list mb-16">
-              <div v-for="s in filteredSymbols.slice(0, 20)" :key="s.symbol"
-                :class="['symbol-item', { selected: isSelected(s.symbol), disabled: selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+            <div class="max-h-40 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 mb-3">
+              <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
+                :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                 @click="toggleSymbol(s)">
-                <div class="flex-between">
-                  <div>
-                    <span class="fw-600">{{ s.symbol }}</span>
-                    <span class="text-sm text-muted" style="margin-left:8px;">{{ s.name }}</span>
-                  </div>
-                  <span v-if="isSelected(s.symbol)" class="text-accent">✓</span>
+                <div class="flex flex-col flex-1 min-w-0 pr-4">
+                  <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                  <span class="text-xs text-[var(--text-muted)] truncate">{{ s.name }}</span>
+                </div>
+                <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-500 text-white shadow-sm">
+                  <Check class="w-4 h-4" />
                 </div>
               </div>
             </div>
 
             <!-- Selected list -->
             <div v-if="selectedItems.length > 0">
-              <div class="text-xs text-muted mb-8">已選擇 ({{ selectedItems.length }}/10)</div>
-              <div class="flex gap-8" style="flex-wrap:wrap;">
-                <div v-for="item in selectedItems" :key="item.symbol" class="badge badge-accent flex align-center gap-4">
+              <div class="text-xs text-muted mb-4">已選擇 ({{ selectedItems.length }}/10)</div>
+              <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" :style="{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#16a34a' }">
                   {{ item.symbol }}
-                  <span style="cursor:pointer;opacity:0.6;" @click="removeSymbol(item.symbol)">✕</span>
+                  <span style="cursor:pointer;opacity:0.6;" @click="removeSymbol(item.symbol)"><X class="w-3 h-3" /></span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Date range -->
-        <div class="card">
-          <div class="card-body grid-2">
-            <div class="form-group">
-              <label class="form-label">回測開始日期</label>
-              <input v-model="optConfig.start_date" type="date" class="form-control" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">結束日期</label>
-              <input v-model="optConfig.end_date" type="date" class="form-control" />
+      <!-- Date range -->
+        <div class="glass-card">
+          <div class="p-3 sm:p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="space-y-1 mb-2">
+                <label class="block text-sm font-medium text-[var(--text-muted)]">回測開始日期</label>
+                <input v-model="optConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+              </div>
+              <div class="space-y-1 mb-2">
+                <label class="block text-sm font-medium text-[var(--text-muted)]">結束日期</label>
+                <input v-model="optConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+              </div>
             </div>
           </div>
         </div>
@@ -70,49 +72,55 @@
 
       <!-- Right: Action area -->
       <div>
-        <div class="card mb-16">
-          <div class="card-body" style="display:flex;flex-direction:column;justify-content:center;min-height:200px;text-align:center;">
-            <p class="text-muted mb-16">
-              系統將根據選定資產的歷史走勢，計算並建構出 <strong>效率前緣 (Efficient Frontier)</strong>。<br>
+        <div class="glass-card mb-2">
+          <div class="p-3 sm:p-4" style="display:flex;flex-direction:column;justify-content:center;min-height:180px;text-align:center;">
+            <p class="text-[var(--text-muted)] mb-3" style="font-size: 0.8rem; line-height: 1.5;">
+              系統將根據選定資產的歷史走勢，計算並建構出 <strong>效率前緣 (Efficient Frontier)</strong>。
+            </p>
+            <p class="text-[var(--text-muted)] mb-6" style="font-size: 0.8rem; line-height: 1.5;">
               提供「最大夏普值 (最高性價比)」與「最小波動率 (最穩健)」兩種最佳權重組合。
             </p>
-            <button class="btn btn-primary btn-lg" style="width:100%;" @click="runOptimization"
+            <button class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runOptimization"
               :disabled="runLoading || selectedItems.length < 2 || selectedItems.length > 10">
-              <span v-if="runLoading" class="spinner" style="width:16px;height:16px;margin-right:8px;"></span>
-              {{ runLoading ? '模型計算中...' : '🧬 開始最佳化分析' }}
+              <template v-if="runLoading">
+                <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />模型計算中...
+              </template>
+              <template v-else>
+                <Dna class="w-4 h-4 mr-2 inline" />開始最佳化分析
+              </template>
             </button>
             <div v-if="selectedItems.length < 2" class="text-red text-sm mt-8">請至少選擇 2 個資產進行分析</div>
           </div>
         </div>
-        <div v-if="optError" class="alert alert-error">{{ optError }}</div>
+        <div v-if="optError" class="p-3 mb-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
       </div>
     </div>
 
     <!-- Results Section -->
-    <div v-if="results" class="mt-32">
-      <h3 class="mb-16">最佳化分析結果</h3>
+    <div v-if="results" class="mt-16">
+      <h3 class="mb-2">最佳化分析結果</h3>
 
-      <div class="grid-2 mb-24" style="gap:24px;">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <!-- Max Sharpe Portfolio -->
-        <div class="card" style="border: 1px solid var(--accent);">
-          <div class="card-header" style="background:var(--accent-glow);">
-            <div class="flex-between w-full" style="width:100%;">
-              <h3 class="text-accent">🏆 最大夏普值組合 (Max Sharpe)</h3>
-              <button class="btn btn-ghost btn-sm" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
+        <div class="glass-card" style="border: 3px solid #f85149;">
+          <div class="p-4 border-b-2 border-[#f85149] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(248, 81, 73, 0.08);">
+            <div class="optimize-header w-full">
+              <h3 class="text-brand-500"><Trophy class="w-5 h-5 mr-2 inline" />最大夏普值組合 (Max Sharpe)</h3>
+              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
             </div>
           </div>
-          <div class="card-body">
-            <div class="grid-3 mb-16">
+          <div class="p-3 sm:p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
-                <div class="text-xs text-muted">預期年化報酬</div>
-                <div class="fw-600 text-green">{{ (results.max_sharpe.return * 100).toFixed(2) }}%</div>
+                <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
+                <div class="fw-600 text-rose-600">{{ (results.max_sharpe.return * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">年化波動率</div>
-                <div class="fw-600">{{ (results.max_sharpe.volatility * 100).toFixed(2) }}%</div>
+                <div class="text-xs text-[var(--text-muted)]">年化波動率</div>
+                <div class="font-semibold text-[var(--text-primary)]">{{ (results.max_sharpe.volatility * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">夏普值</div>
+                <div class="text-xs text-[var(--text-muted)]">夏普值</div>
                 <div class="fw-600 text-accent">{{ results.max_sharpe.sharpe.toFixed(3) }}</div>
               </div>
             </div>
@@ -123,25 +131,25 @@
         </div>
 
         <!-- Min Volatility Portfolio -->
-        <div class="card" style="border: 1px solid var(--green);">
-          <div class="card-header" style="background:rgba(63, 185, 80, 0.1);">
-             <div class="flex-between w-full" style="width:100%;">
-              <h3 class="text-green">🛡️ 最小波動率組合 (Min Volatility)</h3>
-              <button class="btn btn-ghost btn-sm" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
+        <div class="glass-card" style="border: 3px solid #3fb950;">
+          <div class="p-4 border-b-2 border-[#3fb950] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(63, 185, 80, 0.12);">
+             <div class="optimize-header w-full">
+              <h3 class="text-brand-600"><Shield class="w-5 h-5 mr-2 inline" />最小波動率組合 (Min Volatility)</h3>
+              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
             </div>
           </div>
-          <div class="card-body">
-            <div class="grid-3 mb-16">
+          <div class="p-3 sm:p-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
-                <div class="text-xs text-muted">預期年化報酬</div>
-                <div class="fw-600 text-green">{{ (results.min_volatility.return * 100).toFixed(2) }}%</div>
+                <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
+                <div class="fw-600 text-rose-600">{{ (results.min_volatility.return * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">年化波動率</div>
-                <div class="fw-600">{{ (results.min_volatility.volatility * 100).toFixed(2) }}%</div>
+                <div class="text-xs text-[var(--text-muted)]">年化波動率</div>
+                <div class="font-semibold text-[var(--text-primary)]">{{ (results.min_volatility.volatility * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-muted">夏普值</div>
+                <div class="text-xs text-[var(--text-muted)]">夏普值</div>
                 <div class="fw-600 text-accent">{{ results.min_volatility.sharpe.toFixed(3) }}</div>
               </div>
             </div>
@@ -153,12 +161,12 @@
       </div>
 
       <!-- Efficient Frontier Chart -->
-      <div class="card mb-24">
-        <div class="card-header">
+      <div class="glass-card mb-2">
+        <div class="p-4 border-b-2 border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
           <h3>效率前緣 (Efficient Frontier)</h3>
-          <span class="text-sm text-muted">顯示在相同風險下能產生的最高預期報酬</span>
+          <span class="text-sm text-[var(--text-muted)]">顯示在相同風險下能產生的最高預期報酬</span>
         </div>
-        <div class="card-body" style="height:400px;">
+        <div class="p-3 sm:p-4" style="height:380px;">
           <v-chart :option="efficientFrontierOption" autoresize />
         </div>
       </div>
@@ -170,6 +178,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Trophy, Shield, Dna, X, Check, Loader2 } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 
@@ -259,14 +268,14 @@ function createPieOption(portfolioData) {
     .map(([sym, w]) => ({ name: sym, value: w.toFixed(2) }))
   
   return {
-    tooltip: { trigger: 'item', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: '{b}: {c}%' },
+    tooltip: { trigger: 'item', backgroundColor: 'rgba(22, 27, 34, 0.9)', borderColor: 'rgba(48, 54, 61, 0.8)', textStyle: { color: '#e6edf3' }, formatter: '{b}: {c}%' },
     series: [
       {
         type: 'pie',
         radius: ['40%', '70%'],
         avoidLabelOverlap: false,
-        itemStyle: { borderRadius: 10, borderColor: '#0d1117', borderWidth: 2 },
-        label: { show: true, formatter: '{b}\n{c}%', color: '#e6edf3' },
+        itemStyle: { borderRadius: 10, borderColor: 'transparent', borderWidth: 2 },
+        label: { show: true, formatter: '{b}\n{c}%', color: 'inherit' },
         emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
         data: data
       }
@@ -310,8 +319,8 @@ const efficientFrontierOption = computed(() => {
     tooltip: { 
       trigger: 'axis', 
       axisPointer: { type: 'cross' },
-      backgroundColor: '#161b22', 
-      borderColor: '#30363d', 
+      backgroundColor: 'rgba(22, 27, 34, 0.9)', 
+      borderColor: 'rgba(48, 54, 61, 0.8)', 
       textStyle: { color: '#e6edf3' },
       formatter: p => `風險 (波動率): ${p[0].value[0]}%<br/>預期報酬: ${p[0].value[1]}%` 
     },
@@ -322,7 +331,7 @@ const efficientFrontierOption = computed(() => {
       nameLocation: 'middle',
       nameGap: 25,
       axisLabel: { color: '#8b949e' },
-      splitLine: { lineStyle: { color: '#21262d' } },
+      splitLine: { lineStyle: { color: 'rgba(139, 148, 158, 0.1)' } },
       scale: true
     },
     yAxis: { 
@@ -331,7 +340,7 @@ const efficientFrontierOption = computed(() => {
       nameLocation: 'middle',
       nameGap: 40,
       axisLabel: { color: '#8b949e' },
-      splitLine: { lineStyle: { color: '#21262d' } },
+      splitLine: { lineStyle: { color: 'rgba(139, 148, 158, 0.1)' } },
       scale: true
     },
     visualMap: {
@@ -373,6 +382,20 @@ const efficientFrontierOption = computed(() => {
         tooltip: { formatter: p => `資產: ${p.name}<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
       },
       {
+        name: 'Max Sharpe 圓圈',
+        type: 'scatter',
+        symbolSize: 17.5,
+        itemStyle: { 
+          color: 'transparent', 
+          borderColor: '#f85149', 
+          borderWidth: 2,
+          opacity: 0.8
+        },
+        label: { show: false },
+        data: [maxSharpePoint],
+        tooltip: { show: false }
+      },
+      {
         name: 'Max Sharpe',
         type: 'scatter',
         symbolSize: 14,
@@ -387,6 +410,20 @@ const efficientFrontierOption = computed(() => {
         },
         data: [maxSharpePoint],
         tooltip: { formatter: p => `🏆 最大夏普點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
+      },
+      {
+        name: 'Min Volatility 圓圈',
+        type: 'scatter',
+        symbolSize: 17.5,
+        itemStyle: { 
+          color: 'transparent', 
+          borderColor: '#3fb950', 
+          borderWidth: 2,
+          opacity: 0.8
+        },
+        label: { show: false },
+        data: [minVolPoint],
+        tooltip: { show: false }
       },
       {
         name: 'Min Volatility',
@@ -433,13 +470,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.symbol-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
-.symbol-item { padding: 10px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid var(--border); }
-.symbol-item:last-child { border-bottom: none; }
-.symbol-item:hover { background: var(--bg-glass); }
-.symbol-item.selected { background: var(--accent-glow); border-left: 3px solid var(--accent); }
-.symbol-item.disabled { opacity: 0.4; cursor: not-allowed; }
-.cat-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.15s; }
-.cat-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-.align-center { align-items: center; }
+.optimize-header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.symbol-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+}
 </style>
+
+

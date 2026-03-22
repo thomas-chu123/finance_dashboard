@@ -1,218 +1,273 @@
 <template>
-  <div>
-    <h2 class="mb-24">投資總覽</h2>
-
-    <!-- Stat cards -->
-    <div class="grid-4 mb-24">
-      <div class="stat-card">
-        <div class="stat-label">追蹤指數數量</div>
-        <div class="stat-value text-accent">{{ trackingStore.items.length }}</div>
-        <div class="stat-change">{{ activeCount }} 個啟用中</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">觸發通知記錄</div>
-        <div class="stat-value">{{ trackingStore.alertLogs.length }}</div>
-        <div class="stat-change">近 50 筆</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">電子郵件通知</div>
-        <div :class="['stat-value', auth.profile?.notify_email ? 'text-green' : 'text-muted']">
-          {{ auth.profile?.notify_email ? '已啟用' : '停用' }}
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">LINE 通知</div>
-        <div :class="['stat-value', auth.profile?.notify_line ? 'text-green' : 'text-muted']">
-          {{ auth.profile?.notify_line ? '已啟用' : '停用' }}
-        </div>
+  <div class="space-y-6">
+    <div class="flex items-center justify-between mb-2">
+      <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">投資總覽</h2>
+      <div class="flex items-center gap-2">
+        <span v-if="quotesLoading" class="text-xs text-zinc-500 animate-pulse">載入中...</span>
+        <span v-else class="text-xs text-zinc-500">{{ quotesLastUpdated }}</span>
+        <button class="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800" @click="fetchQuotes" title="重新整理">
+          <RefreshCcw :size="16" />
+        </button>
+        <button @click="openQuoteModal" class="bg-[var(--input-bg)] text-[var(--text-primary)] border border-[var(--border-color)] text-xs font-bold py-2 px-3 rounded-lg hover:opacity-80 transition-opacity flex items-center gap-1">
+          <Settings :size="14" /> 自訂指數
+        </button>
       </div>
     </div>
 
-    <!-- Live Market Quotes -->
-    <div class="card mb-24">
-      <div class="card-header">
-        <h3>📡 即時市場報價</h3>
-        <div class="flex gap-8 align-center">
-          <span v-if="quotesLoading" class="spinner" style="width:14px;height:14px;"></span>
-          <span class="text-xs text-muted">{{ quotesLastUpdated || '載入中...' }}</span>
-          <button class="btn btn-ghost btn-sm" @click="fetchQuotes">↻ 更新</button>
-          <button class="btn btn-primary btn-sm" @click="openQuoteModal">⚙ 自訂追蹤指數</button>
+    <!-- Market Overview Ticker -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
+      <div v-for="q in quotes" :key="q.symbol" @click="openQuoteUrl(q.symbol)" class="glass-card p-3.5 rounded-xl flex items-center justify-between cursor-pointer hover:border-brand-500/50 transition-colors group">
+        <div class="flex flex-col pr-3 overflow-hidden">
+          <span class="text-xs font-bold text-[var(--text-primary)] group-hover:text-brand-600 dark:group-hover:text-brand-400 truncate">{{ q.name }}</span>
+          <span class="text-[11px] font-medium text-zinc-500 uppercase tracking-wider mt-0.5">{{ q.symbol }}</span>
+        </div>
+        <div class="flex flex-col items-end shrink-0">
+          <span v-if="q.price !== null" class="text-sm font-bold font-mono text-[var(--text-primary)]">{{ formatPrice(q.price) }}</span>
+          <span v-else class="text-sm font-bold font-mono text-zinc-400">N/A</span>
+          
+          <span v-if="q.change !== null" :class="[
+            'text-[11px] font-bold flex items-center gap-0.5 mt-0.5',
+            q.change > 0 ? 'text-rose-600 dark:text-rose-400' : q.change < 0 ? 'text-brand-600 dark:text-brand-400' : 'text-zinc-500'
+          ]">
+            <TrendingUp v-if="q.change > 0" :size="12" />
+            <TrendingDown v-if="q.change < 0" :size="12" />
+            <Minus v-if="q.change === 0" :size="12" />
+            {{ Math.abs(q.change).toFixed(q.price < 10 ? 4 : 2) }}
+          </span>
         </div>
       </div>
-      <div class="card-body">
-        <div v-if="quotesLoading && !quotes.length" class="loading-center">
-          <div class="spinner"></div>
-        </div>
-        <div v-else class="quotes-grid">
-          <div v-for="q in quotes" :key="q.symbol" class="quote-card">
-            <div class="flex justify-between items-start">
-              <div class="quote-symbol">{{ q.symbol }}</div>
-              <div v-if="q.change !== null && q.change !== 0" :class="['quote-arrow', q.change > 0 ? 'text-red' : 'text-green']">
-                {{ q.change > 0 ? '⬆️' : '⬇️' }}
-              </div>
+      <template v-if="quotesLoading && !quotes.length">
+        <div v-for="i in 6" :key="i" class="glass-card p-3.5 rounded-xl animate-pulse h-[60px]"></div>
+      </template>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      
+      <!-- Main Content Area -->
+      <div class="xl:col-span-3 space-y-6">
+        
+        <!-- Recent Tracking Table -->
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
+            <h3 class="font-bold text-lg text-[var(--text-primary)]">追蹤中的指數</h3>
+            <router-link to="/tracking" class="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline flex items-center gap-1">
+              查看全部 <ChevronRight :size="14" />
+            </router-link>
+          </div>
+          <div class="overflow-x-auto">
+            <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
+            <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
+              尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
             </div>
-            <div class="quote-name">{{ q.name }}</div>
-            <div class="flex justify-between items-end mt-4">
-              <div class="quote-price" v-if="q.price !== null">
-                {{ formatPrice(q.price) }}
+            <div v-else class="min-w-[600px]">
+              <div class="grid grid-cols-6 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
+                <div class="col-span-1">代碼</div>
+                <div class="col-span-2">名稱 / 類別</div>
+                <div class="col-span-1">目前價格</div>
+                <div class="col-span-1">觸發門檻</div>
+                <div class="col-span-1">狀態</div>
               </div>
-              <div class="quote-price text-muted" v-else>N/A</div>
-              
-              <div v-if="q.change !== null" :class="['quote-delta', q.change > 0 ? 'text-red' : q.change < 0 ? 'text-green' : 'text-muted']">
-                {{ Math.abs(q.change).toFixed(q.price < 10 ? 4 : 2) }}
+              <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-6 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
+                <div class="col-span-2 flex flex-col">
+                  <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
+                  <span class="text-[10px] text-zinc-500 uppercase mt-0.5">{{ item.category }}</span>
+                </div>
+                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</div>
+                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">
+                  <span v-if="item.trigger_price">
+                    <TrendingUp v-if="item.trigger_direction === 'above'" :size="12" class="inline text-rose-500 mb-0.5" />
+                    <TrendingDown v-else :size="12" class="inline text-brand-500 mb-0.5" />
+                    {{ item.trigger_price }}
+                  </span>
+                  <span v-else class="text-zinc-500">—</span>
+                </div>
+                <div class="col-span-1">
+                  <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', item.is_active ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
+                    {{ item.is_active ? '啟用' : '停用' }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Alert Logs Table -->
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
+            <h3 class="font-bold text-lg text-[var(--text-primary)]">最近通知記錄</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
+            <div v-else class="min-w-[600px]">
+              <div class="grid grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
+                <div class="col-span-2 flex items-center gap-1">時間 <Clock :size="12" /></div>
+                <div class="col-span-1">代碼</div>
+                <div class="col-span-1">觸發價</div>
+                <div class="col-span-1">實際價</div>
+                <div class="col-span-1">方式</div>
+                <div class="col-span-1">狀態</div>
+              </div>
+              <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                <div class="col-span-2 text-[11px] text-zinc-500">{{ formatDate(log.created_at) }}</div>
+                <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
+                <div class="col-span-1 font-mono text-sm text-zinc-500">{{ log.trigger_price }}</div>
+                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
+                <div class="col-span-1">
+                  <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider">{{ log.channel }}</span>
+                </div>
+                <div class="col-span-1">
+                  <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', log.status === 'sent' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
+                    {{ log.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sidebar Widgets -->
+      <div class="space-y-6">
+        
+        <!-- System Status Summary -->
+        <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20">
+          <h3 class="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+            <Activity :size="16" /> 系統運作狀態
+          </h3>
+          
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="flex flex-col gap-1 p-4 bg-[var(--input-bg)] rounded-xl border border-[var(--border-color)]">
+              <span class="text-xs text-zinc-500 font-bold">追蹤數量</span>
+              <span class="text-2xl font-bold font-mono text-[var(--text-primary)]">{{ trackingStore.items.length }}</span>
+              <span class="text-[10px] text-brand-500 font-bold">{{ activeCount }} 啟用中</span>
+            </div>
+            <div class="flex flex-col gap-1 p-4 bg-[var(--input-bg)] rounded-xl border border-[var(--border-color)]">
+              <span class="text-xs text-zinc-500 font-bold">通知記錄</span>
+              <span class="text-2xl font-bold font-mono text-[var(--text-primary)]">{{ trackingStore.alertLogs.length }}</span>
+              <span class="text-[10px] text-zinc-400 font-bold">近 50 筆</span>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 bg-[var(--input-bg)] rounded-lg border border-[var(--border-color)]">
+              <div class="flex items-center gap-2">
+                <Mail :size="16" class="text-zinc-400" />
+                <span class="text-sm font-bold text-[var(--text-primary)]">Email 通知</span>
+              </div>
+              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_email ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500']">
+                {{ auth.profile?.notify_email ? '已啟用' : '停用' }}
+              </span>
+            </div>
+            <div class="flex items-center justify-between p-3 bg-[var(--input-bg)] rounded-lg border border-[var(--border-color)]">
+              <div class="flex items-center gap-2">
+                <MessageCircle :size="16" class="text-zinc-400" />
+                <span class="text-sm font-bold text-[var(--text-primary)]">LINE 通知</span>
+              </div>
+              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_line ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500']">
+                {{ auth.profile?.notify_line ? '已啟用' : '停用' }}
+              </span>
+            </div>
+          </div>
+          
+          <router-link to="/line" class="block w-full mt-6 py-3 border border-[var(--border-color)] rounded-xl text-xs font-bold text-center text-zinc-500 dark:text-zinc-400 hover:bg-[var(--input-bg)] transition-colors">
+            前往設定通知
+          </router-link>
+        </div>
+
       </div>
     </div>
 
-    <!-- Recent tracking -->
-    <div class="card mb-24">
-      <div class="card-header">
-        <h3>追蹤中的指數</h3>
-        <router-link to="/tracking" class="btn btn-ghost btn-sm">查看全部 →</router-link>
-      </div>
-      <div v-if="trackingStore.loading" class="loading-center"><div class="spinner"></div></div>
-      <div v-else-if="!trackingStore.items.length" style="padding:32px;text-align:center;color:var(--text-muted);">
-        尚未追蹤任何指數 · <router-link to="/tracking" style="color:var(--accent)">立即新增</router-link>
-      </div>
-      <div v-else class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>代碼</th><th>名稱</th><th>類別</th><th>目前價格</th><th>觸發門檻</th><th>狀態</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in trackingStore.items.slice(0, 6)" :key="item.id">
-              <td><span class="fw-600 text-accent">{{ item.symbol }}</span></td>
-              <td>{{ item.name }}</td>
-              <td><span :class="['badge', categoryBadge(item.category)]">{{ item.category.toUpperCase() }}</span></td>
-              <td>{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</td>
-              <td>
-                <span v-if="item.trigger_price">
-                  {{ item.trigger_direction === 'above' ? '↑' : '↓' }} {{ item.trigger_price }}
-                </span>
-                <span v-else class="text-muted">—</span>
-              </td>
-              <td><span :class="['badge', item.is_active ? 'badge-green' : 'badge-red']">{{ item.is_active ? '啟用' : '停用' }}</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Alert logs -->
-    <div class="card">
-      <div class="card-header">
-        <h3>最近通知記錄</h3>
-      </div>
-      <div v-if="!trackingStore.alertLogs.length" style="padding:32px;text-align:center;color:var(--text-muted);">
-        尚無通知記錄
-      </div>
-      <div v-else class="table-wrapper">
-        <table>
-          <thead>
-            <tr><th>時間</th><th>代碼</th><th>觸發價格</th><th>實際價格</th><th>通知方式</th><th>狀態</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="log in trackingStore.alertLogs.slice(0, 10)" :key="log.id">
-              <td class="text-sm text-muted">{{ formatDate(log.created_at) }}</td>
-              <td class="fw-600">{{ log.symbol }}</td>
-              <td>{{ log.trigger_price }}</td>
-              <td>{{ log.current_price }}</td>
-              <td><span class="badge badge-blue">{{ log.channel }}</span></td>
-              <td><span :class="['badge', log.status === 'sent' ? 'badge-green' : 'badge-red']">{{ log.status }}</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
     <!-- Modal: 自訂追蹤指數 -->
     <Teleport to="body">
-    <div v-if="showQuoteModal" class="modal-overlay" @click.self="showQuoteModal = false">
-      <div class="modal quote-modal">
+    <div v-if="showQuoteModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="showQuoteModal = false">
+      <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl w-[860px] max-w-[96vw] max-h-[90vh] flex flex-col">
         <!-- Header -->
-        <div class="modal-header">
-          <h3>⚙ 自訂追蹤指數</h3>
-          <button class="btn-icon" @click="showQuoteModal = false">✕</button>
+        <div class="flex items-center justify-between p-4 px-6 border-b border-[var(--border-color)] shrink-0">
+          <h3 class="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><Settings :size="18" /> 自訂追蹤指數</h3>
+          <button class="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[var(--text-primary)] transition-colors" @click="showQuoteModal = false">
+            <X :size="18" />
+          </button>
         </div>
 
         <!-- Body: two columns -->
-        <div class="modal-body quote-modal-body">
+        <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-3 gap-6 p-6 min-h-0">
 
           <!-- LEFT: Browse & Add -->
-          <div class="qm-left">
+          <div class="md:col-span-2 flex flex-col min-h-0">
             <!-- Category Tabs -->
-            <div class="cat-tabs">
+            <div class="flex gap-2 mb-4 flex-wrap">
               <button
                 v-for="tab in categoryTabs" :key="tab.key"
-                :class="['cat-tab', activeTab === tab.key ? 'cat-tab--active' : '']"
+                :class="['px-4 py-1.5 rounded-full border text-sm font-bold transition-colors', activeTab === tab.key ? 'bg-brand-500 border-brand-500 text-white' : 'border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
                 @click="activeTab = tab.key; quoteSearch = ''"
               >{{ tab.label }}</button>
             </div>
 
             <!-- Search -->
-            <div class="qm-search">
+            <div class="mb-3 relative">
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
               <input
-                type="text" class="input" v-model="quoteSearch"
+                type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" v-model="quoteSearch"
                 :placeholder="'搜尋 ' + currentTabLabel + ' 代碼或名稱...'"
               />
             </div>
 
             <!-- Symbol list -->
-            <div v-if="symbolsLoading" class="loading-center" style="min-height:200px">
-              <div class="spinner"></div>
+            <div v-if="symbolsLoading" class="flex-1 flex items-center justify-center min-h-[200px] border border-[var(--border-color)] rounded-xl">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
             </div>
-            <div v-else class="qm-symbol-list">
+            <div v-else class="flex-1 overflow-y-auto border border-[var(--border-color)] rounded-xl custom-scrollbar bg-[var(--bg-sidebar)]/50">
               <div
                 v-for="item in filteredCurrentTab" :key="item.symbol"
-                class="qm-symbol-row"
-                :class="{ 'qm-symbol-row--selected': isSelected(item.symbol) }"
+                class="flex justify-between items-center p-3 text-sm border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors"
+                :class="{ 'opacity-50': isSelected(item.symbol) }"
               >
-                <div class="qm-sym-info">
-                  <span class="fw-600 text-accent">{{ item.symbol }}</span>
-                  <span class="text-muted qm-sym-name">{{ item.name }}</span>
+                <div class="flex items-baseline gap-2 overflow-hidden pr-2">
+                  <span class="font-bold text-brand-600 dark:text-brand-400 shrink-0">{{ item.symbol }}</span>
+                  <span class="text-xs text-zinc-500 truncate max-w-[200px]">{{ item.name }}</span>
                 </div>
                 <button
                   v-if="!isSelected(item.symbol)"
-                  class="btn btn-ghost btn-sm text-green"
+                  class="p-1 rounded text-brand-600 hover:bg-brand-500/10 font-bold shrink-0"
                   @click="addQuote(item)"
-                >＋</button>
-                <span v-else class="qm-added-badge">✔ 已加入</span>
+                ><Plus :size="16" /></button>
+                <span v-else class="text-xs text-zinc-500 font-bold shrink-0 flex items-center gap-1"><Check :size="16" />已加入</span>
               </div>
-              <div v-if="!filteredCurrentTab.length" class="text-center text-muted p-24">無符合結果</div>
+              <div v-if="!filteredCurrentTab.length" class="text-center text-zinc-500 p-8 text-sm">無符合結果</div>
             </div>
           </div>
 
           <!-- RIGHT: Selected list -->
-          <div class="qm-right">
-            <div class="qm-right-header">
-              <span class="fw-600">已追蹤指數</span>
-              <span class="badge badge-blue">{{ selectedQuotes.length }}</span>
+          <div class="md:col-span-1 flex flex-col border border-brand-500/30 rounded-xl overflow-hidden min-h-0">
+            <div class="flex items-center justify-between p-3 border-b border-[var(--border-color)] bg-brand-500/5 shrink-0">
+              <span class="font-bold text-sm text-[var(--text-primary)]">已追蹤指數</span>
+              <span class="bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ selectedQuotes.length }}</span>
             </div>
-            <div class="qm-selected-list">
+            <div class="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-sidebar)]/50">
               <div
                 v-for="(item, idx) in selectedQuotes" :key="idx"
-                class="qm-selected-row"
+                class="flex justify-between items-center p-3 text-sm border-b border-[var(--border-color)] group"
               >
-                <div class="qm-sym-info">
-                  <span class="fw-600">{{ item.symbol }}</span>
-                  <span class="text-muted qm-sym-name">{{ item.name }}</span>
+                <div class="flex flex-col overflow-hidden pr-2">
+                  <span class="font-bold text-[var(--text-primary)]">{{ item.symbol }}</span>
+                  <span class="text-[10px] text-zinc-500 truncate">{{ item.name }}</span>
                 </div>
-                <button class="btn-icon text-red" @click="removeQuote(idx)" title="移除">✕</button>
+                <button class="text-rose-400 hover:text-rose-600 p-1 opacity-50 group-hover:opacity-100 transition-opacity" @click="removeQuote(idx)" title="移除">
+                  <X :size="14" />
+                </button>
               </div>
-              <div v-if="!selectedQuotes.length" class="text-center text-muted p-24" style="font-size:0.85rem">尚未加入任何標的</div>
+              <div v-if="!selectedQuotes.length" class="text-center text-zinc-500 p-8 text-xs">尚未加入任何標的</div>
             </div>
           </div>
         </div>
 
         <!-- Footer -->
-        <div class="modal-footer">
-          <button class="btn btn-ghost" @click="showQuoteModal = false">取消</button>
-          <button class="btn btn-primary" @click="saveQuotes" :disabled="savingQuotes">
-            <span v-if="savingQuotes" class="spinner" style="width:12px;height:12px;"></span>
+        <div class="p-4 px-6 border-t border-[var(--border-color)] flex items-center justify-end gap-3 bg-[var(--bg-header)] shrink-0">
+          <button class="px-4 py-2 text-sm font-bold text-zinc-500 hover:text-[var(--text-primary)] transition-colors" @click="showQuoteModal = false">取消</button>
+          <button class="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20 flex items-center gap-2" @click="saveQuotes" :disabled="savingQuotes">
+            <div v-if="savingQuotes" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             儲存追蹤清單
           </button>
         </div>
@@ -227,11 +282,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import {
+  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check
+} from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
 
-// Remove local API_BASE declaration
 const quotes = ref([])
 const quotesLoading = ref(false)
 const quotesLastUpdated = ref('')
@@ -319,11 +376,6 @@ async function saveQuotes() {
 
 const activeCount = computed(() => trackingStore.items.filter(i => i.is_active).length)
 
-function categoryBadge(cat) {
-  const map = { vix: 'badge-red', oil: 'badge-yellow', us_etf: 'badge-blue', tw_etf: 'badge-purple', index: 'badge-blue', crypto: 'badge-yellow' }
-  return map[cat] || 'badge-blue'
-}
-
 function formatDate(d) {
   return new Date(d).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
 }
@@ -349,11 +401,27 @@ async function fetchQuotes() {
   }
 }
 
+function openQuoteUrl(symbol) {
+  let url = ''
+  const upper = symbol.toUpperCase()
+  const isTaiwan = /^\d{4,6}[A-Z]?(\.TW|\.TWO)?$/.test(upper) || upper.endsWith('.TW') || upper.endsWith('.TWO')
+  
+  if (isTaiwan) {
+    let finalSymbol = upper
+    if (!upper.includes('.')) {
+      finalSymbol = upper + '.TW' 
+    }
+    url = `https://tw.stock.yahoo.com/quote/${finalSymbol}`
+  } else {
+    url = `https://finance.yahoo.com/quote/${upper}`
+  }
+  window.open(url, '_blank')
+}
+
 onMounted(async () => {
   await trackingStore.fetchAll()
   await trackingStore.fetchAlertLogs()
   await fetchQuotes()
-  // Auto-refresh quotes every 60 seconds
   quotesTimer = setInterval(fetchQuotes, 60_000)
 })
 
@@ -361,193 +429,3 @@ onUnmounted(() => {
   if (quotesTimer) clearInterval(quotesTimer)
 })
 </script>
-
-<style scoped>
-.align-center { align-items: center; }
-
-.quotes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.quote-card {
-  background: var(--bg-glass);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px;
-  transition: border-color 0.2s, transform 0.15s;
-}
-.quote-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-}
-
-.quote-symbol {
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: var(--accent);
-  letter-spacing: 0.02em;
-}
-.quote-name {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin: 3px 0 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.quote-price {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.quote-arrow {
-  font-size: 1.2rem;
-  line-height: 1;
-}
-
-.quote-delta {
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.text-red { color: #ff5252 !important; }
-.text-green { color: #4caf50 !important; }
-.justify-between { justify-content: space-between; }
-.items-start { align-items: flex-start; }
-.items-end { align-items: flex-end; }
-.mt-4 { margin-top: 4px; }
-
-/* ─── Quote Modal (duplicate removed — see global <style> block below) ─── */
-</style>
-
-
-<!-- Global (non-scoped) styles for Teleported modal overlay -->
-<style>
-.quote-modal {
-  width: 860px;
-  max-width: 96vw;
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
-}
-
-.quote-modal-body {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 16px;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
-  padding: 16px 24px;
-}
-
-.cat-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-.cat-tab {
-  padding: 6px 18px;
-  border-radius: 999px;
-  border: 1.5px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.cat-tab:hover { border-color: var(--accent); color: var(--accent); }
-.cat-tab--active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
-
-.qm-left { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.qm-search { margin-bottom: 10px; }
-.qm-symbol-list {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.qm-symbol-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-}
-.qm-symbol-row:last-child { border-bottom: none; }
-.qm-symbol-row:hover { background: var(--bg-glass); }
-.qm-symbol-row--selected { opacity: 0.55; }
-
-.qm-sym-info { display: flex; align-items: baseline; gap: 8px; overflow: hidden; }
-.qm-sym-name {
-  font-size: 0.75rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-  color: var(--text-muted);
-}
-.qm-added-badge { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; }
-
-.qm-right {
-  display: flex;
-  flex-direction: column;
-  border: 1.5px solid var(--accent);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  min-height: 0;
-}
-.qm-right-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-glass);
-  flex-shrink: 0;
-}
-.qm-selected-list { flex: 1; overflow-y: auto; }
-.qm-selected-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  border-bottom: 1px solid var(--border);
-}
-.qm-selected-row:last-child { border-bottom: none; }
-
-.quote-modal .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.quote-modal .modal-footer {
-  padding: 14px 24px;
-  border-top: 1px solid var(--border);
-}
-.quote-modal .btn-icon {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1;
-  transition: color 0.15s, background 0.15s;
-}
-.quote-modal .btn-icon:hover { background: var(--bg-glass); color: var(--text-primary); }
-</style>
-

@@ -6,6 +6,7 @@ import pandas as pd
 import asyncio
 from datetime import datetime
 from typing import Optional
+from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,17 @@ def _is_taiwan_stock(symbol: str) -> bool:
     if symbol.isdigit() or any(symbol.upper().endswith(s) for s in TW_SUFFIXES):
         return True
     return False
+
+
+def get_symbol_currency(symbol: str) -> str:
+    """Identify the currency of a symbol (USD or TWD)."""
+    if _is_taiwan_stock(symbol):
+        return "TWD"
+    if symbol.upper() in ["TAIEX", "^TWII"]:
+        return "TWD"
+    # Exchange rates like TWD=X are USD-based (1 USD = X TWD)
+    # But currently they are symbols themselves.
+    return "USD"
 
 
 def _clean_tw_symbol(symbol: str) -> str:
@@ -90,8 +102,66 @@ async def fetch_finmind_adjusted_prices(
         return pd.Series(dtype=float)
 
 
+async def scrape_yahoo_tw_futures(symbol: str) -> dict:
+    """Scrape live futures price from Yahoo Finance Taiwan, e.g. for WTX&."""
+    url = f"https://tw.stock.yahoo.com/future/{symbol.replace('&', '%26')}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0"
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            resp.raise_for_status()
+            
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            price = None
+            prev_close = None
+            
+            price_spans = soup.find_all('span', class_=lambda c: c and 'Fz(32px)' in c)
+            if price_spans:
+                try:
+                    price = float(price_spans[0].text.replace(',', ''))
+                except ValueError:
+                    pass
+                
+            li_elements = soup.find_all('li', class_=lambda c: c and 'price-detail-item' in c)
+            for li in li_elements:
+                if '昨收' in li.text:
+                    spattr = li.find_all('span')
+                    if len(spattr) >= 2:
+                        val_text = spattr[1].text.replace(',', '')
+                        try:
+                            prev_close = float(val_text)
+                        except ValueError:
+                            pass
+                            
+            if price is not None:
+                return {
+                    "symbol": symbol,
+                    "price": price,
+                    "prev_close": prev_close,
+                    "change": price - prev_close if prev_close is not None else 0.0,
+                    "success": True
+                }
+            else:
+                logger.warning(f"[MarketData] Could not find price in HTML for {symbol}")
+    except Exception as e:
+        logger.error(f"[MarketData] scrape_yahoo_tw_futures error for {symbol}: {e}")
+        
+    return {
+        "symbol": symbol,
+        "price": None,
+        "prev_close": None,
+        "change": 0.0,
+        "success": False
+    }
+
+
 async def get_quote_data(symbol: str, category: str) -> dict:
     """Fetch current price and previous close for a given symbol."""
+    if symbol == "WTX&":
+        return await scrape_yahoo_tw_futures(symbol)
+
     yf_symbol = _to_yf_symbol(symbol)
     ticker = yf.Ticker(yf_symbol)
     
@@ -321,6 +391,7 @@ def get_index_list() -> list[dict]:
         {"symbol": "^FTSE", "name": "FTSE 100", "category": "index"},
         {"symbol": "^HSI", "name": "Hang Seng Index", "category": "index"},
         {"symbol": "TAIEX", "name": "台灣加權股價指數", "category": "index"},
+        {"symbol": "WTX&", "name": "台指數夜盤", "category": "index"},
         # Crypto symbols
         {"symbol": "BTC-USD", "name": "Bitcoin (BTC)", "category": "crypto"},
         {"symbol": "ETH-USD", "name": "Ethereum (ETH)", "category": "crypto"},

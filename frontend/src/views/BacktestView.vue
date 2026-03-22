@@ -1,58 +1,57 @@
 <template>
   <div>
-    <div class="flex-between mb-24">
-      <h2>回測管理</h2>
-      <div class="flex gap-8">
-        <button class="btn btn-ghost btn-sm" @click="showSaved = !showSaved">
-          {{ showSaved ? '📊 執行回測' : '📂 已儲存' }}
-        </button>
-      </div>
+    <div class="backtest-header">
+      <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
+      <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-900 dark:text-gray-900 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved">
+        <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
+        <FolderOpen v-else class="w-4 h-4 mr-2" />
+        {{ showSaved ? '執行回測' : '已儲存' }}
+      </button>
     </div>
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
       <div v-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
-        <div style="font-size:2rem;margin-bottom:12px;">📂</div>
+        <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
         尚無已儲存的回測
       </div>
-      <div v-else class="grid-2">
-        <div v-for="p in savedPortfolios" :key="p.id" class="card">
-          <div class="card-header">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div v-for="p in savedPortfolios" :key="p.id" class="glass-card">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <div>
-              <div class="fw-600">{{ p.name }}</div>
+              <div class="font-semibold text-[var(--text-primary)]">{{ p.name }}</div>
               <div class="text-sm text-muted">{{ p.start_date }} → {{ p.end_date }}</div>
             </div>
-            <div class="flex gap-8">
-              <button class="btn btn-ghost btn-sm" @click="loadSaved(p)">載入</button>
-              <button class="btn btn-danger btn-sm" @click="deleteSaved(p.id)">🗑️</button>
+            <div class="flex items-center gap-2">
+              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" @click="loadSaved(p)">載入</button>
+              <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
             </div>
           </div>
-          <div class="card-body" v-if="p.results_json?.metrics">
-            <div class="grid-3" style="gap:12px;">
+          <div class="p-3 sm:p-4" v-if="p.results_json?.metrics">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">CAGR</div>
-                <div class="fw-600 text-green">{{ p.results_json.metrics.cagr }}%</div>
+                <div class="fw-600" :class="(p.results_json.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">{{ p.results_json.metrics.cagr }}%</div>
               </div>
               <div>
                 <div class="text-xs text-muted">Sharpe</div>
                 <div class="fw-600 text-accent">{{ p.results_json.metrics.sharpe_ratio }}</div>
               </div>
               <div>
-                <div class="text-xs text-muted">Max DD</div>
-                <div class="fw-600 text-red">{{ p.results_json.metrics.max_drawdown }}%</div>
+                <div class="fw-600 text-brand-600">{{ p.results_json.metrics.max_drawdown }}%</div>
               </div>
             </div>
-            <div class="mt-16">
-              <div class="text-xs text-muted mb-12">組合資產</div>
-              <div class="flex gap-8" style="flex-wrap:wrap;">
-                <span v-for="item in p.items" :key="item.symbol" class="badge badge-blue">
+            <div class="mt-3">
+              <div class="text-xs text-muted mb-2">組合資產</div>
+              <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
             </div>
-            <div class="mt-16">
-              <button class="btn btn-ghost btn-sm" style="width:100%;" @click="addToTracking(p.items)">
-                📡 一鍵加入追蹤
+            <div class="mt-3">
+              <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="addToTracking(p.items)">
+                <Activity class="w-4 h-4 mr-2 inline" />一鍵加入追蹤
               </button>
             </div>
           </div>
@@ -62,36 +61,41 @@
 
     <!-- Backtest runner -->
     <div v-else>
-      <div class="grid-2" style="gap:24px;">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
         <!-- Left: config -->
         <div>
-          <div class="card mb-16">
-            <div class="card-header"><h3>選擇資產 (最多 10 個)</h3></div>
-            <div class="card-body">
+          <div class="glass-card mb-2">
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最多 10 個)</h3></div>
+            <div class="p-3 sm:p-4">
               <!-- Quick symbol search -->
-              <div class="form-group">
-                <label class="form-label">搜尋代碼或名稱</label>
-                <input v-model="symbolSearch" type="text" class="form-control" placeholder="輸入 0050, SPY, VIX..." @keydown.enter="addSearchSymbol" />
+              <div class="space-y-1 mb-2">
+                <label class="block text-sm font-medium text-muted">搜尋代碼或名稱</label>
+                <div class="relative">
+                  <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 pr-10" placeholder="輸入 0050, SPY, BTC..." @keydown.enter="addSearchSymbol" />
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <Rocket class="w-4 h-4 text-muted" />
+                  </div>
+                </div>
               </div>
 
               <!-- Symbol type tabs -->
-              <div class="flex gap-8 mb-12" style="flex-wrap:wrap;">
+              <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
                 <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['cat-tab', { active: symbolType === t.value }]"
+                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
               <!-- Symbol list -->
-              <div class="symbol-list">
+              <div class="max-h-40 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50">
                 <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                  :class="['symbol-item', { selected: isSelected(s.symbol), disabled: selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
-                  <div class="flex-between">
-                    <div>
-                      <span class="fw-600">{{ s.symbol }}</span>
-                      <span class="text-sm text-muted" style="margin-left:8px;">{{ s.name }}</span>
-                    </div>
-                    <span v-if="isSelected(s.symbol)" class="text-accent">✓</span>
+                  <div class="flex flex-col flex-1 min-w-0 pr-4">
+                    <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                    <span class="text-xs text-muted truncate">{{ s.name }}</span>
+                  </div>
+                  <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-500 text-white shadow-sm">
+                    <Check class="w-3.5 h-3.5" />
                   </div>
                 </div>
               </div>
@@ -99,21 +103,22 @@
           </div>
 
           <!-- Date range + amount -->
-          <div class="card">
-            <div class="card-body">
-              <div class="grid-2">
-                <div class="form-group">
-                  <label class="form-label">開始日期</label>
-                  <input v-model="btConfig.start_date" type="date" class="form-control" />
+          <div class="glass-card">
+            <div class="p-3 sm:p-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="space-y-1 mb-2">
+                  <label class="block text-sm font-medium text-muted">開始日期</label>
+                  <input v-model="btConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
-                <div class="form-group">
-                  <label class="form-label">結束日期</label>
-                  <input v-model="btConfig.end_date" type="date" class="form-control" />
+                <div class="space-y-1 mb-2">
+                  <label class="block text-sm font-medium text-muted">結束日期</label>
+                  <input v-model="btConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">初始金額 (USD)</label>
-                <input v-model.number="btConfig.initial_amount" type="number" class="form-control" />
+              <div class="space-y-1 mb-2">
+                <label class="block text-sm font-medium text-muted">初始金額 (USD)</label>
+                <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+                <div class="text-xs text-muted mt-4">註：若包含台灣資產，系統將自動依歷史匯率換算為美金計價。</div>
               </div>
             </div>
           </div>
@@ -121,151 +126,184 @@
 
         <!-- Right: selected + weights -->
         <div>
-          <div class="card mb-16">
-            <div class="card-header">
+          <div class="glass-card mb-2">
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
               <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
-              <div class="text-sm" :class="totalWeight === 100 ? 'text-green' : 'text-red'">
+              <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
                 總權重: {{ totalWeight.toFixed(1) }}%
               </div>
             </div>
-            <div class="card-body">
-              <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:16px 0;">
+            <div class="p-3 sm:p-4">
+              <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
                 請從左側選擇資產
               </div>
-              <div v-for="item in selectedItems" :key="item.symbol" class="selected-item">
-                <div class="flex-between" style="margin-bottom:6px;">
-                  <div>
-                    <span class="fw-600">{{ item.symbol }}</span>
-                    <span class="text-xs text-muted" style="margin-left:8px;">{{ item.name }}</span>
+              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
+                      {{ item.symbol.substring(0, 2) }}
+                    </div>
+                    <div class="flex flex-col">
+                      <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                      <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                    </div>
                   </div>
-                  <div class="flex gap-8 align-center">
-                    <span class="fw-600 text-accent">{{ item.weight.toFixed(1) }}%</span>
-                    <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @click="removeSymbol(item.symbol)">✕</button>
+                  <div class="flex items-center gap-4">
+                    <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                    <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                      <X class="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                <input v-model.number="item.weight" type="range" min="1" max="100" step="1"
-                  @input="adjustWeights(item.symbol, item.weight)" />
+                <div class="w-full">
+                  <input 
+                    v-model.number="item.weight" 
+                    type="range" 
+                    min="1" 
+                    max="100" 
+                    step="1"
+                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500 weight-range-slider"
+                    @input="adjustWeights(item.symbol, item.weight)" 
+                  />
+                </div>
               </div>
 
-              <div v-if="selectedItems.length > 1" class="mt-16 flex gap-8">
-                <button class="btn btn-ghost btn-sm" style="flex:1;" @click="equalizeWeights">
-                  ⚖️ 平均分配
+              <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
+                  <Scale class="w-4 h-4 mr-2 inline" />平均分配
                 </button>
-                <button class="btn btn-success btn-sm" style="flex:1;" @click="showSaveModal = true">
-                  💾 儲存組合
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="showSaveModal = true">
+                  <Save class="w-4 h-4 mr-2 inline" />儲存組合
                 </button>
               </div>
-              <div v-else-if="selectedItems.length === 1" class="mt-16">
-                <button class="btn btn-success btn-sm" style="width:100%;" @click="showSaveModal = true">
-                  💾 儲存組合
+              <div v-else-if="selectedItems.length === 1" class="mt-4">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="showSaveModal = true">
+                  <Save class="w-4 h-4 mr-2 inline" />儲存組合
                 </button>
               </div>
             </div>
           </div>
 
-          <div v-if="backtestError" class="alert alert-error mb-16">{{ backtestError }}</div>
+          <div v-if="backtestError" class="p-3 mb-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ backtestError }}</div>
 
-          <div v-if="runLoading" class="progress-wrapper mb-16">
-            <div class="progress-info flex-between mb-8">
-              <span class="text-sm fw-600">
-                🚀 {{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
+          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 mb-3 shadow-sm animate-pulse">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm fw-600 text-[var(--text-primary)]">
+                <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
               </span>
               <span class="text-xs text-accent fw-700">{{ Math.floor(runProgress) }}%</span>
             </div>
-            <div class="progress-track">
-              <div class="progress-fill" :style="{ width: runProgress + '%' }"></div>
+            <div class="h-2 bg-[var(--bg-sidebar)] rounded-full overflow-hidden relative">
+              <div class="h-full bg-brand-500 rounded-full transition-all duration-300" :style="{ width: runProgress + '%' }"></div>
             </div>
           </div>
 
-          <button v-else class="btn btn-primary btn-lg" style="width:100%;" @click="runBacktest"
+          <button v-else class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runBacktest"
             :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5">
-            🚀 執行回測
+            <Play class="w-4 h-4 mr-2 inline" />執行回測
           </button>
         </div>
       </div>
 
       <!-- Results -->
-      <div v-if="results" class="mt-24">
-        <div class="flex-between mb-16">
-          <h3>回測結果 <span class="text-sm text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span></h3>
-          <div class="flex gap-8">
-            <button class="btn btn-ghost btn-sm" @click="addAllToTracking">📡 加入追蹤</button>
-            <button class="btn btn-success btn-sm" @click="showSaveModal = true">💾 儲存回測</button>
+      <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+            回測結果 
+            <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
+          </h3>
+          <div class="flex items-center gap-3">
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="addAllToTracking">
+              <Activity class="w-4 h-4 mr-2" />加入追蹤
+            </button>
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+              <Save class="w-4 h-4 mr-2" />儲存回測
+            </button>
           </div>
         </div>
 
         <!-- Metrics -->
-        <div class="grid-4 mb-24" v-if="results?.metrics">
-          <div class="stat-card">
-            <div class="stat-label">CAGR 年化報酬</div>
-            <div :class="['stat-value', (results.metrics.cagr || 0) >= 0 ? 'text-green' : 'text-red']">{{ results.metrics.cagr }}%</div>
+        <div class="metrics-grid mb-6">
+          <!-- CAGR -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
+            <div :class="['text-xl font-bold', (results.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
+              {{ results.metrics.cagr }}%
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Sharpe Ratio</div>
-            <div class="stat-value text-accent">{{ results.metrics.sharpe_ratio }}</div>
+          <!-- Sharpe -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SHARPE RATIO</div>
+            <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results.metrics.sharpe_ratio }}</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Sortino Ratio</div>
-            <div class="stat-value text-purple">{{ results.metrics.sortino_ratio }}</div>
+          <!-- Sortino -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SORTINO RATIO</div>
+            <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results.metrics.sortino_ratio }}</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">Beta</div>
-            <div class="stat-value">{{ results.metrics.beta }}</div>
+          <!-- Beta -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">BETA</div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results.metrics.beta }}</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">最大回撤</div>
-            <div class="stat-value text-red">{{ results.metrics.max_drawdown }}%</div>
+          <!-- Max Drawdown -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">MAX DRAWDOWN</div>
+            <div class="text-xl font-bold text-brand-600">{{ results.metrics.max_drawdown }}%</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">年化標準差</div>
-            <div class="stat-value">{{ results.metrics.annual_std }}%</div>
+          <!-- Volatility -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VOLATILITY (STD)</div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results.metrics.annual_std }}%</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">VaR (95%)</div>
-            <div class="stat-value text-yellow">{{ results.metrics.var_95 }}%</div>
+          <!-- VaR -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VAR (95%)</div>
+            <div class="text-xl font-bold text-orange-500">{{ results.metrics.var_95 }}%</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-label">期末資產</div>
-            <div class="stat-value text-green">${{ (results.metrics.final_amount || 0).toLocaleString() }}</div>
-            <div class="stat-change" :class="(results.metrics.total_return || 0) >= 0 ? 'up' : 'down'">
-              總報酬 {{ results.metrics.total_return }}%
+          <!-- Final Amount -->
+          <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">FINAL AMOUNT</div>
+            <div class="text-xl font-bold text-rose-600">${{ (results.metrics.final_amount || 0).toLocaleString() }}</div>
+            <div class="text-[10px] font-medium" :class="(results.metrics.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
+              RETURN: {{ results.metrics.total_return }}%
             </div>
           </div>
         </div>
 
         <!-- Charts -->
-        <div class="grid-2 mb-24" style="gap:24px;">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-12">
           <!-- Portfolio growth chart -->
-          <div class="card">
-            <div class="card-header"><h3>資產成長曲線</h3></div>
-            <div class="card-body" style="height:300px;">
+          <div class="glass-card">
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
+            <div class="p-3 sm:p-4" style="height:360px;">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
           </div>
 
           <!-- Annual returns -->
-          <div class="card">
-            <div class="card-header"><h3>年度報酬率</h3></div>
-            <div class="card-body" style="height:300px;">
+          <div class="glass-card">
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>年度報酬率</h3></div>
+            <div class="p-3 sm:p-4" style="height:260px;">
               <v-chart :option="annualReturnChartOption" autoresize style="height:100%;" />
             </div>
           </div>
         </div>
 
         <!-- Asset contributions -->
-        <div class="card mb-24">
-          <div class="card-header"><h3>各資產貢獻度</h3></div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr><th>代碼</th><th>名稱</th><th>權重</th><th>報酬貢獻 (USD)</th></tr>
+        <div class="glass-card mb-2">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度</h3></div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs text-muted uppercase bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
+                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">權重</th><th class="px-6 py-4 font-medium">報酬貢獻 (USD)</th></tr>
               </thead>
-              <tbody>
+              <tbody class="divide-y divide-[var(--border-color)]/20">
                 <tr v-for="(contrib, symbol) in (results.asset_contributions || {})" :key="symbol">
-                  <td class="fw-600 text-accent">{{ symbol }}</td>
-                  <td>{{ contrib.name }}</td>
-                  <td>{{ contrib.weight }}%</td>
-                  <td :class="(contrib.return_contribution || 0) >= 0 ? 'text-green' : 'text-red'">
+                  <td class="px-6 py-4 fw-600 text-accent">{{ symbol }}</td>
+                  <td class="px-6 py-4">{{ contrib.name }}</td>
+                  <td class="px-6 py-4">{{ contrib.weight }}%</td>
+                  <td class="px-6 py-4" :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
                     ${{ (contrib.return_contribution || 0).toLocaleString() }}
                   </td>
                 </tr>
@@ -275,33 +313,33 @@
         </div>
 
         <!-- Drawdown chart -->
-        <div class="card mb-24" v-if="results.drawdown_series">
-          <div class="card-header">
+        <div class="glass-card mb-6" v-if="results.drawdown_series">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>回撤曲線 (Drawdown)</h3>
-            <span class="text-sm text-muted">最大回撤：<span class="text-red fw-600">{{ results.metrics.max_drawdown }}%</span></span>
+            <span class="text-sm text-muted">最大回撤：<span class="text-brand-600 fw-600">{{ results.metrics.max_drawdown }}%</span></span>
           </div>
-          <div class="card-body" style="height:240px;">
+          <div class="p-4 sm:p-6" style="height:240px;">
             <v-chart :option="drawdownChartOption" autoresize style="height:100%;" />
           </div>
         </div>
 
         <!-- Monthly Returns Heatmap -->
-        <div class="card mb-24" v-if="results.monthly_returns">
-          <div class="card-header">
+        <div class="glass-card mb-6" v-if="results.monthly_returns">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>月度報酬率熱力圖</h3>
           </div>
-          <div class="card-body" style="height:320px;">
+          <div class="p-4 sm:p-6" style="height:320px;">
             <v-chart :option="monthlyReturnsHeatmapOption" autoresize style="height:100%;" />
           </div>
         </div>
 
         <!-- Correlation heatmap -->
-        <div class="card" v-if="results.correlation_matrix && results.available_symbols?.length > 1">
-          <div class="card-header">
+        <div class="glass-card" v-if="results.correlation_matrix && results.available_symbols?.length > 1">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>相關性熱力圖</h3>
             <span class="text-xs text-muted">1.0 = 完全正相關 · -1.0 = 完全負相關</span>
           </div>
-          <div class="card-body" style="height:320px;">
+          <div class="p-4 sm:p-6" style="height:320px;">
             <v-chart :option="correlationHeatmapOption" autoresize style="height:100%;" />
           </div>
         </div>
@@ -310,18 +348,18 @@
 
     <!-- Save modal -->
     <Transition name="fade">
-      <div v-if="showSaveModal" class="modal-overlay">
-        <div class="modal">
-          <div class="modal-header"><h3>儲存回測</h3><button class="modal-close" @click="showSaveModal = false">✕</button></div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label class="form-label">回測名稱</label>
-              <input v-model="saveName" type="text" class="form-control" placeholder="例: 台美混合 2020-2024" />
+      <div v-if="showSaveModal" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[var(--bg-main)] rounded-xl shadow-xl w-full max-w-md overflow-hidden ring-1 ring-[var(--border-color)]">
+          <div class="px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center font-semibold text-[var(--text-primary)]"><h3>儲存回測</h3><button class="text-muted hover:text-[var(--text-primary)] transition-colors" @click="showSaveModal = false"><X class="w-4 h-4" /></button></div>
+          <div class="p-6">
+            <div class="space-y-1 mb-4">
+              <label class="block text-sm font-medium text-muted">回測名稱</label>
+              <input v-model="saveName" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="例: 台美混合 2020-2024" />
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showSaveModal = false">取消</button>
-            <button class="btn btn-primary" @click="saveBacktest">儲存</button>
+          <div class="px-6 py-4 bg-[var(--bg-sidebar)] flex justify-end gap-3">
+            <button class="px-4 py-2 text-sm font-medium text-muted hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showSaveModal = false">取消</button>
+            <button class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" @click="saveBacktest">儲存</button>
           </div>
         </div>
       </div>
@@ -334,6 +372,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
@@ -374,6 +413,11 @@ const filteredSymbols = computed(() => {
 
 const totalWeight = computed(() => selectedItems.value.reduce((s, i) => s + (i.weight || 0), 0))
 
+const benchmarkSymbol = computed(() => {
+  const hasTaiwan = selectedItems.value.some(i => i.category === 'tw_etf')
+  return hasTaiwan ? '0050' : 'SPY'
+})
+
 function isSelected(sym) { return selectedItems.value.some(i => i.symbol === sym) }
 
 function toggleSymbol(s) {
@@ -396,6 +440,15 @@ function equalizeWeights() {
   selectedItems.value.forEach((item, idx) => {
     item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
   })
+}
+
+function adjustWeights(symbol, newWeight) {
+  const item = selectedItems.value.find(i => i.symbol === symbol)
+  if (!item) return
+  
+  // Basic logic: just update this one. 
+  // For a better UX, we could adjust others proportionally, but let's keep it simple for now.
+  item.weight = newWeight
 }
 
 function addSearchSymbol() {
@@ -464,7 +517,7 @@ async function runBacktest() {
 const growthChartOption = computed(() => {
   if (!results.value?.portfolio_value_series) return {}
   const dates = Object.keys(results.value.portfolio_value_series)
-  const values = dates.map(d => results.value.portfolio_value_series[d].toFixed(2))
+  const values = dates.map(d => parseFloat(results.value.portfolio_value_series[d]))
 
   const series = [{ 
     name: '投資組合',
@@ -472,9 +525,19 @@ const growthChartOption = computed(() => {
     type: 'line', 
     smooth: true, 
     symbol: 'none', 
-    lineStyle: { color: '#58a6ff', width: 2.5 }, 
-    areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(88,166,255,0.25)' }, { offset: 1, color: 'rgba(88,166,255,0)' }] } } 
+    lineStyle: { color: '#2563eb', width: 2.5 }, 
+    areaStyle: { 
+      color: { 
+        type: 'linear', x: 0, y: 0, x2: 0, y2: 1, 
+        colorStops: [
+          { offset: 0, color: 'rgba(37, 99, 235, 0.2)' }, 
+          { offset: 1, color: 'rgba(37, 99, 235, 0)' }
+        ] 
+      } 
+    } 
   }]
+
+  const benchmarkLabel = `參考曲線-${benchmarkSymbol.value}`
 
   // Add benchmark if available
   if (results.value?.benchmark_value_series && Object.keys(results.value.benchmark_value_series).length > 0) {
@@ -483,26 +546,65 @@ const growthChartOption = computed(() => {
     if (initialAmt > 0) {
       const bmValues = dates.map(d => {
         const val = bmData[d] || 1
-        return (val * initialAmt).toFixed(2)
+        return parseFloat((val * initialAmt).toFixed(2))
       })
       series.push({
-        name: `基準 ${results.value?.metrics?.benchmark_symbol || 'SPY'}`,
+        name: benchmarkLabel,
         data: bmValues,
         type: 'line',
         smooth: true,
         symbol: 'none',
-        lineStyle: { color: '#8b949e', width: 2, type: 'dashed' }
+        lineStyle: { color: '#10b981', width: 2, type: 'solid' }
       })
     }
   }
 
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: '#8b949e' },
-    grid: { left: 60, right: 20, top: 40, bottom: 40 },
-    legend: { show: true, textStyle: { color: '#8b949e' }, top: 0 },
-    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 10, color: '#8b949e', interval: Math.floor(dates.length / 6) }, axisLine: { lineStyle: { color: '#30363d' } } },
-    yAxis: { type: 'value', axisLabel: { formatter: v => '$' + (v/1000).toFixed(0) + 'k', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } }, scale: true },
+    textStyle: { color: '#8b949e', fontFamily: 'Inter, sans-serif' },
+    grid: { left: 80, right: 40, top: 40, bottom: 80 }, 
+    legend: { 
+      show: true, 
+      bottom: '2%', 
+      left: 'center', 
+      orient: 'horizontal',
+      icon: 'roundRect',
+      data: [
+        { name: '投資組合', textStyle: { color: '#2563eb', fontWeight: 'bold' } },
+        { name: benchmarkLabel, textStyle: { color: '#10b981', fontWeight: 'bold' } }
+      ]
+    },
+    xAxis: { 
+      type: 'category', 
+      name: 'Year',
+      nameLocation: 'middle',
+      nameGap: 35,
+      data: dates, 
+      axisLabel: { 
+        fontSize: 10, 
+        color: '#8b949e', 
+        interval: Math.floor(dates.length / 8),
+        formatter: (value) => value.split('-')[0]
+      }, 
+      axisLine: { lineStyle: { color: 'transparent' } },
+      splitLine: { show: false }
+    },
+    yAxis: { 
+      type: 'value', // Changed back to value for better tick density ($150k etc)
+      scale: true,
+      name: 'Portfolio Balance ($)',
+      nameLocation: 'middle',
+      nameGap: 60,
+      splitNumber: 8, // More ticks
+      axisLabel: { 
+        formatter: v => '$' + v.toLocaleString(), 
+        color: '#8b949e' 
+      },
+      axisLine: { lineStyle: { color: '#30363d', width: 1 } },
+      splitLine: { lineStyle: { color: '#2d333b', type: 'solid' } },
+      minorTick: { show: false },
+      minorSplitLine: { show: false }
+    },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => {
       let html = `${p[0].axisValue}<br/>`
       p.forEach(s => { html += `${s.marker} ${s.seriesName}: $${parseFloat(s.value).toLocaleString()}<br/>` })
@@ -518,13 +620,13 @@ const annualReturnChartOption = computed(() => {
   const vals = years.map(y => (results.value.annual_returns[y] * 100).toFixed(2))
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: '#8b949e' },
+    textStyle: { color: '#e6edf3' },
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: { type: 'category', data: years, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } } },
     yAxis: { type: 'value', axisLabel: { formatter: v => v + '%', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } } },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${p[0].axisValue}: ${p[0].value}%` },
     series: [{
-      data: vals.map(v => ({ value: v, itemStyle: { color: parseFloat(v) >= 0 ? '#3fb950' : '#f85149' } })),
+      data: vals.map(v => ({ value: v, itemStyle: { color: parseFloat(v) >= 0 ? '#f85149' : '#3fb950' } })),
       type: 'bar', barMaxWidth: 40,
     }]
   }
@@ -536,15 +638,15 @@ const drawdownChartOption = computed(() => {
   const vals = dates.map(d => parseFloat(results.value.drawdown_series[d].toFixed(2)))
   return {
     backgroundColor: 'transparent',
-    textStyle: { color: '#8b949e' },
+    textStyle: { color: '#e6edf3' },
     grid: { left: 60, right: 20, top: 10, bottom: 40 },
     xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 10, color: '#8b949e', interval: Math.floor(dates.length / 6) }, axisLine: { lineStyle: { color: '#30363d' } } },
     yAxis: { type: 'value', axisLabel: { formatter: v => v + '%', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } }, max: 0 },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${p[0].axisValue}<br/>回撤：${p[0].value}%` },
     series: [{
       data: vals, type: 'line', smooth: true, symbol: 'none',
-      lineStyle: { color: '#f85149', width: 1.5 },
-      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(248,81,73,0.4)' }, { offset: 1, color: 'rgba(248,81,73,0.02)' }] } }
+      lineStyle: { color: '#3fb950', width: 1.5 },
+      areaStyle: { color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1, colorStops: [{ offset: 0, color: 'rgba(63,185,80,0.4)' }, { offset: 1, color: 'rgba(63,185,80,0.02)' }] } }
     }]
   }
 })
@@ -613,7 +715,7 @@ const monthlyReturnsHeatmapOption = computed(() => {
     yAxis: { type: 'category', data: months, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     visualMap: {
       min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 0,
-      inRange: { color: ['#f85149', '#161b22', '#3fb950'] },
+      inRange: { color: ['#3fb950', '#161b22', '#f85149'] },
       textStyle: { color: '#8b949e' }, formatter: v => v + '%'
     },
     tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${years[p.value[0]]} ${months[p.value[1]]}<br/>報酬：${p.value[2]}%` },
@@ -708,44 +810,33 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.symbol-list { max-height: 240px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
-.symbol-item { padding: 10px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid var(--border); }
-.symbol-item:last-child { border-bottom: none; }
-.symbol-item:hover { background: var(--bg-glass); }
-.symbol-item.selected { background: var(--accent-glow); border-left: 3px solid var(--accent); }
-.symbol-item.disabled { opacity: 0.4; cursor: not-allowed; }
-.selected-item { padding: 12px; background: var(--bg-glass); border-radius: var(--radius-sm); margin-bottom: 10px; }
-.cat-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.15s; }
-.cat-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
-.align-center { align-items: center; }
-
-/* Progress Bar Styles */
-.progress-wrapper {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  animation: slideUp 0.3s ease-out;
+.backtest-header {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 0.5rem !important;
 }
 
-.progress-track {
-  height: 8px;
-  background: var(--bg-base);
-  border-radius: 4px;
-  overflow: hidden;
-  position: relative;
+.symbol-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
-  transition: width 0.2s ease-out;
-  border-radius: 4px;
+.metrics-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1rem !important;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@media (min-width: 1024px) {
+  .metrics-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
 }
 </style>
+
+

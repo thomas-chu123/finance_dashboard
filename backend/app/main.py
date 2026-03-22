@@ -10,6 +10,7 @@ from app.routers.market import router as market_router, test_router as alert_tes
 from app.routers.optimize import router as optimize_router
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from redis import asyncio as aioredis
 import os
 import logging
@@ -51,6 +52,17 @@ async def lifespan(app: FastAPI):
     logger.info(f"Allowed CORS origins: {['http://localhost:5173', 'http://localhost:3100', settings.app_base_url]}")
     logger.info(f"Effective APP_BASE_URL: {settings.app_base_url}")
     
+    # Initialize Cache
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    try:
+        redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=False)
+        await redis.ping()
+        FastAPICache.init(RedisBackend(redis), prefix="fin-cache")
+        logger.info("✅ Cache initialized with Redis")
+    except Exception as e:
+        logger.warning(f"⚠️ Redis connection failed: {e}. Falling back to InMemoryBackend for caching.")
+        FastAPICache.init(InMemoryBackend(), prefix="fin-cache")
+
     start_scheduler()
     yield
     if scheduler.running:
@@ -99,14 +111,6 @@ app.include_router(optimize_router)
 app.include_router(notifications.router)
 app.include_router(line.router)
 
-@app.on_event("startup")
-async def startup_event():
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-    try:
-        redis = aioredis.from_url(redis_url, encoding="utf8", decode_responses=False)
-        FastAPICache.init(RedisBackend(redis), prefix="fin-cache")
-    except Exception as e:
-        print(f"Warning: Failed to connect to Redis: {e}. Caching will not work.")
 
 
 @app.get("/api/health")

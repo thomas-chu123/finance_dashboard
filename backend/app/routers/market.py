@@ -129,7 +129,7 @@ async def test_alert(tracking_id: str):
     # Email
     if channel in ("email", "both") and profile.get("notify_email") and profile.get("email"):
         try:
-            subject, body = build_alert_email(symbol, name, category, current_price, trigger_price, direction)
+            subject, body = build_alert_email(symbol, name, category, current_price, trigger_price, direction, tracking_id)
             ok = await send_email(profile["email"], subject, body)
             results["email"] = "sent" if ok else "failed (SMTP error)"
         except Exception as e:
@@ -138,7 +138,7 @@ async def test_alert(tracking_id: str):
     # LINE
     if channel in ("line", "both") and profile.get("notify_line") and profile.get("line_user_id"):
         try:
-            msg = build_alert_message(symbol, name, current_price, trigger_price, direction)
+            msg = build_alert_message(symbol, name, current_price, trigger_price, direction, tracking_id)
             resp = await send_line_message(profile["line_user_id"], msg)
             results["line"] = "sent" if resp.get("success") else f"failed: {resp.get('error')}"
         except Exception as e:

@@ -5,7 +5,7 @@ import asyncio
 import logging
 import time
 from typing import List, Dict, Any, Optional
-from app.services.market_data import get_historical_prices
+from app.services.market_data import get_historical_prices, get_symbol_currency
 
 
 RISK_FREE_RATE = 0.02  # 2% annual
@@ -92,6 +92,27 @@ async def run_backtest(
             logger.info(f"[Backtest] Fetched {len(series)} rows for {sym}")
         else:
             logger.warning(f"[Backtest] NO data found for {sym}")
+
+    # Currency conversion (TWD -> USD)
+    # We assume base currency is USD for now.
+    twd_fx = pd.Series()
+    if any(get_symbol_currency(s) == "TWD" for s in symbols):
+        twd_fx = await get_historical_prices("TWD=X", start_date, end_date)
+        if twd_fx.empty:
+            logger.warning("[Backtest] Could not fetch TWD=X exchange rate. Using local returns (no FX adjustment).")
+        else:
+            logger.info(f"[Backtest] Fetched {len(twd_fx)} days of USD/TWD exchange rate.")
+
+    if not twd_fx.empty:
+        for sym in list(price_data.keys()):
+            if get_symbol_currency(sym) == "TWD":
+                # Align price and FX
+                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().dropna()
+                if not combined.empty:
+                    price_data[sym] = combined["price"] / combined["fx"]
+                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (aligned rows: {len(combined)})")
+                else:
+                    logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local prices.")
 
     if not price_data:
         logger.error("[Backtest] No data fetched for ANY symbol.")
@@ -201,17 +222,29 @@ async def run_backtest(
     corr_matrix = returns.corr().round(4).to_dict()
 
     # Benchmark fetching and comparison
-    benchmark_symbol = "SPY" # Default benchmark
+    benchmark_symbol = "SPY"  # Default benchmark
     benchmark_prices = pd.Series()
     try:
-        # Determine benchmark based on symbols
-        if any(s.endswith(".TW") or s.endswith(".TWO") for s in symbols):
+        # Determine benchmark based on symbols or category
+        has_taiwan = any(
+            it.get("category") == "tw_etf" or 
+            it["symbol"].endswith(".TW") or 
+            it["symbol"].endswith(".TWO") 
+            for it in items
+        )
+        if has_taiwan:
             benchmark_symbol = "0050.TW"
         
         if benchmark_symbol in price_data:
             benchmark_prices = price_data[benchmark_symbol]
         else:
             benchmark_prices = await get_historical_prices(benchmark_symbol, start_date, end_date)
+            
+        if not benchmark_prices.empty and get_symbol_currency(benchmark_symbol) == "TWD" and not twd_fx.empty:
+            combined_bm = pd.DataFrame({"price": benchmark_prices, "fx": twd_fx}).ffill().dropna()
+            if not combined_bm.empty:
+                benchmark_prices = combined_bm["price"] / combined_bm["fx"]
+                logger.info(f"[Backtest] Converted benchmark {benchmark_symbol} to USD")
     except Exception as e:
         logger.warning(f"[Backtest] Benchmark fetch problem: {e}")
 
