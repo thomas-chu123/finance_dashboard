@@ -81,8 +81,8 @@ export function useDragDrop() {
    * @param {DragEvent} event - 拖動事件
    */
   function handleDragLeave(event) {
-    // 移除視覺反饋
-    if (event.currentTarget) {
+    // Bug 3 修正：只有在滑鼠真正離開容器（而非移到子元素）時才移除視覺反饋
+    if (!event.currentTarget.contains(event.relatedTarget)) {
       event.currentTarget.classList.remove('drag-over')
     }
   }
@@ -102,14 +102,17 @@ export function useDragDrop() {
       event.currentTarget.classList.remove('drag-over')
     }
     
-    if (draggedIndex.value !== null && draggedIndex.value !== index) {
-      return {
-        fromIndex: draggedIndex.value,
-        toIndex: index
-      }
-    }
+    // Bug 2 修正：先計算結果，再立即清除狀態，避免狀態殘留
+    const result = (draggedIndex.value !== null && draggedIndex.value !== index)
+      ? { fromIndex: draggedIndex.value, toIndex: index }
+      : null
     
-    return null
+    draggedIndex.value = null
+    draggedElement.value = null
+    isDragging.value = false
+    dragOverIndex.value = null
+    
+    return result
   }
 
   /**
