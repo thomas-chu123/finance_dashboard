@@ -44,14 +44,14 @@
             <div class="mt-3">
               <div class="text-xs text-muted mb-2">組合資產</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-white dark:bg-emerald-600 dark:text-white">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
             </div>
             <div class="mt-3">
-              <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="addToTracking(p.items)">
-                <Activity class="w-4 h-4 mr-2 inline" />一鍵加入追蹤
+              <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm w-full" @click="addToTracking(p.items)">
+                <Activity class="w-4 h-4 mr-2" />一鍵加入追蹤
               </button>
             </div>
           </div>
