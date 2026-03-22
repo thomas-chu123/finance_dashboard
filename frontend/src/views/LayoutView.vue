@@ -59,21 +59,21 @@
           </router-link>
 
           <router-link to="/tracking" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; closeSidebarOnMobile()" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '指數追蹤' : ''">
+            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '指數追蹤' : ''">
               <TrendingUp :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span v-if="!isSidebarCollapsed" class="font-medium text-sm">指數追蹤</span>
             </a>
           </router-link>
 
           <router-link to="/backtest" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; closeSidebarOnMobile()" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '回測管理' : ''">
+            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '回測管理' : ''">
               <RefreshCcw :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span v-if="!isSidebarCollapsed" class="font-medium text-sm">回測管理</span>
             </a>
           </router-link>
 
           <router-link to="/optimize" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; closeSidebarOnMobile()" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '投資組合最佳化' : ''">
+            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '投資組合最佳化' : ''">
               <Target :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span v-if="!isSidebarCollapsed" class="font-medium text-sm">投資組合最佳化</span>
             </a>
@@ -82,14 +82,14 @@
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">系統</div>
           
           <router-link to="/users" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; closeSidebarOnMobile()" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '使用者管理' : ''">
+            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? '使用者管理' : ''">
               <Users :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用者管理</span>
             </a>
           </router-link>
 
           <router-link to="/line" custom v-slot="{ href, navigate, isActive }">
-            <a :href="href" @click="navigate; closeSidebarOnMobile()" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? 'LINE 通知' : ''">
+            <a :href="href" @click="navigate; isSidebarOpen = false;" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group', isSidebarCollapsed ? 'justify-center' : 'w-full', isActive ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="isSidebarCollapsed ? 'LINE 通知' : ''">
               <MessageCircle :size="20" :class="['flex-shrink-0 transition-colors', isActive ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
               <span v-if="!isSidebarCollapsed" class="font-medium text-sm">LINE 通知</span>
             </a>
@@ -217,9 +217,9 @@ function closeSidebar() {
   }
 }
 
-// 移動設備上導航時自動關閉sidebar
+// 移動設備上導航時自動關閉sidebar（直接檢查視窗寬度，不依賴ref）
 function closeSidebarOnMobile() {
-  if (!isLargeScreen.value && isSidebarOpen.value) {
+  if (window.innerWidth < 1024) {
     isSidebarOpen.value = false
   }
 }
