@@ -222,11 +222,17 @@ async def run_backtest(
     corr_matrix = returns.corr().round(4).to_dict()
 
     # Benchmark fetching and comparison
-    benchmark_symbol = "SPY" # Default benchmark
+    benchmark_symbol = "SPY"  # Default benchmark
     benchmark_prices = pd.Series()
     try:
-        # Determine benchmark based on symbols
-        if any(s.endswith(".TW") or s.endswith(".TWO") for s in symbols):
+        # Determine benchmark based on symbols or category
+        has_taiwan = any(
+            it.get("category") == "tw_etf" or 
+            it["symbol"].endswith(".TW") or 
+            it["symbol"].endswith(".TWO") 
+            for it in items
+        )
+        if has_taiwan:
             benchmark_symbol = "0050.TW"
         
         if benchmark_symbol in price_data:

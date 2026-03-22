@@ -27,7 +27,8 @@
     --text-secondary: #71717a;
     --border-color: #e4e4e7;
     --card-bg: rgba(255, 255, 255, 0.9);
-    --input-bg: #f4f4f5;
+    --input-bg: #ffffff;
+    --input-border: #e2e8f0;
   }
 
   .dark {
@@ -43,16 +44,24 @@
   }
 
   body {
-    @apply bg-[var(--bg-main)] text-[var(--text-primary)] antialiased font-sans transition-colors duration-300;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: var(--font-sans);
+    transition: background-color 0.3s, color 0.3s;
   }
 }
 
 .glass-card {
-  @apply bg-[var(--card-bg)] border border-[var(--border-color)] backdrop-blur-sm shadow-sm;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .data-grid-border {
-  @apply border-[var(--border-color)];
+  border-color: var(--border-color);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -60,10 +69,37 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  background-color: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-zinc-300 dark:bg-zinc-800 rounded-full;
+  background-color: #d4d4d8; /* zinc-300 */
+  border-radius: 9999px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #27272a; /* zinc-800 */
+}
+
+/* Custom Slider Styling for Safari */
+.weight-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #22c55e; /* brand-500 */
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.weight-range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #22c55e;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
 }
 

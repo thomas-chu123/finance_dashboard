@@ -88,7 +88,7 @@
               <!-- Symbol list -->
               <div class="max-h-64 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50">
                 <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-50/50 dark:bg-brand-900/20' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
+                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-[#f0fdf4] dark:bg-brand-900/20' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
                   <div class="flex flex-col flex-1 min-w-0 pr-4">
                     <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
@@ -140,7 +140,7 @@
               <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center text-brand-500 dark:text-brand-400 font-extrabold text-xs uppercase">
+                    <div class="w-10 h-10 rounded-lg bg-[#dcfce7] dark:bg-brand-900/40 flex items-center justify-center text-brand-500 dark:text-brand-400 font-extrabold text-xs uppercase">
                       {{ item.symbol.substring(0, 2) }}
                     </div>
                     <div class="flex flex-col">
@@ -162,7 +162,7 @@
                     min="1" 
                     max="100" 
                     step="1"
-                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500"
+                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500 weight-range-slider"
                     @input="adjustWeights(item.symbol, item.weight)" 
                   />
                 </div>
@@ -300,10 +300,10 @@
               </thead>
               <tbody class="divide-y divide-[var(--border-color)]/20">
                 <tr v-for="(contrib, symbol) in (results.asset_contributions || {})" :key="symbol">
-                  <td class="fw-600 text-accent">{{ symbol }}</td>
+                  <td class="px-6 py-4 fw-600 text-accent">{{ symbol }}</td>
                   <td class="px-6 py-4">{{ contrib.name }}</td>
                   <td class="px-6 py-4">{{ contrib.weight }}%</td>
-                  <td :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
+                  <td class="px-6 py-4" :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
                     ${{ (contrib.return_contribution || 0).toLocaleString() }}
                   </td>
                 </tr>
@@ -413,6 +413,11 @@ const filteredSymbols = computed(() => {
 
 const totalWeight = computed(() => selectedItems.value.reduce((s, i) => s + (i.weight || 0), 0))
 
+const benchmarkSymbol = computed(() => {
+  const hasTaiwan = selectedItems.value.some(i => i.category === 'tw_etf')
+  return hasTaiwan ? '0050' : 'SPY'
+})
+
 function isSelected(sym) { return selectedItems.value.some(i => i.symbol === sym) }
 
 function toggleSymbol(s) {
@@ -515,22 +520,24 @@ const growthChartOption = computed(() => {
   const values = dates.map(d => parseFloat(results.value.portfolio_value_series[d]))
 
   const series = [{ 
-    name: 'Portfolio 1',
+    name: '投資組合',
     data: values, 
     type: 'line', 
     smooth: true, 
     symbol: 'none', 
-    lineStyle: { color: '#1e40af', width: 2.5 }, // More solid blue like reference
+    lineStyle: { color: '#2563eb', width: 2.5 }, 
     areaStyle: { 
       color: { 
         type: 'linear', x: 0, y: 0, x2: 0, y2: 1, 
         colorStops: [
-          { offset: 0, color: 'rgba(30, 64, 175, 0.2)' }, 
-          { offset: 1, color: 'rgba(30, 64, 175, 0)' }
+          { offset: 0, color: 'rgba(37, 99, 235, 0.2)' }, 
+          { offset: 1, color: 'rgba(37, 99, 235, 0)' }
         ] 
       } 
     } 
   }]
+
+  const benchmarkLabel = `參考曲線-${benchmarkSymbol.value}`
 
   // Add benchmark if available
   if (results.value?.benchmark_value_series && Object.keys(results.value.benchmark_value_series).length > 0) {
@@ -542,12 +549,12 @@ const growthChartOption = computed(() => {
         return parseFloat((val * initialAmt).toFixed(2))
       })
       series.push({
-        name: 'Portfolio 2', // Reference uses Portfolio 1/2 naming style
+        name: benchmarkLabel,
         data: bmValues,
         type: 'line',
         smooth: true,
         symbol: 'none',
-        lineStyle: { color: '#10b981', width: 2, type: 'solid' } // Teal/Green like reference
+        lineStyle: { color: '#10b981', width: 2, type: 'solid' }
       })
     }
   }
@@ -555,14 +562,17 @@ const growthChartOption = computed(() => {
   return {
     backgroundColor: 'transparent',
     textStyle: { color: '#8b949e', fontFamily: 'Inter, sans-serif' },
-    grid: { left: 80, right: 40, top: 40, bottom: 80 }, // More space for labels
+    grid: { left: 80, right: 40, top: 40, bottom: 80 }, 
     legend: { 
       show: true, 
-      textStyle: { color: '#8b949e' }, 
       bottom: '2%', 
       left: 'center', 
       orient: 'horizontal',
-      icon: 'roundRect'
+      icon: 'roundRect',
+      data: [
+        { name: '投資組合', textStyle: { color: '#2563eb', fontWeight: 'bold' } },
+        { name: benchmarkLabel, textStyle: { color: '#10b981', fontWeight: 'bold' } }
+      ]
     },
     xAxis: { 
       type: 'category', 
@@ -574,22 +584,28 @@ const growthChartOption = computed(() => {
         fontSize: 10, 
         color: '#8b949e', 
         interval: Math.floor(dates.length / 8),
-        formatter: (value) => value.split('-')[0] // Only show year if possible, or keeps as is
+        formatter: (value) => value.split('-')[0]
       }, 
       axisLine: { lineStyle: { color: '#30363d' } },
-      splitLine: { show: false } // Cleaner look like reference
+      splitLine: { show: false }
     },
     yAxis: { 
-      type: 'log', // Logarithmic scale as requested
+      type: 'value', // Changed back to value for better tick density ($150k etc)
+      scale: true,
       name: 'Portfolio Balance ($)',
       nameLocation: 'middle',
       nameGap: 60,
+      splitNumber: 8, // More ticks
       axisLabel: { 
         formatter: v => '$' + v.toLocaleString(), 
         color: '#8b949e' 
       }, 
-      splitLine: { lineStyle: { color: '#21262d' } }, 
-      scale: true 
+      splitLine: { lineStyle: { color: '#21262d', type: 'dashed' } }, 
+      minorTick: { show: true },
+      minorSplitLine: { 
+        show: true, 
+        lineStyle: { color: '#21262d', opacity: 0.2 } 
+      }
     },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => {
       let html = `${p[0].axisValue}<br/>`
