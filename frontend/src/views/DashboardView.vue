@@ -43,13 +43,25 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
       
-      <!-- Main Content Area -->
+      <!-- Main Content Area - Draggable Cards -->
       <div class="xl:col-span-3 space-y-6">
         
-        <!-- Recent Tracking Table -->
-        <div class="glass-card rounded-2xl overflow-hidden">
+        <!-- Tracking Table Card (Draggable) -->
+        <div 
+          v-if="isCardVisible('tracking-table')"
+          class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
+          draggable="true"
+          @dragstart="handleDragStart($event, getCardIndex('tracking-table'))"
+          @dragend="handleDragEnd($event)"
+          @dragenter="handleDragEnter($event, getCardIndex('tracking-table'))"
+          @dragover="handleDragOver($event)"
+          @dragleave="handleDragLeave($event)"
+          @drop="handleCardDrop($event, getCardIndex('tracking-table'))"
+          :class="{ 'opacity-50': isDragging && dragOverIndex === getCardIndex('tracking-table') }"
+          data-card-id="tracking-table"
+        >
           <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-            <h3 class="font-bold text-lg text-[var(--text-primary)]">追蹤中的指數</h3>
+            <h3 class="font-bold text-lg text-[var(--text-primary)]">📊 追蹤中的指數</h3>
             <router-link to="/tracking" class="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline flex items-center gap-1">
               查看全部 <ChevronRight :size="14" />
             </router-link>
@@ -92,10 +104,22 @@
           </div>
         </div>
 
-        <!-- Alert Logs Table -->
-        <div class="glass-card rounded-2xl overflow-hidden">
+        <!-- Alert Logs Card (Draggable) -->
+        <div 
+          v-if="isCardVisible('alert-logs')"
+          class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
+          draggable="true"
+          @dragstart="handleDragStart($event, getCardIndex('alert-logs'))"
+          @dragend="handleDragEnd($event)"
+          @dragenter="handleDragEnter($event, getCardIndex('alert-logs'))"
+          @dragover="handleDragOver($event)"
+          @dragleave="handleDragLeave($event)"
+          @drop="handleCardDrop($event, getCardIndex('alert-logs'))"
+          :class="{ 'opacity-50': isDragging && dragOverIndex === getCardIndex('alert-logs') }"
+          data-card-id="alert-logs"
+        >
           <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-            <h3 class="font-bold text-lg text-[var(--text-primary)]">最近通知記錄</h3>
+            <h3 class="font-bold text-lg text-[var(--text-primary)]">🔔 最近通知記錄</h3>
           </div>
           <div class="overflow-x-auto">
             <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
@@ -128,11 +152,23 @@
 
       </div>
 
-      <!-- Sidebar Widgets -->
+      <!-- Sidebar Widgets - Draggable -->
       <div class="space-y-6">
         
-        <!-- System Status Summary -->
-        <div class="glass-card rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20">
+        <!-- System Status Card (Draggable) -->
+        <div 
+          v-if="isCardVisible('status-sidebar')"
+          class="glass-card rounded-2xl p-6 bg-gradient-to-br from-brand-500/5 to-transparent border-brand-500/20 cursor-grab active:cursor-grabbing transition-all"
+          draggable="true"
+          @dragstart="handleDragStart($event, getCardIndex('status-sidebar'))"
+          @dragend="handleDragEnd($event)"
+          @dragenter="handleDragEnter($event, getCardIndex('status-sidebar'))"
+          @dragover="handleDragOver($event)"
+          @dragleave="handleDragLeave($event)"
+          @drop="handleCardDrop($event, getCardIndex('status-sidebar'))"
+          :class="{ 'opacity-50': isDragging && dragOverIndex === getCardIndex('status-sidebar') }"
+          data-card-id="status-sidebar"
+        >
           <h3 class="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-2">
             <Activity :size="16" /> 系統運作狀態
           </h3>
@@ -282,12 +318,17 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { useDashboardStore } from '../stores/dashboard'
+import { useDragDrop } from '../composables/useDragDrop'
+import preferencesAPI from '../api/preferences'
 import {
   TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
+const dashboardStore = useDashboardStore()
+const { handleDragStart, handleDragEnd, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, dragOverIndex, isDragging } = useDragDrop()
 
 const quotes = ref([])
 const quotesLoading = ref(false)
@@ -419,6 +460,16 @@ function openQuoteUrl(symbol) {
 }
 
 onMounted(async () => {
+  // 加載卡片順序
+  dashboardStore.loadFromLocalStorage()
+  if (auth.token) {
+    try {
+      await dashboardStore.loadCardOrder(auth.token)
+    } catch (e) {
+      console.warn('Failed to load card order from server, using local storage')
+    }
+  }
+  
   await trackingStore.fetchAll()
   await trackingStore.fetchAlertLogs()
   await fetchQuotes()
@@ -428,4 +479,54 @@ onMounted(async () => {
 onUnmounted(() => {
   if (quotesTimer) clearInterval(quotesTimer)
 })
+
+/**
+ * 處理卡片拖放完成
+ * @param {Event} event - 拖放事件
+ * @param {number} toIndex - 放置目標索引
+ */
+async function handleCardDrop(event, toIndex) {
+  const result = handleDrop(event, toIndex)
+  if (result) {
+    dashboardStore.moveCard(result.fromIndex, result.toIndex)
+    
+    // 保存到後端
+    if (auth.token) {
+      try {
+        await dashboardStore.saveCardOrder(auth.token)
+      } catch (e) {
+        console.error('Failed to save card order:', e)
+      }
+    }
+  }
+}
+
+/**
+ * 檢查卡片是否可見
+ * @param {string} cardId - 卡片 ID
+ */
+function isCardVisible(cardId) {
+  return dashboardStore.cardOrder.includes(cardId)
+}
+
+/**
+ * 取得卡片在排序陣列中的索引
+ * @param {string} cardId - 卡片 ID
+ */
+function getCardIndex(cardId) {
+  return dashboardStore.cardOrder.indexOf(cardId)
+}
 </script>
+
+<style scoped>
+/* 拖放視覺反饋樣式 */
+.drag-over {
+  border: 2px solid rgb(var(--color-brand-500)) !important;
+  background-color: rgb(59 130 246 / 0.05) !important;
+}
+
+/* 拖動中的卡片透明度 */
+.dragging {
+  opacity: 0.5;
+}
+</style>
