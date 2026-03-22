@@ -7,7 +7,7 @@
             <Activity class="w-10 h-10 text-[#00df81]" :stroke-width="2" />
           </div>
         </div>
-        <h1 class="text-[2rem] leading-tight font-bold bg-gradient-to-r from-[#00df81] to-[#38bdf8] bg-clip-text text-transparent pb-1 tracking-tight">Finance Dashboard</h1>
+        <h1 class="text-[2rem] leading-tight font-bold bg-gradient-to-r from-[#00df81] to-[#38bdf8] bg-clip-text text-transparent pb-1 tracking-tight">NEXUS<br />Finance Dashboard</h1>
         <p class="text-[var(--text-secondary)] text-sm mt-3 font-medium tracking-wide">Investment Tracking & Backtesting</p>
       </div>
 
