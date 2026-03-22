@@ -82,6 +82,11 @@
             <MessageCircle :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/line' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">LINE 通知</span>
           </router-link>
+
+          <router-link to="/guide" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/guide' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="使用說明" @click="handleMenuItemClick('/guide')">
+            <FileQuestion :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/guide' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用說明</span>
+          </router-link>
         </nav>
 
         <div class="mt-auto pt-6 border-t border-[var(--border-color)]">
@@ -175,7 +180,8 @@ import {
   Menu, 
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileQuestion
 } from 'lucide-vue-next'
 
 const router = useRouter()
