@@ -28,6 +28,15 @@
             </span>
           </div>
           
+          <!-- Close Button (Mobile Only) -->
+          <button 
+            @click="closeSidebar"
+            class="lg:hidden p-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors ml-auto flex-shrink-0"
+            title="關閉菜單"
+          >
+            <X :size="20" />
+          </button>
+          
           <!-- Collapse Toggle (Desktop Only) -->
           <button 
             @click="toggleSidebarCollapse"
