@@ -2,16 +2,64 @@
 
 ## ⚠️ 重要語言指示
 
-**所有回覆都必須使用繁體中文 (Traditional Chinese)**
+**所有回覆都必須使用繁體中文 (Traditional Chinese)**，**除了 Git commit messages（必須使用英文）**
 
-- ✅ 使用繁體中文
+- ✅ 使用繁體中文（一般回覆與工程指導）
 - ❌ 不使用簡體中文或其他語言
 - ✅ 代碼註釋: 繁體中文
-- ✅ Git 提交信息: 英文（按照專案慣例）
-- ✅ PR 描述: 英文（按照專案慣例）
+- ✅ **Git 提交信息: 英文（絕對必須）**
+- ✅ **PR 描述: 英文（使用 Conventional Commits 格式）**
 - ✅ Code review 評論: 繁體中文
 - ✅ 文件說明: 繁體中文，放置於 `/docs` 目錄
 - ✅ 回覆內容: 繁體中文
+
+### Git Commit Message 格式（英文）
+
+**必須遵循 Conventional Commits 規格**
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**類型 (type)**：
+- `feat` — 新功能
+- `fix` — 修復錯誤
+- `refactor` — 代碼重構（不修復 bug，不添加功能）
+- `test` — 添加或更新測試
+- `docs` — 文檔更新（包括 README 和 API 文件）
+- `ci` — CI/CD 設定更新（GitHub Actions、 Docker 等）
+- `style` — 代碼格式化（不影響功能）
+- `perf` — 性能優化
+- `chore` — 其他雜項（依賴更新、構建腳本等）
+
+**作用域 (scope)**：
+- `auth` — 認證模塊
+- `backtest` — 回測引擎
+- `optimize` — 優化引擎
+- `market` — 市場數據
+- `tracking` — 投資組合跟蹤
+- `ui` — 前端 UI 元件
+- `api` — API 端點
+- 其他合適的模塊名稱
+
+**主題 (subject)**：
+- 使用命令式語氣（"add" 而不是 "added"）
+- 不超過 50 個字符
+- 首字母小寫
+- 末尾不加句號
+
+**範例**：
+```
+feat(backtest): add DCA strategy support
+fix(optimize): correct sharpe ratio calculation
+docs(api): update portfolio endpoints documentation
+refactor(market): extract data validation logic
+test(backtest): add edge case coverage for negative returns
+```
 
 ---
 

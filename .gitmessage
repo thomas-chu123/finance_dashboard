@@ -1,0 +1,15 @@
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# <footer>
+#
+# --- COMMIT MESSAGE GUIDELINES ---
+# Type: feat|fix|refactor|test|docs|ci|style|perf|chore
+# Scope: auth|backtest|optimize|market|tracking|ui|api
+# Subject: Use imperative mood, lowercase, no period, max 50 chars
+# 
+# Example:
+#   feat(backtest): add DCA strategy support
+#   fix(optimize): correct sharpe ratio calculation
+#   docs(api): update portfolio endpoints documentation
