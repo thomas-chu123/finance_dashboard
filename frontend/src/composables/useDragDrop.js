@@ -45,7 +45,7 @@ export function useDragDrop() {
     
     // 移除視覺反饋
     if (draggedElement.value) {
-      draggedElement.value.style.opacity = '1'
+      draggedElement.value.style.opacity = ''
     }
     
     draggedIndex.value = null
@@ -106,6 +106,11 @@ export function useDragDrop() {
     const result = (draggedIndex.value !== null && draggedIndex.value !== index)
       ? { fromIndex: draggedIndex.value, toIndex: index }
       : null
+    
+    // 移除拖動物件的視覺反饋
+    if (draggedElement.value) {
+      draggedElement.value.style.opacity = ''
+    }
     
     draggedIndex.value = null
     draggedElement.value = null
