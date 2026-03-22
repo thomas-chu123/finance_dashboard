@@ -231,6 +231,11 @@ function toggleSidebarCollapse() {
   }
 }
 
+// 路由變化時自動關閉手機菜單
+router.afterEach(() => {
+  closeSidebarOnMobile()
+})
+
 onMounted(() => {
   auth.fetchProfile()
   window.addEventListener('resize', handleResize)
