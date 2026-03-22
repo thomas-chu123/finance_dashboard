@@ -68,7 +68,7 @@
       <div v-if="trackingStore.loading" class="flex justify-center items-center py-20">
         <Loader2 class="w-8 h-8 text-brand-500 animate-spin" />
       </div>
-      <div v-else-if="!filteredItems.length" class="py-20 text-center text-zinc-500">
+      <div v-else-if="!filteredItems.length" class="px-4 py-20 text-left text-zinc-500">
         <div class="text-4xl mb-4 opacity-50">📭</div>
         <div class="text-lg">此類別尚無追蹤項目</div>
       </div>
@@ -79,11 +79,11 @@
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">代碼</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">名稱</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">類別</th>
-              <th class="px-4 py-4 text-right font-medium whitespace-nowrap">目前價格</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">目前價格</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">觸發規則</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">通知方式</th>
-              <th class="px-4 py-4 text-center font-medium whitespace-nowrap">狀態</th>
-              <th class="px-4 py-4 text-center font-medium whitespace-nowrap">操作</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">狀態</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">操作</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[var(--border-color)]">
@@ -97,7 +97,7 @@
                   {{ categoryBadgeInfo(item.category).label }}
                 </span>
               </td>
-              <td class="px-4 py-4 text-right">
+              <td class="px-4 py-4 text-left">
                 <span v-if="item.current_price" class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ item.current_price.toLocaleString() }}</span>
                 <span v-else class="text-zinc-500">—</span>
               </td>
@@ -118,14 +118,14 @@
                   {{ channelLabel(item.notify_channel) }}
                 </span>
               </td>
-              <td class="px-4 py-4 text-center">
+              <td class="px-4 py-4 text-left">
                 <label class="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" :checked="item.is_active" @change="toggleActive(item)" class="sr-only peer">
                   <div class="w-9 h-5 bg-zinc-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-brand-500"></div>
                 </label>
               </td>
-              <td class="px-4 py-4 text-right">
-                <div class="flex items-center justify-end space-x-2">
+              <td class="px-4 py-4 text-left">
+                <div class="flex items-center justify-start space-x-2">
                   <button class="p-1.5 text-zinc-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors rounded-md hover:bg-brand-500/10" @click="openEdit(item)" title="編輯">
                     <Edit2 class="w-4 h-4" />
                   </button>

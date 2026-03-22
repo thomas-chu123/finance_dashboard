@@ -56,16 +56,16 @@
           </div>
           <div class="overflow-x-auto">
             <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
-            <div v-else-if="!trackingStore.items.length" class="p-12 text-center text-zinc-500">
+            <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
               尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
             </div>
             <div v-else class="min-w-[600px]">
               <div class="grid grid-cols-6 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
                 <div class="col-span-1">代碼</div>
                 <div class="col-span-2">名稱 / 類別</div>
-                <div class="col-span-1 text-right">目前價格</div>
-                <div class="col-span-1 text-right">觸發門檻</div>
-                <div class="col-span-1 text-right">狀態</div>
+                <div class="col-span-1">目前價格</div>
+                <div class="col-span-1">觸發門檻</div>
+                <div class="col-span-1">狀態</div>
               </div>
               <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-6 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                 <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
@@ -73,8 +73,8 @@
                   <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
                   <span class="text-[10px] text-zinc-500 uppercase mt-0.5">{{ item.category }}</span>
                 </div>
-                <div class="col-span-1 text-right font-mono text-sm text-[var(--text-primary)]">{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</div>
-                <div class="col-span-1 text-right font-mono text-sm text-[var(--text-primary)]">
+                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</div>
+                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">
                   <span v-if="item.trigger_price">
                     <TrendingUp v-if="item.trigger_direction === 'above'" :size="12" class="inline text-rose-500 mb-0.5" />
                     <TrendingDown v-else :size="12" class="inline text-brand-500 mb-0.5" />
@@ -82,7 +82,7 @@
                   </span>
                   <span v-else class="text-zinc-500">—</span>
                 </div>
-                <div class="col-span-1 text-right">
+                <div class="col-span-1">
                   <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', item.is_active ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
                     {{ item.is_active ? '啟用' : '停用' }}
                   </span>
@@ -98,25 +98,25 @@
             <h3 class="font-bold text-lg text-[var(--text-primary)]">最近通知記錄</h3>
           </div>
           <div class="overflow-x-auto">
-            <div v-if="!trackingStore.alertLogs.length" class="p-12 text-center text-zinc-500">尚無通知記錄</div>
+            <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
             <div v-else class="min-w-[600px]">
               <div class="grid grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
-                <div class="col-span-2 flex items-center gap-1"><Clock :size="12" /> 時間</div>
+                <div class="col-span-2 flex items-center gap-1">時間 <Clock :size="12" /></div>
                 <div class="col-span-1">代碼</div>
-                <div class="col-span-1 text-right">觸發價</div>
-                <div class="col-span-1 text-right">實際價</div>
-                <div class="col-span-1 text-center">方式</div>
-                <div class="col-span-1 text-right">狀態</div>
+                <div class="col-span-1">觸發價</div>
+                <div class="col-span-1">實際價</div>
+                <div class="col-span-1">方式</div>
+                <div class="col-span-1">狀態</div>
               </div>
               <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                 <div class="col-span-2 text-[11px] text-zinc-500">{{ formatDate(log.created_at) }}</div>
                 <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
-                <div class="col-span-1 text-right font-mono text-sm text-zinc-500">{{ log.trigger_price }}</div>
-                <div class="col-span-1 text-right font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
-                <div class="col-span-1 text-center">
+                <div class="col-span-1 font-mono text-sm text-zinc-500">{{ log.trigger_price }}</div>
+                <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
+                <div class="col-span-1">
                   <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider">{{ log.channel }}</span>
                 </div>
-                <div class="col-span-1 text-right">
+                <div class="col-span-1">
                   <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', log.status === 'sent' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
                     {{ log.status }}
                   </span>
