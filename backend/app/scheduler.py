@@ -57,11 +57,15 @@ async def check_prices():
                 "price_updated_at": datetime.now(timezone.utc).isoformat(),
             }).eq("id", tracking_id).execute()
 
+            # Truncate prices to 2 decimal places (discard everything after 2 decimals, not rounding)
+            truncated_current = int(current_price * 100) / 100
+            truncated_trigger = int(trigger_price * 100) / 100
+
             # Check trigger condition
             condition_met = False
-            if trigger_direction == "above" and current_price >= trigger_price:
+            if trigger_direction == "above" and truncated_current >= truncated_trigger:
                 condition_met = True
-            elif trigger_direction == "below" and current_price <= trigger_price:
+            elif trigger_direction == "below" and truncated_current <= truncated_trigger:
                 condition_met = True
 
             # Logic for "Daily Notify" once triggered:
@@ -106,8 +110,8 @@ async def check_prices():
                     symbol=symbol,
                     name=item["name"],
                     category=category,
-                    current_price=current_price,
-                    trigger_price=trigger_price,
+                    current_price=truncated_current,
+                    trigger_price=truncated_trigger,
                     trigger_direction=trigger_direction,
                     tracking_id=tracking_id,
                 )
@@ -120,8 +124,8 @@ async def check_prices():
                 msg = build_alert_message(
                     symbol=symbol,
                     name=item["name"],
-                    current_price=current_price,
-                    trigger_price=trigger_price,
+                    current_price=truncated_current,
+                    trigger_price=truncated_trigger,
                     trigger_direction=trigger_direction,
                     tracking_id=tracking_id,
                 )

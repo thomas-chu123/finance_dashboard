@@ -124,6 +124,10 @@ async def test_alert(tracking_id: str):
     channel = item.get("notify_channel", "email")
     direction = item.get("trigger_direction", "above")
 
+    # Truncate prices to 2 decimal places (discard everything after 2 decimals, not rounding)
+    current_price = int(current_price * 100) / 100
+    trigger_price = int(trigger_price * 100) / 100
+
     results = {"email": None, "line": None}
 
     # Email
