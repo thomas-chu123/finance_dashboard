@@ -81,6 +81,7 @@
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">類別</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">目前價格</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">觸發規則</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">RSI 指標</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">通知方式</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">狀態</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">操作</th>
@@ -110,6 +111,27 @@
                   </span>
                   <span class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ item.trigger_price || '—' }}</span>
                 </div>
+              </td>
+              <td class="px-4 py-4">
+                <div v-if="item.trigger_mode && item.trigger_mode !== 'price'" class="flex items-center space-x-2">
+                  <button 
+                    @click="showRSIModal = true; selectedRSIItem = item"
+                    class="flex items-center px-2 py-1 text-sm font-bold rounded-lg transition-all"
+                    :class="item.current_rsi !== null && item.current_rsi !== undefined
+                      ? item.current_rsi < (item.rsi_below || 30) 
+                        ? 'bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30'
+                        : item.current_rsi > (item.rsi_above || 70)
+                        ? 'bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30'
+                        : 'bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30'
+                      : 'bg-zinc-500/20 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/30'"
+                    title="檢視 RSI 詳情"
+                  >
+                    <span class="text-base mr-1">📈</span>
+                    <span v-if="item.current_rsi !== null && item.current_rsi !== undefined" class="font-mono">{{ item.current_rsi.toFixed(1) }}</span>
+                    <span v-else>--</span>
+                  </button>
+                </div>
+                <span v-else class="text-zinc-500 text-sm">—</span>
               </td>
               <td class="px-4 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center gap-1 bg-white dark:bg-white text-zinc-950 dark:text-zinc-950 border border-zinc-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap shadow-sm">
@@ -214,6 +236,20 @@
               <input v-model="form.name" type="text" class="w-full h-10 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block px-3" placeholder="例: 元大台灣50" />
             </div>
 
+            <!-- Trigger Mode Selector -->
+            <TriggerModeSelector v-model="form.trigger_mode" />
+
+            <!-- RSI Parameters Form -->
+            <RSIParametersForm 
+              :show="form.trigger_mode !== 'price'"
+              :period="form.rsi_period"
+              :rsi-below="form.rsi_below"
+              :rsi-above="form.rsi_above"
+              @update:period="form.rsi_period = $event"
+              @update:rsiBelow="form.rsi_below = $event"
+              @update:rsiAbove="form.rsi_above = $event"
+            />
+
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-bold text-[var(--text-primary)] mb-1">觸發方向</label>
@@ -252,6 +288,47 @@
         </div>
       </div>
     </Transition>
+
+    <!-- RSI Monitoring Modal -->
+    <Transition
+      enter-active-class="transition ease-out duration-200"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0">
+      <div v-if="showRSIModal" class="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+          <!-- Header -->
+          <div class="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">📈</span>
+              <div>
+                <h3 class="text-lg font-bold text-[var(--text-primary)]">RSI 監控詳情</h3>
+                <p class="text-xs text-zinc-500 mt-1">{{ selectedRSIItem?.symbol }} - {{ selectedRSIItem?.name }}</p>
+              </div>
+            </div>
+            <button @click="showRSIModal = false" class="p-1 text-zinc-500 hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--input-bg)] transition-colors">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Content -->
+          <div class="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+            <RSIMonitoringDashboard :item="selectedRSIItem" />
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-between">
+            <button class="px-4 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showRSIModal = false">關閉</button>
+            <button class="flex items-center justify-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-amber-500/20" @click="testAlert(selectedRSIItem)" v-if="selectedRSIItem">
+              <Bell class="w-4 h-4 mr-2" />
+              測試通知
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -264,6 +341,9 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import TriggerModeSelector from '../components/TriggerModeSelector.vue'
+import RSIParametersForm from '../components/RSIParametersForm.vue'
+import RSIMonitoringDashboard from '../components/RSIMonitoringDashboard.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
@@ -272,6 +352,8 @@ const editItem = ref(null)
 const saving = ref(false)
 const modalError = ref('')
 const activeCategory = ref('all')
+const showRSIModal = ref(false)
+const selectedRSIItem = ref(null)
 
 const fundamentalsData = ref({})
 const loadingFundamentals = ref(false)
@@ -289,6 +371,7 @@ const categories = [
 const form = reactive({
   symbol: '', name: '', category: 'us_etf',
   trigger_direction: 'below', trigger_price: null,
+  trigger_mode: 'price', rsi_period: 14, rsi_below: 30, rsi_above: 70,
   notify_channel: 'email', notes: ''
 })
 
@@ -409,7 +492,12 @@ function openEdit(item) {
   Object.assign(form, {
     symbol: item.symbol, name: item.name, category: item.category,
     trigger_direction: item.trigger_direction || 'below',
-    trigger_price: item.trigger_price, notify_channel: item.notify_channel,
+    trigger_price: item.trigger_price, 
+    trigger_mode: item.trigger_mode || 'price',
+    rsi_period: item.rsi_period || 14,
+    rsi_below: item.rsi_below || 30,
+    rsi_above: item.rsi_above || 70,
+    notify_channel: item.notify_channel,
     notes: item.notes || ''
   })
   showAddModal.value = true
@@ -421,7 +509,12 @@ function closeModal() {
   modalError.value = ''
   symbolSearch.value = ''
   currentPrice.value = null
-  Object.assign(form, { symbol: '', name: '', category: 'us_etf', trigger_direction: 'below', trigger_price: null, notify_channel: 'email', notes: '' })
+  Object.assign(form, { 
+    symbol: '', name: '', category: 'us_etf', 
+    trigger_direction: 'below', trigger_price: null, 
+    trigger_mode: 'price', rsi_period: 14, rsi_below: 30, rsi_above: 70,
+    notify_channel: 'email', notes: '' 
+  })
 }
 
 async function handleSave() {
@@ -430,7 +523,23 @@ async function handleSave() {
   modalError.value = ''
   try {
     const data = { ...form }
-    if (!data.trigger_price) delete data.trigger_price
+    
+    // Handle trigger_price based on trigger_mode
+    if (form.trigger_mode !== 'price') {
+      delete data.trigger_price
+      delete data.trigger_direction
+    } else {
+      if (!data.trigger_price) delete data.trigger_price
+      delete data.rsi_period
+      delete data.rsi_below
+      delete data.rsi_above
+    }
+    
+    // If both mode, keep both sets of parameters
+    if (form.trigger_mode === 'both') {
+      // Keep all parameters
+    }
+    
     if (editItem.value) {
       await trackingStore.update(editItem.value.id, data)
     } else {

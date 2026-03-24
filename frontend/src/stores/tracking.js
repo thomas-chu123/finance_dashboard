@@ -6,6 +6,7 @@ export const useTrackingStore = defineStore('tracking', {
   state: () => ({
     items: [],
     alertLogs: [],
+    rsiData: {}, // { [id]: { current_rsi, status, updated_at, ... } }
     loading: false,
   }),
 
@@ -55,6 +56,20 @@ export const useTrackingStore = defineStore('tracking', {
     async fetchAlertLogs() {
       const res = await axios.get(`${API_BASE}/api/tracking/alerts`, { headers: this._headers() })
       this.alertLogs = res.data
+    },
+
+    async fetchRSIData(id) {
+      try {
+        const res = await axios.get(
+          `${API_BASE}/api/tracking/${id}/rsi-data`,
+          { headers: this._headers() }
+        )
+        this.rsiData[id] = res.data
+        return res.data
+      } catch (e) {
+        console.error(`Failed to fetch RSI data for tracking ${id}:`, e)
+        throw e
+      }
     },
   },
 })
