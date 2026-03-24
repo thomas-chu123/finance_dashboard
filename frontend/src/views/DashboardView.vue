@@ -391,11 +391,18 @@ async function fetchQuotes() {
   quotesLoading.value = true
   try {
     const metas = auth.profile?.dashboard_quotes || DEFAULT_SYMBOLS
+    console.debug('[DashboardView.fetchQuotes] Starting...', {
+      hasProfile: !!auth.profile,
+      hasCustomQuotes: !!auth.profile?.dashboard_quotes,
+      quotesCount: metas.length,
+      metas
+    })
     const res = await axios.post(`${API_BASE}/api/market/quotes`, metas)
     quotes.value = res.data
     quotesLastUpdated.value = new Date().toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei' }) + ' 更新'
+    console.debug('[DashboardView.fetchQuotes] Success:', { count: res.data.length, lastUpdated: quotesLastUpdated.value })
   } catch (e) {
-    console.error('Quotes fetch failed', e)
+    console.error('[DashboardView.fetchQuotes] Error:', e.message, e.response?.status, e.response?.data)
   } finally {
     quotesLoading.value = false
   }
@@ -419,10 +426,27 @@ function openQuoteUrl(symbol) {
 }
 
 onMounted(async () => {
-  await trackingStore.fetchAll()
-  await trackingStore.fetchAlertLogs()
-  await fetchQuotes()
+  console.log('[DashboardView.onMounted] Starting initialization...', { hasProfile: !!auth.profile })
+  try {
+    await trackingStore.fetchAll()
+    console.log('[DashboardView.onMounted] ✓ Tracking items loaded:', trackingStore.items.length)
+  } catch (e) {
+    console.error('[DashboardView.onMounted] ✗ Failed to load tracking:', e)
+  }
+  try {
+    await trackingStore.fetchAlertLogs()
+    console.log('[DashboardView.onMounted] ✓ Alert logs loaded:', trackingStore.alertLogs.length)
+  } catch (e) {
+    console.error('[DashboardView.onMounted] ✗ Failed to load alert logs:', e)
+  }
+  try {
+    await fetchQuotes()
+    console.log('[DashboardView.onMounted] ✓ Quotes loaded:', quotes.value.length)
+  } catch (e) {
+    console.error('[DashboardView.onMounted] ✗ Failed to load quotes:', e)
+  }
   quotesTimer = setInterval(fetchQuotes, 60_000)
+  console.log('[DashboardView.onMounted] ✓ Auto-refresh timer started (60s interval)')
 })
 
 onUnmounted(() => {

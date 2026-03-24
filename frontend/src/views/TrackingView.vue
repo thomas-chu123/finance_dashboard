@@ -2,19 +2,27 @@
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">指數追蹤管理</h2>
-      <button class="flex items-center justify-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20" @click="showAddModal = true">
-        <Plus class="w-4 h-4 mr-2" />
-        新增追蹤
-      </button>
+      <div class="flex gap-2">
+        <button class="flex items-center justify-center px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-xl transition-all text-sm font-bold" @click="async () => { console.log('Manual refresh triggered'); diagnosePageState(); await trackingStore.fetchAll(); console.log('Manual refresh completed'); }">
+          <Loader2 class="w-4 h-4 mr-2" />
+          重新加載
+        </button>
+        <button class="flex items-center justify-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20" @click="showAddModal = true">
+          <Plus class="w-4 h-4 mr-2" />
+          新增追蹤
+        </button>
+      </div>
     </div>
 
     <!-- Filter tabs -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="flex flex-wrap gap-2">
         <button v-for="cat in categories" :key="cat.value"
-          :class="['px-4 py-1.5 rounded-full text-sm font-bold transition-colors border', activeCategory === cat.value ? 'bg-brand-500 border-brand-500 text-white shadow-sm' : 'bg-transparent border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
+          :class="['px-4 py-1.5 rounded-full text-sm font-bold transition-colors border relative', activeCategory === cat.value ? 'bg-brand-500 border-brand-500 text-white shadow-sm' : 'bg-transparent border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
           @click="activeCategory = cat.value">
           {{ cat.label }}
+          <span v-if="cat.value === 'all'" class="ml-1 text-xs opacity-70">({{ trackingStore.items.length }})</span>
+          <span v-else class="ml-1 text-xs opacity-70">({{ trackingStore.items.filter(i => i.category === cat.value).length }})</span>
         </button>
       </div>
       <div>
@@ -65,6 +73,15 @@
 
     <!-- Table -->
     <div class="glass-card rounded-2xl overflow-hidden">
+      <!-- Debug info (can be removed later) -->
+      <div v-if="trackingStore.items.length > 0 && trackingStore.items.some(i => !i.category)" class="px-4 py-3 bg-amber-50 dark:bg-amber-500/10 border-l-4 border-amber-500 text-sm flex items-center justify-between">
+        <div>
+          <span class="text-amber-700 dark:text-amber-300 font-bold">⚠️ 警告:</span>
+          <span class="text-amber-600 dark:text-amber-200 ml-2">某些追蹤項目遺漏 category 欄位，請聯繫管理員更新資料庫</span>
+        </div>
+        <button class="ml-4 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded whitespace-nowrap" @click="trackingStore.fetchAll()">重新同步</button>
+      </div>
+
       <div v-if="trackingStore.loading" class="flex justify-center items-center py-20">
         <Loader2 class="w-8 h-8 text-brand-500 animate-spin" />
       </div>
@@ -163,6 +180,13 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Stats Footer -->
+      <div v-if="trackingStore.items.length > 0" class="px-4 py-3 bg-[var(--bg-sidebar)]/50 border-t border-[var(--border-color)] text-sm text-zinc-500">
+        <span>共計 <span class="font-bold text-[var(--text-primary)]">{{ trackingStore.items.length }}</span> 個追蹤項目</span>
+        <span class="mx-2">•</span>
+        <span>篩選結果: <span class="font-bold text-[var(--text-primary)]">{{ filteredItems.length }}</span> 個</span>
       </div>
     </div>
 
@@ -418,10 +442,18 @@ const filteredSymbols = computed(() => {
 
 async function fetchAvailableSymbols() {
   try {
+    console.log('[TrackingView] Fetching available symbols...')
     const res = await axios.get(`${API_BASE}/api/market/symbols`, { headers: auth.headers })
+    console.log('[TrackingView] Available symbols received:', {
+      tw_etf: res.data.tw_etf?.length || 0,
+      us_etf: res.data.us_etf?.length || 0,
+      index: res.data.index?.length || 0
+    })
     availableSymbols.value = res.data
   } catch (e) {
-    console.error('Failed to fetch symbols:', e)
+    console.error('[TrackingView] Failed to fetch symbols:', e.message, e.response?.status)
+    // Set empty fallback
+    availableSymbols.value = { tw_etf: [], us_etf: [], index: [] }
   }
 }
 
@@ -461,11 +493,35 @@ function onSymbolInput() {
 }
 
 
-const filteredItems = computed(() =>
-  activeCategory.value === 'all'
-    ? trackingStore.items
-    : trackingStore.items.filter(i => i.category === activeCategory.value)
-)
+const filteredItems = computed(() => {
+  const items = trackingStore.items.map(item => {
+    // Ensure category field exists; fallback to 'us_etf' if missing
+    if (!item.category) {
+      return {
+        ...item,
+        category: inferCategory(item.symbol)
+      }
+    }
+    return item
+  })
+  
+  return activeCategory.value === 'all'
+    ? items
+    : items.filter(i => i.category === activeCategory.value)
+})
+
+function inferCategory(symbol) {
+  // Infer category from symbol if category field is missing
+  if (!symbol) return 'us_etf'
+  const upper = symbol.toUpperCase()
+  if (upper === '^VIX') return 'vix'
+  if (upper === 'CL=F' || upper === 'BZ=F') return 'oil'
+  if (upper === 'TWSE' || upper === 'TPEX') return 'index'
+  if (upper.endsWith('.TW')) return 'tw_etf'
+  if (upper.includes('BTC') || upper.includes('ETH')) return 'crypto'
+  if (upper === 'EURUSD=X' || upper === 'JPYUSD=X') return 'exchange'
+  return 'us_etf' // Default
+}
 
 function categoryBadgeInfo(cat) {
   const map = {
@@ -483,6 +539,25 @@ function categoryBadgeInfo(cat) {
 function channelLabel(ch) {
   const map = { email: 'Email', line: 'LINE', both: 'Email + LINE' }
   return map[ch] || ch
+}
+
+function diagnosePageState() {
+  const diagnosis = {
+    timestamp: new Date().toISOString(),
+    authToken: auth.token ? '✓ Present' : '✗ Missing',
+    userId: auth.userId ? '✓ ' + auth.userId : '✗ Missing',
+    isLoggedIn: auth.isLoggedIn,
+    trackingStoreItems: trackingStore.items.length,
+    trackingStoreLoading: trackingStore.loading,
+    filteredItems: filteredItems.value.length,
+    activeCategory: activeCategory.value,
+    categoryCounts: categories.map(cat => ({
+      category: cat.label,
+      count: cat.value === 'all' ? trackingStore.items.length : trackingStore.items.filter(i => i.category === cat.value).length
+    }))
+  }
+  console.log('[Diagnosis]', JSON.stringify(diagnosis, null, 2))
+  return diagnosis
 }
 
 function openEdit(item) {
@@ -524,11 +599,22 @@ async function handleSave() {
   try {
     const data = { ...form }
     
+    console.log('[TrackingView.handleSave] 準備提交的數據:', {
+      symbol: data.symbol,
+      name: data.name,
+      category: data.category,
+      trigger_mode: data.trigger_mode,
+      notify_channel: data.notify_channel,
+      notes: data.notes
+    })
+    
     // Handle trigger_price based on trigger_mode
     if (form.trigger_mode !== 'price') {
+      console.log('[TrackingView.handleSave] 非 price 模式: 移除 trigger_price 和 trigger_direction')
       delete data.trigger_price
       delete data.trigger_direction
     } else {
+      console.log('[TrackingView.handleSave] Price 模式: 移除 RSI 參數')
       if (!data.trigger_price) delete data.trigger_price
       delete data.rsi_period
       delete data.rsi_below
@@ -537,17 +623,29 @@ async function handleSave() {
     
     // If both mode, keep both sets of parameters
     if (form.trigger_mode === 'both') {
-      // Keep all parameters
+      console.log('[TrackingView.handleSave] Both 模式: 保留所有參數')
     }
     
+    console.log('[TrackingView.handleSave] 最終提交數據:', data)
+    
     if (editItem.value) {
+      console.log('[TrackingView.handleSave] 更新模式, ID:', editItem.value.id)
       await trackingStore.update(editItem.value.id, data)
     } else {
+      console.log('[TrackingView.handleSave] 新增模式')
       await trackingStore.create(data)
     }
+    
+    console.log('[TrackingView.handleSave] 成功!')
     closeModal()
   } catch (e) {
-    modalError.value = e.response?.data?.detail || e.message
+    console.error('[TrackingView.handleSave] 錯誤:', {
+      message: e.message,
+      status: e.response?.status,
+      detail: e.response?.data?.detail,
+      data: e.response?.data
+    })
+    modalError.value = e.response?.data?.detail || e.message || '保存失敗'
   } finally {
     saving.value = false
   }
@@ -609,8 +707,50 @@ async function fetchFundamentals() {
 }
 
 onMounted(async () => {
-  trackingStore.fetchAll()
-  fetchAvailableSymbols()
+  try {
+    console.log('[TrackingView] Mounted, loading tracking items...')
+    console.log('[TrackingView] Current auth state:', {
+      isLoggedIn: auth.isLoggedIn,
+      userId: auth.userId,
+      hasToken: !!auth.token
+    })
+    await trackingStore.fetchAll()
+    console.log('[TrackingView] ✓ Loaded tracking items:', trackingStore.items.length, 'items')
+    
+    await trackingStore.fetchAlertLogs()
+    console.log('[TrackingView] ✓ Loaded alert logs:', trackingStore.alertLogs.length, 'logs')
+    
+    diagnosePageState()
+  } catch (e) {
+    console.error('[TrackingView] Failed to fetch tracking items on first attempt:', e)
+    // Retry after 1 second
+    setTimeout(async () => {
+      try {
+        console.log('[TrackingView] Retrying fetchAll...')
+        await trackingStore.fetchAll()
+        console.log('[TrackingView] ✓ Retry successful:', trackingStore.items.length, 'items')
+        
+        try {
+          await trackingStore.fetchAlertLogs()
+          console.log('[TrackingView] ✓ Alert logs loaded on retry:', trackingStore.alertLogs.length, 'logs')
+        } catch (alertError) {
+          console.error('[TrackingView] Alert logs fetch failed on retry:', alertError)
+        }
+        
+        diagnosePageState()
+      } catch (retryError) {
+        console.error('[TrackingView] Retry failed:', retryError)
+        diagnosePageState()
+      }
+    }, 1000)
+  }
+  
+  try {
+    await fetchAvailableSymbols()
+    console.log('[TrackingView] ✓ Available symbols loaded')
+  } catch (e) {
+    console.error('[TrackingView] Failed to fetch available symbols:', e)
+  }
 })
 </script>
 

@@ -464,8 +464,13 @@ function exportToBacktest(portfolioData) {
   router.push('/backtest')
 }
 
-onMounted(() => {
-  loadSymbols()
+onMounted(async () => {
+  try {
+    await loadSymbols()
+    console.log('[OptimizeView] Symbols loaded successfully')
+  } catch (error) {
+    console.error('[OptimizeView] Failed to load symbols:', error)
+  }
 })
 </script>
 

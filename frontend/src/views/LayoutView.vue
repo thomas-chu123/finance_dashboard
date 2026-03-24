@@ -159,8 +159,20 @@ const isSidebarOpen = ref(true)
 const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
 
-onMounted(() => {
-  auth.fetchProfile()
+onMounted(async () => {
+  console.log('[LayoutView.onMounted] Starting profile initialization...', { hasToken: !!auth.token, apiBase: import.meta.env.VITE_API_BASE_URL })
+  try {
+    console.log('[LayoutView.onMounted] Calling auth.fetchProfile()...')
+    await auth.fetchProfile()
+    console.log('[LayoutView.onMounted] ✓ Profile loaded successfully:', {
+      displayName: auth.profile?.display_name,
+      email: auth.profile?.email,
+      hasQuotes: !!auth.profile?.dashboard_quotes,
+      quotesCount: auth.profile?.dashboard_quotes?.length
+    })
+  } catch (error) {
+    console.error('[LayoutView.onMounted] ✗ Failed to load profile:', error)
+  }
 })
 
 function handleLogout() {

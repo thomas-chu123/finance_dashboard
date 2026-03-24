@@ -51,12 +51,18 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchProfile() {
-      if (!this.token) return
+      console.debug('[auth.fetchProfile] Starting...', { hasToken: !!this.token, apiBase: API_BASE })
+      if (!this.token) {
+        console.warn('[auth.fetchProfile] No token available, skipping profile fetch')
+        return
+      }
       try {
+        console.debug('[auth.fetchProfile] Fetching from:', `${API_BASE}/api/users/me?_t=${Date.now()}`)
         const res = await axios.get(`${API_BASE}/api/users/me?_t=${Date.now()}`, { headers: this.headers })
+        console.debug('[auth.fetchProfile] Profile loaded:', res.data)
         this.profile = res.data
       } catch (e) {
-        console.error('Profile fetch failed', e)
+        console.error('[auth.fetchProfile] Error:', e.message, e.response?.status, e.response?.data)
       }
     },
 

@@ -113,28 +113,43 @@ async def list_tracking(authorization: str = Header(default="")):
 @router.post("", response_model=TrackingRSIResponse)
 async def create_tracking(body: TrackingCreate, authorization: str = Header(default="")):
     """建立新的追蹤項目（支援 RSI 觸發參數）."""
-    user_id = get_user_id(authorization)
-    sb = get_supabase()
-    
-    # 驗證 RSI 參數
-    _validate_rsi_parameters(
-        body.trigger_mode,
-        body.rsi_below,
-        body.rsi_above
-    )
-    
-    # 插入數據
-    data = body.model_dump()
-    data["user_id"] = user_id
-    data["is_active"] = True
-    data["alert_triggered"] = False
-    
-    res = sb.table("tracked_indices").insert(data).execute()
-    if not res.data:
-        raise HTTPException(status_code=500, detail="Create failed")
-    
-    logger.info(f"✓ 新增追蹤項目: {body.symbol} (mode={body.trigger_mode}, user={user_id})")
-    return res.data[0]
+    try:
+        user_id = get_user_id(authorization)
+        sb = get_supabase()
+        
+        logger.info(f"[create_tracking] 開始創建追蹤項目: {body.symbol}, mode={body.trigger_mode}, user={user_id}")
+        
+        # 驗證 RSI 參數
+        _validate_rsi_parameters(
+            body.trigger_mode,
+            body.rsi_below,
+            body.rsi_above
+        )
+        
+        # 插入數據
+        data = body.model_dump()
+        data["user_id"] = user_id
+        data["is_active"] = True
+        data["alert_triggered"] = False
+        
+        logger.debug(f"[create_tracking] 準備插入的數據: {data}")
+        
+        res = sb.table("tracked_indices").insert(data).execute()
+        
+        if not res.data:
+            logger.error(f"[create_tracking] 插入失敗，無返回數據: {res}")
+            raise HTTPException(status_code=500, detail="Create failed - no data returned from database")
+        
+        logger.info(f"✓ 新增追蹤項目: {body.symbol} (id={res.data[0].get('id')}, mode={body.trigger_mode}, user={user_id})")
+        return res.data[0]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[create_tracking] 發生異常: {type(e).__name__}: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create tracking: {str(e)}"
+        )
 
 
 @router.put("/{tracking_id}", response_model=TrackingRSIResponse)
