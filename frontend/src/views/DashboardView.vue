@@ -17,7 +17,7 @@
     <!-- Market Overview Ticker -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
       <div v-for="(q, idx) in quotes" :key="q.symbol" 
-           @click="handleQuoteClick($event, q.symbol)" 
+           @click="handleQuoteClick($event, q.symbol, q.category)" 
            class="glass-card p-3.5 rounded-xl flex items-center justify-between cursor-grab active:cursor-grabbing hover:border-brand-500/50 transition-all group"
            draggable="true"
            @dragstart="handleQuoteDragStart($event, idx)"
@@ -376,13 +376,13 @@ function handleQuoteDragEnd(event) {
   lastQuoteDragEndTime = Date.now()
 }
 
-function handleQuoteClick(event, symbol) {
+function handleQuoteClick(event, symbol, category) {
   // If drag ended less than 200ms ago, it was a drag, not a click
   if (Date.now() - lastQuoteDragEndTime < 200) {
     event.preventDefault()
     return
   }
-  openQuoteUrl(symbol)
+  openQuoteUrl(symbol, category)
 }
 
 async function handleQuoteDropTarget(event, toIndex) {
@@ -412,6 +412,7 @@ async function handleQuoteDropTarget(event, toIndex) {
 const quotes = ref([])
 const quotesLoading = ref(false)
 const quotesLastUpdated = ref('')
+const symbolCatalog = ref({})  // 從後端加載的符號目錄
 let quotesTimer = null
 
 const DEFAULT_SYMBOLS = [
@@ -528,20 +529,58 @@ async function fetchQuotes() {
   }
 }
 
-function openQuoteUrl(symbol) {
+// 異步加載符號目錄（來自後端 SSOT）
+async function loadSymbolCatalog() {
+  try {
+    const res = await axios.get(`${API_BASE}/api/market/symbol-catalog`)
+    symbolCatalog.value = res.data
+  } catch (e) {
+    console.error('Failed to load symbol catalog:', e)
+  }
+}
+
+function openQuoteUrl(symbol, category = null) {
   let url = ''
   const upper = symbol.toUpperCase()
-  const isTaiwan = /^\d{4,6}[A-Z]?(\.TW|\.TWO)?$/.test(upper) || upper.endsWith('.TW') || upper.endsWith('.TWO')
   
-  if (isTaiwan) {
+  // 嘗試從符號目錄獲取配置（新方式）
+  const catalogEntry = symbolCatalog.value[upper]
+  
+  if (catalogEntry) {
+    // 使用後端的符號目錄
+    const yahooSymbol = catalogEntry.yahoo_symbol
+    const domain = catalogEntry.domain
+    const encoded = encodeURIComponent(yahooSymbol)
+    url = `https://${domain}/quote/${encoded}`
+  } else if (category === 'tw_etf') {
+    // 台灣 ETF: 0050.TW, 0056.TW 等（後備）
     let finalSymbol = upper
     if (!upper.includes('.')) {
-      finalSymbol = upper + '.TW' 
+      finalSymbol = upper + '.TW'
     }
     url = `https://tw.stock.yahoo.com/quote/${finalSymbol}`
+  } else if (category === 'index') {
+    // 指數特殊處理（後備）
+    if (upper === 'WTX&') {
+      url = `https://tw.stock.yahoo.com/future/WTX&`
+    } else if (upper.startsWith('^')) {
+      const encoded = encodeURIComponent(upper)
+      url = `https://tw.stock.yahoo.com/quote/${encoded}`
+    } else {
+      url = `https://finance.yahoo.com/quote/${upper}`
+    }
+  } else if (category === 'vix') {
+    url = `https://finance.yahoo.com/quote/^VIX`
+  } else if (category === 'oil' || upper.includes('=F')) {
+    const encoded = encodeURIComponent(upper)
+    url = `https://finance.yahoo.com/quote/${encoded}`
+  } else if (category === 'exchange' || upper.includes('=X')) {
+    url = `https://finance.yahoo.com/quote/${upper}`
   } else {
+    // 默認: 美國 ETF
     url = `https://finance.yahoo.com/quote/${upper}`
   }
+  
   window.open(url, '_blank')
 }
 
@@ -555,6 +594,9 @@ onMounted(async () => {
       console.warn('Failed to load card order from server, using local storage')
     }
   }
+  
+  // 加載符號目錄（用於 Yahoo Finance 連結生成）
+  await loadSymbolCatalog()
   
   await trackingStore.fetchAll()
   await trackingStore.fetchAlertLogs()

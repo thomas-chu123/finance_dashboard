@@ -34,6 +34,8 @@ async def _fetch_quote(meta: dict) -> dict:
         category = "oil"
     elif "=X" in symbol.upper():
         category = "exchange"
+    elif symbol.upper() in ("TAIEX", "WTX&"):
+        category = "index"
     else:
         category = "us_etf"
     try:
@@ -42,6 +44,7 @@ async def _fetch_quote(meta: dict) -> dict:
         return {
             "symbol": symbol,
             "name": meta["name"],
+            "category": category,
             "price": data.get("price"),
             "change": data.get("change"),
             "prev_close": data.get("prev_close"),
@@ -52,6 +55,7 @@ async def _fetch_quote(meta: dict) -> dict:
         return {
             "symbol": symbol,
             "name": meta["name"],
+            "category": category,
             "price": None,
             "change": None,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -97,6 +101,32 @@ async def get_available_symbols():
         "us_etf": us_etfs,
         "index": indices
     }
+
+@router.get("/symbol-catalog")
+async def get_symbol_catalog():
+    """Fetch the complete symbol catalog with Yahoo Finance mappings.
+    
+    This endpoint returns a unified catalog of all supported symbols,
+    including their Yahoo Finance mappings, display names (zh/en),
+    and categories. This serves as the Single Source of Truth (SSOT)
+    for symbol management across the frontend.
+    
+    Returns:
+        dict: Symbol catalog keyed by symbol code
+        {
+            "VIX": {
+                "symbol": "VIX",
+                "yahoo_symbol": "^VIX",
+                "name_zh": "...",
+                "name_en": "...",
+                "category": "vix",
+                "domain": "finance.yahoo.com"
+            },
+            ...
+        }
+    """
+    from app.services.market_data import SYMBOL_CATALOG
+    return SYMBOL_CATALOG
 
 # ─── Notification test endpoint ────────────────────────────────────────────────
 test_router = APIRouter(prefix="/api/tracking", tags=["test-alert"])
