@@ -1,5 +1,13 @@
 # Copilot 指引 - Finance Dashboard
 
+## ⚠️ 🔴 最高優先級 - Git Commit Message 必須使用英文
+
+**生成任何 Git commit message 時 MUST 使用英文，絕對不能使用中文或其他語言。**
+
+這是硬性要求，無任何例外。所有 commit message 必須遵循 Conventional Commits 格式，使用英文撰寫。
+
+---
+
 ## ⚠️ 重要語言指示
 
 **所有回覆都必須使用繁體中文 (Traditional Chinese)**，**除了 Git commit messages（必須使用英文）**
