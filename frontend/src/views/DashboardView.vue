@@ -540,48 +540,32 @@ async function loadSymbolCatalog() {
 }
 
 function openQuoteUrl(symbol, category = null) {
-  let url = ''
   const upper = symbol.toUpperCase()
   
-  // 嘗試從符號目錄獲取配置（新方式）
-  const catalogEntry = symbolCatalog.value[upper]
+  // 優先從符號目錄獲取配置（後端 SSOT）
+  const config = symbolCatalog.value[upper]
+  if (config && config.url_path) {
+    // 直接使用後端提供的 URL 路徑（已包含編碼）
+    const url = `https://${config.domain}/${config.url_path}`
+    window.open(url, '_blank')
+    return
+  }
   
-  if (catalogEntry) {
-    // 使用後端的符號目錄
-    const yahooSymbol = catalogEntry.yahoo_symbol
-    const domain = catalogEntry.domain
-    const encoded = encodeURIComponent(yahooSymbol)
-    url = `https://${domain}/quote/${encoded}`
-  } else if (category === 'tw_etf') {
-    // 台灣 ETF: 0050.TW, 0056.TW 等（後備）
+  // Fallback 邏輯（相容舊符號）
+  if (category === 'tw_etf') {
+    // 台灣 ETF: 0050.TW, 0056.TW 等
     let finalSymbol = upper
     if (!upper.includes('.')) {
       finalSymbol = upper + '.TW'
     }
-    url = `https://tw.stock.yahoo.com/quote/${finalSymbol}`
-  } else if (category === 'index') {
-    // 指數特殊處理（後備）
-    if (upper === 'WTX&') {
-      url = `https://tw.stock.yahoo.com/future/WTX&`
-    } else if (upper.startsWith('^')) {
-      const encoded = encodeURIComponent(upper)
-      url = `https://tw.stock.yahoo.com/quote/${encoded}`
-    } else {
-      url = `https://finance.yahoo.com/quote/${upper}`
-    }
-  } else if (category === 'vix') {
-    url = `https://finance.yahoo.com/quote/^VIX`
-  } else if (category === 'oil' || upper.includes('=F')) {
-    const encoded = encodeURIComponent(upper)
-    url = `https://finance.yahoo.com/quote/${encoded}`
-  } else if (category === 'exchange' || upper.includes('=X')) {
-    url = `https://finance.yahoo.com/quote/${upper}`
+    window.open(`https://tw.stock.yahoo.com/quote/${finalSymbol}`, '_blank')
+  } else if (category === 'us_etf' || !category) {
+    // 美國 ETF
+    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank')
   } else {
-    // 默認: 美國 ETF
-    url = `https://finance.yahoo.com/quote/${upper}`
+    // 其他類別默認
+    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank')
   }
-  
-  window.open(url, '_blank')
 }
 
 onMounted(async () => {
