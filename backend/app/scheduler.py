@@ -220,6 +220,10 @@ async def check_prices():
                     trigger_price=item.get("trigger_price") or current_price,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
+                    trigger_mode=trigger_mode,
+                    current_rsi=current_rsi,
+                    rsi_below=item.get("rsi_below"),
+                    rsi_above=item.get("rsi_above"),
                 )
                 ok = await send_email(email, subject, body)
                 if ok:
@@ -234,6 +238,10 @@ async def check_prices():
                     trigger_price=item.get("trigger_price") or current_price,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
+                    trigger_mode=trigger_mode,
+                    current_rsi=current_rsi,
+                    rsi_below=item.get("rsi_below"),
+                    rsi_above=item.get("rsi_above"),
                 )
                 res = await send_line_message(line_user_id, msg)
                 if res.get("success"):

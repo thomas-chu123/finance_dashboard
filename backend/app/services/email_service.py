@@ -42,13 +42,37 @@ def build_alert_email(
     trigger_price: float,
     trigger_direction: str,
     tracking_id: str,
+    trigger_mode: str = "price",
+    current_rsi: float | None = None,
+    rsi_below: float | None = None,
+    rsi_above: float | None = None,
 ) -> tuple[str, str]:
     direction_label = "突破" if trigger_direction == "above" else "跌破"
+    mode_desc = {
+        "price": "價格",
+        "rsi": "RSI 指標",
+        "both": "價格和 RSI",
+    }.get(trigger_mode, "價格")
+    
     subject = f"📊 投資提醒：{name} ({symbol}) 已{direction_label} {trigger_price:.2f}"
 
     primary = "#1a73e8"
     accent = "#ea4335" if trigger_direction == "below" else "#0f9d58"
     bg = "#f8f9fa"
+
+    # RSI 信息行（可選）
+    rsi_row = ""
+    if current_rsi is not None:
+        rsi_color = "#ea4335" if current_rsi < 30 else "#0f9d58" if current_rsi > 70 else "#4285f4"
+        rsi_row = f"""
+              <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">RSI (14)</td>
+                  <td style="padding:8px 0;text-align:right;font-size:18px;font-weight:700;color:{rsi_color};">{current_rsi:.2f}</td></tr>
+        """
+        if rsi_below is not None and rsi_above is not None:
+            rsi_row += f"""
+              <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">RSI 閾值</td>
+                  <td style="padding:8px 0;text-align:right;font-size:13px;color:#666;">超賣 {rsi_below:.0f} / 超買 {rsi_above:.0f}</td></tr>
+            """
 
     body = f"""
     <!DOCTYPE html>
@@ -58,7 +82,7 @@ def build_alert_email(
       <div style="max-width:600px;margin:20px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);background:#fff;">
         <div style="background:linear-gradient(135deg,{primary} 0%,#1557b0 100%);padding:30px;text-align:center;">
           <div style="font-size:48px;margin-bottom:10px;">📊</div>
-          <h1 style="color:#fff;margin:0;font-size:22px;font-weight:600;">投資指數價格觸發通知</h1>
+          <h1 style="color:#fff;margin:0;font-size:22px;font-weight:600;">{mode_desc}觸發通知</h1>
         </div>
         <div style="padding:30px;">
           <p style="color:#5f6368;font-size:15px;">您追蹤的指數已達到您設定的觸發條件：</p>
@@ -74,6 +98,7 @@ def build_alert_email(
                   <td style="padding:8px 0;text-align:right;font-weight:600;color:{accent};">{direction_label} {trigger_price:.2f}</td></tr>
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">目前價格</td>
                   <td style="padding:8px 0;text-align:right;font-size:24px;font-weight:700;color:{accent};">{current_price:.2f}</td></tr>
+              {rsi_row}
             </table>
           </div>
           <div style="text-align:center;margin-top:24px;">
@@ -90,3 +115,4 @@ def build_alert_email(
     </html>
     """
     return subject, body
+

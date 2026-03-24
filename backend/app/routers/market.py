@@ -104,7 +104,7 @@ test_router = APIRouter(prefix="/api/tracking", tags=["test-alert"])
 
 @test_router.post("/{tracking_id}/test-alert")
 async def test_alert(tracking_id: str):
-    """Manually fire a test notification for a tracked index."""
+    """Manually fire a test notification for a tracked index (with RSI support)."""
     sb = get_supabase()
 
     row_resp = sb.table("tracked_indices").select(
@@ -123,13 +123,22 @@ async def test_alert(tracking_id: str):
     trigger_price = item.get("trigger_price") or current_price
     channel = item.get("notify_channel", "email")
     direction = item.get("trigger_direction", "above")
+    
+    # RSI 數據
+    trigger_mode = item.get("trigger_mode", "price")
+    current_rsi = item.get("current_rsi")
+    rsi_below = item.get("rsi_below")
+    rsi_above = item.get("rsi_above")
 
     results = {"email": None, "line": None}
 
     # Email
     if channel in ("email", "both") and profile.get("notify_email") and profile.get("email"):
         try:
-            subject, body = build_alert_email(symbol, name, category, current_price, trigger_price, direction, tracking_id)
+            subject, body = build_alert_email(
+                symbol, name, category, current_price, trigger_price, direction, tracking_id,
+                trigger_mode=trigger_mode, current_rsi=current_rsi, rsi_below=rsi_below, rsi_above=rsi_above
+            )
             ok = await send_email(profile["email"], subject, body)
             results["email"] = "sent" if ok else "failed (SMTP error)"
         except Exception as e:
@@ -138,7 +147,10 @@ async def test_alert(tracking_id: str):
     # LINE
     if channel in ("line", "both") and profile.get("notify_line") and profile.get("line_user_id"):
         try:
-            msg = build_alert_message(symbol, name, current_price, trigger_price, direction, tracking_id)
+            msg = build_alert_message(
+                symbol, name, current_price, trigger_price, direction, tracking_id,
+                trigger_mode=trigger_mode, current_rsi=current_rsi, rsi_below=rsi_below, rsi_above=rsi_above
+            )
             resp = await send_line_message(profile["line_user_id"], msg)
             results["line"] = "sent" if resp.get("success") else f"failed: {resp.get('error')}"
         except Exception as e:
