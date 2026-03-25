@@ -1,4 +1,5 @@
 """Email notification service (adapted from medical project)."""
+import traceback
 import aiosmtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -12,12 +13,22 @@ async def send_email(to_email: str, subject: str, body_html: str) -> bool:
         print("[Email] SMTP credentials not configured, skipping.")
         return False
 
+    # --- SMTP debug: 印出當前設定（密碼僅顯示前3字元）---
+    pwd_hint = (settings.smtp_password[:3] + "***") if settings.smtp_password else "(empty)"
+    print(
+        f"[Email][SMTP-DEBUG] Config: "
+        f"host={settings.smtp_host!r}, port={settings.smtp_port}, "
+        f"user={settings.smtp_user!r}, from={settings.smtp_from!r}, "
+        f"password_hint={pwd_hint}, start_tls=True"
+    )
+
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
     msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from}>"
     msg["To"] = to_email
     msg.attach(MIMEText(body_html, "html", "utf-8"))
 
+    print(f"[Email][SMTP-DEBUG] Attempting to connect to {settings.smtp_host}:{settings.smtp_port} ...")
     try:
         await aiosmtplib.send(
             msg,
@@ -27,10 +38,22 @@ async def send_email(to_email: str, subject: str, body_html: str) -> bool:
             password=settings.smtp_password,
             start_tls=True,
         )
+        print(f"[Email][SMTP-DEBUG] Connection & AUTH succeeded.")
         print(f"[Email] Sent to {to_email}: {subject}")
         return True
+    except aiosmtplib.SMTPAuthenticationError as e:
+        print(f"[Email][SMTP-DEBUG] AUTH FAILED (check user/password): {e}")
+        return False
+    except aiosmtplib.SMTPConnectError as e:
+        print(f"[Email][SMTP-DEBUG] CONNECT FAILED (check host/port/firewall): {e}")
+        return False
+    except aiosmtplib.SMTPException as e:
+        print(f"[Email][SMTP-DEBUG] SMTP error: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
+        return False
     except Exception as e:
-        print(f"[Email] Failed to send to {to_email}: {e}")
+        print(f"[Email] Failed to send to {to_email}: {type(e).__name__}: {e}")
+        print(traceback.format_exc())
         return False
 
 
