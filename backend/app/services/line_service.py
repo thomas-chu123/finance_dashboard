@@ -66,7 +66,8 @@ def build_alert_message(
     mode_desc = {
         "price": "價格",
         "rsi": "RSI 指標",
-        "both": "價格和 RSI",
+        "both": "價格及 RSI",
+        "either": "價格或 RSI",
     }.get(trigger_mode, "價格")
     
     return (

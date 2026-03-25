@@ -70,8 +70,8 @@ def _validate_rsi_parameters(trigger_mode: str, rsi_below: Optional[float], rsi_
             detail=f"Invalid trigger_mode. Must be one of: {', '.join(VALID_TRIGGER_MODES)}"
         )
     
-    if trigger_mode in ("rsi", "both"):
-        # RSI 模式需要至少一個閾值
+    if trigger_mode in ("rsi", "both", "either"):
+        # RSI 相關模式需要至少一個閾值
         if rsi_below is None and rsi_above is None:
             raise HTTPException(
                 status_code=400,

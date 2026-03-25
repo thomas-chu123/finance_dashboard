@@ -85,7 +85,7 @@ def _evaluate_trigger_conditions(
     Args:
         price_condition_met: 價格條件是否滿足
         rsi_condition_met: RSI 條件是否滿足
-        trigger_mode: 觸發模式 ("price", "rsi", 或 "both")
+        trigger_mode: 觸發模式 ("price", "rsi", "both" 或 "either")
     
     Returns:
         應該觸發警報返回 True
@@ -97,8 +97,11 @@ def _evaluate_trigger_conditions(
         # 只檢查 RSI 條件
         return rsi_condition_met
     elif trigger_mode == "both":
-        # 兩個條件都必須滿足
+        # 兩個條件都必須滿足（價格 AND RSI）
         return price_condition_met and rsi_condition_met
+    elif trigger_mode == "either":
+        # 任一條件滿足即觸發（價格 OR RSI）
+        return price_condition_met or rsi_condition_met
     
     # 預設為價格模式
     return price_condition_met
@@ -146,7 +149,7 @@ async def check_prices():
 
             # 2. 如果需要 RSI，計算並更新 RSI
             current_rsi = item.get("current_rsi")
-            if trigger_mode in ("rsi", "both"):
+            if trigger_mode in ("rsi", "both", "either"):
                 rsi_period = item.get("rsi_period", 14)
                 success = await rsi_service.update_rsi_for_tracked_index(
                     tracking_id, symbol, category, rsi_period

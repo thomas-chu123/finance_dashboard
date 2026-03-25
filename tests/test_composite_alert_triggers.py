@@ -86,7 +86,18 @@ class TestCompositeConditions:
         assert _evaluate_trigger_conditions(True, False, "both") is False
         assert _evaluate_trigger_conditions(False, True, "both") is False
         assert _evaluate_trigger_conditions(False, False, "both") is False
-    
+
+    def test_either_mode(self):
+        """測試價格 OR RSI 任一觸發模式."""
+        # 兩者都觸發
+        assert _evaluate_trigger_conditions(True, True, "either") is True
+        # 只有價格觸發
+        assert _evaluate_trigger_conditions(True, False, "either") is True
+        # 只有 RSI 觸發
+        assert _evaluate_trigger_conditions(False, True, "either") is True
+        # 兩者都不觸發
+        assert _evaluate_trigger_conditions(False, False, "either") is False
+
     def test_invalid_trigger_mode(self):
         """測試無效的觸發模式（預設為 price）."""
         assert _evaluate_trigger_conditions(True, False, "invalid") is True
@@ -143,6 +154,30 @@ class TestCompositeScenarios:
         
         # Both 模式：價格觸發但 RSI 未觸發，整體不觸發
         assert _evaluate_trigger_conditions(price_met, rsi_met, "both") is False
+
+    def test_scenario_either_conditions_flexible_alert(self):
+        """場景：元大高股息設定 either 模式 — 價格或 RSI 任一滿足即通知."""
+        current_price = 23.0   # 低於觸發價 25（觸發）
+        trigger_price = 25.0
+        current_rsi = 40.0     # 中立，未進入超賣（不觸發）
+
+        price_met = _check_price_condition(current_price, trigger_price, "below")
+        rsi_met = _check_rsi_condition(current_rsi, rsi_below=30, rsi_above=70)
+
+        # Either 模式：只有價格觸發也足夠
+        assert _evaluate_trigger_conditions(price_met, rsi_met, "either") is True
+
+    def test_scenario_either_conditions_rsi_only_signal(self):
+        """場景：Either 模式 — 價格未觸發但 RSI 超賣仍觸發通知."""
+        current_price = 26.0   # 高於觸發價 25（不觸發）
+        trigger_price = 25.0
+        current_rsi = 28.0     # 超賣（觸發）
+
+        price_met = _check_price_condition(current_price, trigger_price, "below")
+        rsi_met = _check_rsi_condition(current_rsi, rsi_below=30, rsi_above=None)
+
+        # Either 模式：只有 RSI 觸發也足夠
+        assert _evaluate_trigger_conditions(price_met, rsi_met, "either") is True
 
 
 class TestEdgeCases:

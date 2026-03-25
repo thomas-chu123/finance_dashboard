@@ -51,7 +51,8 @@ def build_alert_email(
     mode_desc = {
         "price": "價格",
         "rsi": "RSI 指標",
-        "both": "價格和 RSI",
+        "both": "價格及 RSI",
+        "either": "價格或 RSI",
     }.get(trigger_mode, "價格")
     
     subject = f"📊 投資提醒：{name} ({symbol}) 已{direction_label} {trigger_price:.2f}"

@@ -58,7 +58,7 @@ class ProfileResponse(BaseModel):
 VALID_CATEGORIES = {"vix", "oil", "us_etf", "tw_etf", "index", "crypto"}
 VALID_DIRECTIONS = {"above", "below"}
 VALID_CHANNELS = {"email", "line", "both"}
-VALID_TRIGGER_MODES = {"price", "rsi", "both"}
+VALID_TRIGGER_MODES = {"price", "rsi", "both", "either"}  # both=AND, either=OR
 
 
 class RSITriggerConfig(BaseModel):
@@ -74,7 +74,7 @@ class TrackingCreate(BaseModel):
     category: str = "us_etf"
     trigger_price: Optional[float] = None
     trigger_direction: str = "below"
-    trigger_mode: str = "price"  # "price", "rsi", "both"
+    trigger_mode: str = "price"  # "price", "rsi", "both" (AND), "either" (OR)
     rsi_period: int = 14  # RSI 計算週期
     rsi_below: Optional[float] = None  # RSI 超賣閾值
     rsi_above: Optional[float] = None  # RSI 超買閾值
