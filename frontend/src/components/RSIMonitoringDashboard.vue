@@ -161,7 +161,7 @@
     </div>
 
     <!-- RSI Chart -->
-    <RSIChart :item="item" :dark-mode="true" />
+    <RSIChart :item="item" :tracking-id="item?.id" :dark-mode="true" />
   </div>
 </template>
 

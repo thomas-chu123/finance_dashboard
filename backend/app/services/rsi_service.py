@@ -123,19 +123,31 @@ class RSICacheService:
             return json.loads(cached)
         
         try:
-            # 獲取歷史數據
-            prices = await get_historical_prices(symbol, category, days=days)
+            # 計算日期範圍
+            from datetime import datetime, timedelta, timezone
+            end_date = datetime.now(timezone.utc).date()
+            start_date = end_date - timedelta(days=days + 10)  # 多獲取 10 天以應對市場休市
             
-            if prices:
-                # 緩存價格
-                self._cache_prices(cache_key, prices)
-                return prices
-            else:
-                logger.warning(f"無法獲取歷史價格: {symbol}")
-                return None
+            # 獲取歷史數據
+            prices_series = await get_historical_prices(
+                symbol, 
+                start_date.isoformat(), 
+                end_date.isoformat()
+            )
+            
+            if prices_series is not None and len(prices_series) > 0:
+                prices = prices_series.tolist()
+                if prices:
+                    # 緩存價格
+                    self._cache_prices(cache_key, prices)
+                    logger.info(f"已獲取 {symbol} 的 {len(prices)} 天歷史價格")
+                    return prices
+            
+            logger.warning(f"無法獲取歷史價格: {symbol}")
+            return None
         
         except Exception as e:
-            logger.error(f"獲取歷史價格失敗: {symbol} - {e}")
+            logger.error(f"獲取歷史價格失敗: {symbol} - {type(e).__name__}: {e}")
             return None
     
     def _cache_rsi(self, symbol: str, rsi: float) -> None:
@@ -225,7 +237,8 @@ class RSICalculationService:
         tracking_id: str,
         symbol: str,
         category: str,
-        rsi_period: int = 14
+        rsi_period: int = 14,
+        force_refresh: bool = False
     ) -> bool:
         """
         為單個追蹤項目更新 RSI 值.
@@ -235,6 +248,7 @@ class RSICalculationService:
             symbol: 資產代碼
             category: 資產類別
             rsi_period: RSI 計算週期
+            force_refresh: 是否強制重新計算，忽略快取
         
         Returns:
             成功返回 True
@@ -244,7 +258,8 @@ class RSICalculationService:
             rsi = await self.cache_service.calculate_and_cache_rsi(
                 symbol,
                 category,
-                period=rsi_period
+                period=rsi_period,
+                force_refresh=force_refresh
             )
             
             if rsi is None:
@@ -353,6 +368,91 @@ class RSICalculationService:
             triggered = True
         
         return triggered
+    
+    async def get_historical_rsi_data(
+        self,
+        symbol: str,
+        category: str,
+        rsi_period: int = 14,
+        days: int = 30
+    ) -> Optional[Dict[str, List]]:
+        """
+        獲取歷史 RSI 數據 (帶日期).
+        
+        Args:
+            symbol: 資產代碼
+            category: 資產類別
+            rsi_period: RSI 計算週期
+            days: 要返回的歷史天數
+        
+        Returns:
+            包含日期和RSI值列表的字典，或 None 如果失敗
+            格式: {"dates": ["2024-03-20", ...], "rsi_values": [45.2, ...]}
+        """
+        try:
+            from app.services.market_data import get_historical_prices
+            from app.services.technical_indicators import RSICalculator
+            import pandas as pd
+            
+            # 獲取歷史價格
+            end_date = datetime.now(timezone.utc).date()
+            start_date = end_date - timedelta(days=days + 14)  # 多獲取以計算RSI
+            
+            logger.debug(f"獲取 {symbol} 的歷史價格: {start_date} 到 {end_date}")
+            
+            prices_series = await get_historical_prices(
+                symbol,
+                start_date.isoformat(),
+                end_date.isoformat()
+            )
+            
+            if prices_series is None or prices_series.empty:
+                logger.warning(f"無法獲取 {symbol} 的歷史價格")
+                return None
+            
+            close_prices = prices_series.tolist()
+            
+            if len(close_prices) < rsi_period + 1:
+                logger.warning(f"歷史數據不足: {symbol} 只有 {len(close_prices)} 天")
+                return None
+            
+            # 計算 RSI 序列
+            rsi_values = RSICalculator.calculate_rsi_series(close_prices, period=rsi_period)
+            
+            # 對齊日期和RSI值
+            dates_list = prices_series.index.tolist()
+            
+            # 只返回最近 days 天的數據（且需要至少有一個有效的RSI值）
+            if len(rsi_values) > days:
+                start_idx = len(rsi_values) - days
+                dates_list = dates_list[-days:]
+                rsi_values = rsi_values[-days:]
+            
+            # 轉換日期格式並過濾None值
+            formatted_data = []
+            for date, rsi in zip(dates_list, rsi_values):
+                date_str = pd.Timestamp(date).strftime('%m/%d') if hasattr(date, 'strftime') else str(date)
+                formatted_data.append({
+                    "date": date_str,
+                    "rsi": round(rsi, 2) if rsi is not None else None
+                })
+            
+            logger.info(f"✓ 獲取 RSI 歷史數據完成: {symbol}, {len(formatted_data)} 天")
+            
+            # 分開日期和值用於前端圖表
+            dates = [item["date"] for item in formatted_data]
+            values = [item["rsi"] for item in formatted_data]
+            
+            return {
+                "symbol": symbol,
+                "period": rsi_period,
+                "dates": dates,
+                "rsi_values": values
+            }
+        
+        except Exception as e:
+            logger.error(f"獲取歷史 RSI 數據失敗: {symbol} - {type(e).__name__}: {e}")
+            return None
 
 
 # 全局實例

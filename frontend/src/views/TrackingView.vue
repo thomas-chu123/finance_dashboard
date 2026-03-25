@@ -322,7 +322,7 @@
       leave-from-class="opacity-100"
       leave-to-class="opacity-0">
       <div v-if="showRSIModal" class="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+        <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[100vh] overflow-hidden flex flex-col">
           <!-- Header -->
           <div class="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -338,17 +338,24 @@
           </div>
 
           <!-- Content -->
-          <div class="px-6 py-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          <div class="flex-1 px-6 py-6 overflow-y-auto">
             <RSIMonitoringDashboard :item="selectedRSIItem" />
           </div>
 
           <!-- Footer -->
-          <div class="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-between">
+          <div class="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-between items-center gap-3">
             <button class="px-4 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showRSIModal = false">關閉</button>
-            <button class="flex items-center justify-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-amber-500/20" @click="testAlert(selectedRSIItem)" v-if="selectedRSIItem">
-              <Bell class="w-4 h-4 mr-2" />
-              測試通知
-            </button>
+            <div class="flex gap-2">
+              <button class="flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed" @click="calculateRSINow(selectedRSIItem)" v-if="selectedRSIItem" :disabled="calculatingRSI">
+                <BarChart2 v-if="!calculatingRSI" class="w-4 h-4 mr-2" />
+                <Loader2 v-else class="w-4 h-4 mr-2 animate-spin" />
+                {{ calculatingRSI ? '計算中...' : '計算RSI' }}
+              </button>
+              <button class="flex items-center justify-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-amber-500/20" @click="testAlert(selectedRSIItem)" v-if="selectedRSIItem">
+                <Bell class="w-4 h-4 mr-2" />
+                測試通知
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -378,6 +385,7 @@ const modalError = ref('')
 const activeCategory = ref('all')
 const showRSIModal = ref(false)
 const selectedRSIItem = ref(null)
+const calculatingRSI = ref(false)
 
 const fundamentalsData = ref({})
 const loadingFundamentals = ref(false)
@@ -680,6 +688,26 @@ async function testAlert(item) {
     alert('發送失敗: ' + (e.response?.data?.detail || e.message))
   } finally {
     testingId.value = null
+  }
+}
+
+async function calculateRSINow(item) {
+  calculatingRSI.value = true
+  try {
+    const res = await axios.post(
+      `${API_BASE}/api/tracking/${item.id}/calculate-rsi`,
+      {},
+      { headers: auth.headers }
+    )
+    alert(`✅ RSI 計算完成！\n目前 RSI: ${res.data.current_rsi?.toFixed(2) || 'N/A'}`)
+    // 刷新 selectedRSIItem 以顯示最新的 RSI 值
+    if (selectedRSIItem.value && selectedRSIItem.value.id === item.id) {
+      selectedRSIItem.value = res.data
+    }
+  } catch (e) {
+    alert('計算失敗: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    calculatingRSI.value = false
   }
 }
 

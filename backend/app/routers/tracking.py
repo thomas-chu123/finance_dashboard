@@ -260,6 +260,111 @@ async def get_rsi_data(tracking_id: str, authorization: str = Header(default="")
     }
 
 
+@router.get("/{tracking_id}/rsi-history")
+async def get_rsi_history(tracking_id: str, authorization: str = Header(default="")):
+    """獲取追蹤項目過去 30 天的歷史 RSI 數據 (用於圖表)."""
+    user_id = get_user_id(authorization)
+    sb = get_supabase()
+    rsi_service = get_rsi_calculation_service()
+    
+    # 驗證權限並取得追蹤項目
+    res = (
+        sb.table("tracked_indices")
+        .select("symbol, category, rsi_period")
+        .eq("id", tracking_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Tracking not found or not owned by user")
+    
+    item = res.data
+    symbol = item["symbol"]
+    category = item["category"]
+    rsi_period = item.get("rsi_period", 14)
+    
+    try:
+        # 獲取歷史 RSI 數據
+        history_data = await rsi_service.get_historical_rsi_data(
+            symbol, category, rsi_period, days=30
+        )
+        
+        if not history_data:
+            raise HTTPException(status_code=500, detail=f"Unable to fetch RSI history for {symbol}")
+        
+        return history_data
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[get_rsi_history] 錯誤: {tracking_id} - {type(e).__name__}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching RSI history: {str(e)}")
+
+
+@router.post("/{tracking_id}/calculate-rsi", response_model=TrackingRSIResponse)
+async def calculate_rsi_now(tracking_id: str, authorization: str = Header(default="")):
+    """手動計算追蹤項目的 RSI 值 (使用者啟動的手動計算)."""
+    user_id = get_user_id(authorization)
+    sb = get_supabase()
+    rsi_service = get_rsi_calculation_service()
+    
+    # 驗證權限並取得追蹤項目
+    res = (
+        sb.table("tracked_indices")
+        .select("*")
+        .eq("id", tracking_id)
+        .eq("user_id", user_id)
+        .single()
+        .execute()
+    )
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Tracking not found or not owned by user")
+    
+    item = res.data
+    symbol = item["symbol"]
+    category = item["category"]
+    rsi_period = item.get("rsi_period", 14)
+    
+    logger.info(f"[calculate_rsi_now] 開始計算 RSI: {symbol} (category={category}, period={rsi_period})")
+    
+    try:
+        # 強制刷新 RSI 計算
+        success = await rsi_service.update_rsi_for_tracked_index(
+            tracking_id, symbol, category, rsi_period, force_refresh=True
+        )
+        
+        logger.info(f"[calculate_rsi_now] 計算結果: success={success}, symbol={symbol}")
+        
+        if not success:
+            logger.error(f"[calculate_rsi_now] RSI 計算失敗: {symbol} (可能是缺乏歷史數據)")
+            raise HTTPException(status_code=500, detail=f"RSI calculation failed for {symbol} - insufficient historical data or API error")
+        
+        # 刷新數據以返回最新的 RSI 值
+        updated_res = (
+            sb.table("tracked_indices")
+            .select("*")
+            .eq("id", tracking_id)
+            .single()
+            .execute()
+        )
+        if updated_res.data:
+            rsi_value = updated_res.data.get('current_rsi')
+            logger.info(f"✓ 手動計算 RSI 完成: {symbol} (rsi={rsi_value})")
+            return updated_res.data[0] if isinstance(updated_res.data, list) else updated_res.data
+        else:
+            logger.error(f"[calculate_rsi_now] 無法刷新數據: {tracking_id}")
+            raise HTTPException(status_code=500, detail="Failed to refresh tracking data after calculation")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[calculate_rsi_now] 異常: {type(e).__name__}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"RSI calculation error: {type(e).__name__}: {str(e)}")
+
+
 @router.post("/from-backtest")
 async def add_from_backtest(body: AddFromBacktestRequest, authorization: str = Header(default="")):
     """One-click add ETFs from backtest results into tracking (with RSI defaults)."""

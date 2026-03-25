@@ -1,17 +1,25 @@
 <template>
-  <div class="w-full h-full min-h-[400px] bg-[var(--bg-main)] rounded-xl border border-[var(--border-color)]">
+  <div class="w-full bg-[var(--bg-main)] rounded-xl border border-[var(--border-color)]" style="height: 400px;">
     <div ref="chartRef" class="w-full h-full"></div>
+    <div v-if="isLoading" class="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center">
+      <div class="text-zinc-400 text-sm font-bold">載入歷史數據中...</div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
+import axios from 'axios'
 
 const props = defineProps({
   item: {
     type: Object,
     required: true
+  },
+  trackingId: {
+    type: String,
+    default: null
   },
   darkMode: {
     type: Boolean,
@@ -21,8 +29,13 @@ const props = defineProps({
 
 const chartRef = ref(null)
 let chart = null
+const isLoading = ref(false)
+const historyData = ref(null)
 
-// Generate sample historical data
+// 從 localStorage 取得 API 基礎 URL 和授權信息
+const API_BASE = window.localStorage.getItem('API_BASE') || 'http://localhost:8000'
+
+// Generate sample historical data (備用方案)
 const generateSampleData = () => {
   const dates = []
   const prices = []
@@ -49,7 +62,37 @@ const generateSampleData = () => {
   return { dates, prices, rsiValues }
 }
 
-const { dates, prices, rsiValues } = generateSampleData()
+// 數據初始化
+let dates = []
+let prices = []
+let rsiValues = []
+
+// 從 API 獲取真實的歷史 RSI 數據
+const fetchHistoricalRSIData = async () => {
+  if (!props.trackingId) {
+    console.warn('RSIChart: trackingId not provided, using sample data')
+    return null
+  }
+
+  isLoading.value = true
+  try {
+    const headers = {
+      'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+    }
+    
+    const response = await axios.get(
+      `${API_BASE}/api/tracking/${props.trackingId}/rsi-history`,
+      { headers }
+    )
+    
+    return response.data
+  } catch (error) {
+    console.warn('Failed to fetch RSI history:', error.message)
+    return null
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const chartOption = computed(() => ({
   backgroundColor: 'transparent',
@@ -70,8 +113,8 @@ const chartOption = computed(() => ({
     left: 'center'
   },
   grid: [
-    { left: '10%', right: '5%', top: '60px', height: '55%' },
-    { left: '10%', right: '5%', top: '62%', height: '30%' }
+    { left: '10%', right: '5%', top: '60px', height: '43%' },
+    { left: '10%', right: '5%', top: '72%', height: '25%' }
   ],
   xAxis: [
     {
@@ -147,7 +190,35 @@ const chartOption = computed(() => ({
   ]
 }))
 
-onMounted(() => {
+onMounted(async () => {
+  // 嘗試從 API 獲取真實數據
+  const data = await fetchHistoricalRSIData()
+  
+  if (data && data.dates && data.rsi_values) {
+    // 使用真實的 RSI 數據
+    historyData.value = data
+    dates = data.dates
+    rsiValues = data.rsi_values
+    
+    // 由於沒有真實的價格數據，使用模擬價格
+    const now = new Date()
+    let priceBase = props.item.current_price || 100
+    for (let i = 0; i < dates.length; i++) {
+      priceBase += (Math.random() - 0.48) * 2
+      prices.push(Math.max(priceBase, 10).toFixed(2))
+    }
+    
+    console.log('✓ 使用真實 RSI 歷史數據')
+  } else {
+    // 備用：使用隨機生成的示例數據
+    const sampleData = generateSampleData()
+    dates = sampleData.dates
+    prices = sampleData.prices
+    rsiValues = sampleData.rsiValues
+    console.log('⚠ 使用示例數據 (無法獲取歷史 RSI)')
+  }
+  
+  // 初始化圖表
   if (chartRef.value) {
     chart = echarts.init(chartRef.value, props.darkMode ? 'dark' : 'light')
     chart.setOption(chartOption.value)
@@ -163,6 +234,23 @@ watch(() => props.darkMode, () => {
     chart.dispose()
     chart = echarts.init(chartRef.value, props.darkMode ? 'dark' : 'light')
     chart.setOption(chartOption.value)
+  }
+})
+
+watch(() => props.item?.id, async (newId) => {
+  if (newId && props.trackingId) {
+    // 當 item 改變時，重新獲取歷史數據
+    const data = await fetchHistoricalRSIData()
+    if (data && data.dates && data.rsi_values) {
+      historyData.value = data
+      dates = data.dates
+      rsiValues = data.rsi_values
+      
+      // 更新圖表
+      if (chart) {
+        chart.setOption(chartOption.value)
+      }
+    }
   }
 })
 </script>
