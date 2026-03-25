@@ -97,8 +97,8 @@
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">名稱</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">類別</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">目前價格</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">價格觸發條件</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">觸發模式</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">價格觸發條件</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">RSI 指標</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">通知方式</th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">狀態</th>
@@ -120,6 +120,11 @@
                 <span v-if="item.current_price" class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ formatPrice(item.current_price) }}</span>
                 <span v-else class="text-zinc-500">—</span>
               </td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <span :class="['px-2 py-0.5 text-[10px] font-bold rounded-full whitespace-nowrap border', triggerModeLabel(item.trigger_mode).class]">
+                  {{ triggerModeLabel(item.trigger_mode).icon }} {{ triggerModeLabel(item.trigger_mode).label }}
+                </span>
+              </td>
               <td class="px-4 py-4">
                 <div v-if="item.trigger_price" class="flex items-center space-x-2">
                   <span v-if="item.trigger_direction" :class="['flex items-center text-[11px] font-bold tracking-wider uppercase', item.trigger_direction === 'above' ? 'text-rose-600 dark:text-rose-400' : 'text-brand-600 dark:text-brand-400']">
@@ -130,11 +135,6 @@
                   <span class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ formatPrice(item.trigger_price) }}</span>
                 </div>
                 <span v-else class="text-zinc-500 text-sm">—</span>
-              </td>
-              <td class="px-4 py-4 whitespace-nowrap">
-                <span :class="['px-2 py-0.5 text-[10px] font-bold rounded-full whitespace-nowrap border', triggerModeLabel(item.trigger_mode).class]">
-                  {{ triggerModeLabel(item.trigger_mode).icon }} {{ triggerModeLabel(item.trigger_mode).label }}
-                </span>
               </td>
               <td class="px-4 py-4">
                 <div v-if="item.trigger_mode && item.trigger_mode !== 'price'" class="flex items-center space-x-2">
