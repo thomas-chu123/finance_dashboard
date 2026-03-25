@@ -11,7 +11,7 @@
       <select
         :value="modelValue"
         @change="emit('update:modelValue', $event.target.value)"
-        class="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all hover:border-brand-500 focus:outline-none focus:border-brand-500"
+        class="w-full h-10 px-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all hover:border-brand-500 focus:outline-none focus:ring-brand-500 focus:border-brand-500"
       >
         <option v-for="mode in triggerModes" :key="mode.value" :value="mode.value">
           {{ mode.icon }} {{ mode.label }}
