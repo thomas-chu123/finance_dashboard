@@ -15,16 +15,27 @@ async def send_email(to_email: str, subject: str, body_html: str) -> bool:
 
     # --- SMTP debug: 印出當前設定（密碼僅顯示前3字元）---
     pwd_hint = (settings.smtp_password[:3] + "***") if settings.smtp_password else "(empty)"
+
+    # Zoho(及多數 SMTP server) 要求 From 地址必須與認證帳號一致，否則回傳
+    # "Sender is not allowed to relay emails"。若 smtp_from 未設定，自動 fallback。
+    from_addr = settings.smtp_from if settings.smtp_from else settings.smtp_user
+    if from_addr != settings.smtp_user:
+        print(
+            f"[Email][SMTP-DEBUG] ⚠️  WARNING: smtp_from={from_addr!r} != smtp_user={settings.smtp_user!r}. "
+            f"Zoho will reject this with 'Sender is not allowed to relay emails'. "
+            f"Set SMTP_FROM to the same address as SMTP_USER in .env."
+        )
+
     print(
         f"[Email][SMTP-DEBUG] Config: "
         f"host={settings.smtp_host!r}, port={settings.smtp_port}, "
-        f"user={settings.smtp_user!r}, from={settings.smtp_from!r}, "
+        f"user={settings.smtp_user!r}, from={from_addr!r}, "
         f"password_hint={pwd_hint}, start_tls=True"
     )
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = f"{settings.smtp_from_name} <{settings.smtp_from}>"
+    msg["From"] = f"{settings.smtp_from_name} <{from_addr}>"
     msg["To"] = to_email
     msg.attach(MIMEText(body_html, "html", "utf-8"))
 
