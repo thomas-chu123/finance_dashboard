@@ -1,5 +1,10 @@
 #!/bin/bash
 
+pm2 stop finance-backend || true
+pm2 stop finance-frontend || true
+pm2 delete finance-backend || true
+pm2 delete finance-frontend || true
+
 # --- PM2 部署腳本 ---
 # 此腳本會自動偵測專案根目錄並執行部署
 

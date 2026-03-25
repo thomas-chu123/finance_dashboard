@@ -23,6 +23,132 @@ SYMBOL_MAP = {
     "TAIEX": "^TWII",
 }
 
+# 完整的符號目錄（SSOT - Single Source of Truth）
+# 儲存所有支援的符號、映射、類別和顯示信息
+SYMBOL_CATALOG = {
+    # 指數
+    "TAIEX": {
+        "symbol": "TAIEX",
+        "yahoo_symbol": "^TWII",
+        "url_path": "quote/%5ETWII",
+        "name_zh": "台灣加權股價指數",
+        "name_en": "Taiwan Weighted Stock Index",
+        "category": "index",
+        "domain": "tw.stock.yahoo.com"
+    },
+    "WTX&": {
+        "symbol": "WTX&",
+        "yahoo_symbol": "WTX&",
+        "url_path": "future/WTX&",
+        "name_zh": "台指數夜盤",
+        "name_en": "Taiwan Index Night Session",
+        "category": "index",
+        "domain": "tw.stock.yahoo.com"
+    },
+    # VIX (波動指數)
+    "VIX": {
+        "symbol": "VIX",
+        "yahoo_symbol": "^VIX",
+        "url_path": "quote/%5EVIX",
+        "name_zh": "CBOE 波動指數",
+        "name_en": "CBOE Volatility Index (VIX)",
+        "category": "vix",
+        "domain": "finance.yahoo.com"
+    },
+    # 期貨
+    "GOLD": {
+        "symbol": "GOLD",
+        "yahoo_symbol": "GC=F",
+        "url_path": "quote/GC=F",
+        "name_zh": "黃金期貨",
+        "name_en": "Gold Futures",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "OIL": {
+        "symbol": "OIL",
+        "yahoo_symbol": "CL=F",
+        "url_path": "quote/CL=F",
+        "name_zh": "WTI 原油期貨",
+        "name_en": "WTI Crude Oil Futures",
+        "category": "oil",
+        "domain": "finance.yahoo.com"
+    },
+    "BRENT": {
+        "symbol": "BRENT",
+        "yahoo_symbol": "BZ=F",
+        "url_path": "quote/BZ%3DF",
+        "name_zh": "布倫特原油期貨",
+        "name_en": "Brent Crude Oil Futures",
+        "category": "oil",
+        "domain": "finance.yahoo.com"
+    },
+    # 全球指數
+    "^GSPC": {
+        "symbol": "^GSPC",
+        "yahoo_symbol": "^GSPC",
+        "url_path": "quote/%5EGSPC",
+        "name_zh": "S&P 500 指數",
+        "name_en": "S&P 500 Index",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^IXIC": {
+        "symbol": "^IXIC",
+        "yahoo_symbol": "^IXIC",
+        "url_path": "quote/%5EIXIC",
+        "name_zh": "納斯達克綜合指數",
+        "name_en": "Nasdaq Composite",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^DJI": {
+        "symbol": "^DJI",
+        "yahoo_symbol": "^DJI",
+        "url_path": "quote/%5EDJI",
+        "name_zh": "道瓊工業平均指數",
+        "name_en": "Dow Jones Industrial Average",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^N225": {
+        "symbol": "^N225",
+        "yahoo_symbol": "^N225",
+        "url_path": "quote/%5EN225",
+        "name_zh": "日經 225 指數",
+        "name_en": "Nikkei 225",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^STOXX50E": {
+        "symbol": "^STOXX50E",
+        "yahoo_symbol": "^STOXX50E",
+        "url_path": "quote/%5ESTOXX50E",
+        "name_zh": "歐洲 Stoxx 50 指數",
+        "name_en": "Euro Stoxx 50",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^FTSE": {
+        "symbol": "^FTSE",
+        "yahoo_symbol": "^FTSE",
+        "url_path": "quote/%5EFTSE",
+        "name_zh": "富時 100 指數",
+        "name_en": "FTSE 100",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^HSI": {
+        "symbol": "^HSI",
+        "yahoo_symbol": "^HSI",
+        "url_path": "quote/%5EHSI",
+        "name_zh": "香港恆生指數",
+        "name_en": "Hang Seng Index",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+}
+
 TW_SUFFIXES = {".TW", ".TWO"}
 
 

@@ -44,14 +44,14 @@
             <div class="mt-3">
               <div class="text-xs text-muted mb-2">組合資產</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-white dark:bg-emerald-600 dark:text-white">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
             </div>
             <div class="mt-3">
-              <button class="px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="addToTracking(p.items)">
-                <Activity class="w-4 h-4 mr-2 inline" />一鍵加入追蹤
+              <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm w-full" @click="addToTracking(p.items)">
+                <Activity class="w-4 h-4 mr-2" />一鍵加入追蹤
               </button>
             </div>
           </div>
@@ -213,7 +213,7 @@
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
           <div class="flex items-center gap-3">
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="addAllToTracking">
+            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
               <Activity class="w-4 h-4 mr-2" />加入追蹤
             </button>
             <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
@@ -710,11 +710,11 @@ const monthlyReturnsHeatmapOption = computed(() => {
   return {
     backgroundColor: 'transparent',
     textStyle: { color: '#8b949e' },
-    grid: { left: 50, right: 20, top: 20, bottom: 50 },
+    grid: { left: 50, right: 20, top: 20, bottom: 100 },
     xAxis: { type: 'category', data: years, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     yAxis: { type: 'category', data: months, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     visualMap: {
-      min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 0,
+      min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 20,
       inRange: { color: ['#3fb950', '#161b22', '#f85149'] },
       textStyle: { color: '#8b949e' }, formatter: v => v + '%'
     },

@@ -1,10 +1,26 @@
 """User management router."""
 from fastapi import APIRouter, HTTPException, Header
-from typing import Optional
+from pydantic import BaseModel
+from typing import Optional, List
 from app.models import ProfileUpdate, ProfileResponse
 from app.database import get_supabase
+from app.services.user_preferences import UserPreferencesService
 
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+
+# Pydantic 模型
+class UserPreferencesResponse(BaseModel):
+    """用戶偏好設置響應模型"""
+    user_id: str
+    card_order: List[str]
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class UserPreferencesUpdate(BaseModel):
+    """用戶偏好設置更新模型"""
+    card_order: Optional[List[str]] = None
 
 
 def get_user_id(authorization: str = "") -> str:
@@ -19,6 +35,51 @@ def get_user_id(authorization: str = "") -> str:
         raise HTTPException(status_code=401, detail="登入憑證已過期或無效，請重新登入 (Token expired/invalid)")
         
     return payload["sub"]
+
+
+@router.get("/preferences", response_model=UserPreferencesResponse)
+async def get_preferences(authorization: str = Header(default="")):
+    """
+    獲取用戶偏好設置（包括卡片順序）
+    """
+    user_id = get_user_id(authorization)
+    try:
+        preferences = UserPreferencesService.get_user_preferences(user_id)
+        return UserPreferencesResponse(**preferences)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/preferences", response_model=UserPreferencesResponse)
+async def update_preferences(body: UserPreferencesUpdate, authorization: str = Header(default="")):
+    """
+    更新用戶偏好設置（包括卡片順序）
+    """
+    user_id = get_user_id(authorization)
+    try:
+        update_data = body.model_dump(exclude_none=True)
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No data to update")
+        
+        preferences = UserPreferencesService.update_user_preferences(user_id, update_data)
+        return UserPreferencesResponse(**preferences)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/preferences/reset", response_model=UserPreferencesResponse)
+async def reset_preferences(authorization: str = Header(default="")):
+    """
+    重置用戶偏好設置為默認值
+    """
+    user_id = get_user_id(authorization)
+    try:
+        preferences = UserPreferencesService.reset_user_preferences(user_id)
+        return UserPreferencesResponse(**preferences)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/me", response_model=ProfileResponse)

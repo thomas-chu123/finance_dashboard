@@ -157,6 +157,11 @@ async def check_prices():
                     if updated.data:
                         current_rsi = updated.data.get("current_rsi")
 
+            # Truncate prices to 2 decimal places (discard everything after 2 decimals, not rounding)
+            truncated_current = int(current_price * 100) / 100
+            trigger_price = item.get("trigger_price")
+            truncated_trigger = int(trigger_price * 100) / 100 if trigger_price else None
+
             # 3. 檢查價格條件
             price_condition_met = False
             trigger_price = item.get("trigger_price")
@@ -216,8 +221,8 @@ async def check_prices():
                     symbol=symbol,
                     name=item["name"],
                     category=category,
-                    current_price=current_price,
-                    trigger_price=item.get("trigger_price") or current_price,
+                    current_price=truncated_current,
+                    trigger_price=truncated_trigger or truncated_current,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
                     trigger_mode=trigger_mode,
@@ -234,8 +239,8 @@ async def check_prices():
                 msg = build_alert_message(
                     symbol=symbol,
                     name=item["name"],
-                    current_price=current_price,
-                    trigger_price=item.get("trigger_price") or current_price,
+                    current_price=truncated_current,
+                    trigger_price=truncated_trigger or truncated_current,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
                     trigger_mode=trigger_mode,

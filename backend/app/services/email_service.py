@@ -56,7 +56,7 @@ def build_alert_email(
     
     subject = f"📊 投資提醒：{name} ({symbol}) 已{direction_label} {trigger_price:.2f}"
 
-    primary = "#1a73e8"
+    primary = "#34a853"
     accent = "#ea4335" if trigger_direction == "below" else "#0f9d58"
     bg = "#f8f9fa"
 
@@ -80,7 +80,7 @@ def build_alert_email(
     <head><meta charset="utf-8"></head>
     <body style="margin:0;padding:0;font-family:'Helvetica Neue',Arial,sans-serif;background:{bg};">
       <div style="max-width:600px;margin:20px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);background:#fff;">
-        <div style="background:linear-gradient(135deg,{primary} 0%,#1557b0 100%);padding:30px;text-align:center;">
+        <div style="background:linear-gradient(135deg,{primary} 0%,#2d8e47 100%);padding:30px;text-align:center;">
           <div style="font-size:48px;margin-bottom:10px;">📊</div>
           <h1 style="color:#fff;margin:0;font-size:22px;font-weight:600;">{mode_desc}觸發通知</h1>
         </div>
@@ -102,13 +102,13 @@ def build_alert_email(
             </table>
           </div>
           <div style="text-align:center;margin-top:24px;">
-            <a href="{settings.app_base_url}/tracking" style="display:inline-block;padding:14px 32px;background:{primary};color:#fff;text-decoration:none;border-radius:28px;font-weight:600;">查看追蹤清單</a>
+            <a href="{settings.app_base_url}/tracking" style="display:inline-block;padding:14px 32px;background:#34a853;color:#fff;text-decoration:none;border-radius:28px;font-weight:600;">查看追蹤清單</a>
           </div>
         </div>
         <div style="padding:20px;border-top:1px solid #f1f3f4;text-align:center;color:#70757a;font-size:12px;">
           <p style="margin:0;">此信件為系統自動發送，請勿直接回覆。</p>
           <p style="margin:6px 0;">想要停止此項目的通知？<a href="{settings.backend_base_url}/api/public/stop-notification/{tracking_id}" style="color:#ea4335;text-decoration:none;font-weight:600;">點此停止通知</a></p>
-          <p style="margin:6px 0 0;">© 2026 Finance Dashboard</p>
+          <p style="margin:6px 0 0;">© 2026 NEXUS Finance Dashboard</p>
         </div>
       </div>
     </body>

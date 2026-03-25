@@ -1,0 +1,17 @@
+{
+  "[git-commit]": {
+    "editor.rulers": [50],
+    "editor.wordWrap": "on"
+  },
+  // Copilot 相關設定
+  "github.copilot.enable": {
+    "plaintext": false,
+    "markdown": true,
+    "scm": true
+  },
+  // 強制 git commit 使用英文
+  "git.ignoreLimitWarning": true,
+  "files.exclude": {
+    "**/.DS_Store": true
+  }
+}

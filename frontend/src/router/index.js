@@ -43,6 +43,11 @@ const routes = [
         name: 'Line',
         component: () => import('../views/LineView.vue'),
       },
+      {
+        path: 'guide',
+        name: 'Guide',
+        component: () => import('../views/GuideView.vue'),
+      },
     ],
   },
 ]
