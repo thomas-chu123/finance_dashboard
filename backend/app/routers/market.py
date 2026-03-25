@@ -28,6 +28,9 @@ async def _fetch_quote(meta: dict) -> dict:
     sym_upper = symbol.upper().replace(".TW", "").replace(".TWO", "")
     if ".TW" in symbol or ".TWO" in symbol:
         category = "tw_etf"
+    elif sym_upper.isdigit() and 4 <= len(sym_upper) <= 6:
+        # Pure numeric code stored without .TW suffix (e.g. "0050" from legacy profile)
+        category = "tw_etf"
     elif symbol in ("^VIX", "VIX"):
         category = "vix"
     elif symbol in ("CL=F", "BZ=F", "OIL", "BRENT"):

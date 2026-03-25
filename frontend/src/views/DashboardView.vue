@@ -559,7 +559,9 @@ function openQuoteUrl(symbol, category = null) {
   }
   
   // Fallback 邏輯（相容舊符號）
-  if (category === 'tw_etf') {
+  // 也檢查純數字代碼（如舊版 profile 中存的 "0050" 而非 "0050.TW"）
+  const isNumericTwCode = /^\d{4,6}$/.test(upper)
+  if (category === 'tw_etf' || isNumericTwCode) {
     // 台灣 ETF: 0050.TW, 0056.TW 等
     let finalSymbol = upper
     if (!upper.includes('.')) {

@@ -190,13 +190,27 @@ async def fetch_finmind_adjusted_prices(
     symbol: str, start_date: str, end_date: str
 ) -> pd.Series:
     """Fetch adjusted prices from FinMind API (TaiwanStockPriceAdj)."""
+    return await _fetch_finmind_prices(symbol, start_date, end_date, dataset="TaiwanStockPriceAdj")
+
+
+async def fetch_finmind_unadjusted_prices(
+    symbol: str, start_date: str, end_date: str
+) -> pd.Series:
+    """Fetch unadjusted (actual) closing prices from FinMind API (TaiwanStockPrice)."""
+    return await _fetch_finmind_prices(symbol, start_date, end_date, dataset="TaiwanStockPrice")
+
+
+async def _fetch_finmind_prices(
+    symbol: str, start_date: str, end_date: str, dataset: str
+) -> pd.Series:
+    """內部共用：從 FinMind API 抓取指定 dataset 的收盤價。"""
     if not FINMIND_API_TOKEN:
         logger.warning("[MarketData] FinMind_API token not found in environment.")
         return pd.Series(dtype=float)
 
     clean_sym = _clean_tw_symbol(symbol)
     params = {
-        "dataset": "TaiwanStockPriceAdj",
+        "dataset": dataset,
         "data_id": clean_sym,
         "start_date": start_date,
         "end_date": end_date,
@@ -210,21 +224,19 @@ async def fetch_finmind_adjusted_prices(
             data = resp.json()
 
             if data.get("status") != 200 or not data.get("data"):
-                logger.warning(f"[MarketData] FinMind returned no data for {clean_sym}: {data.get('msg')}")
+                logger.warning(f"[MarketData] FinMind returned no data for {clean_sym} ({dataset}): {data.get('msg')}")
                 return pd.Series(dtype=float)
 
             df = pd.DataFrame(data["data"])
             df["date"] = pd.to_datetime(df["date"])
             df = df.set_index("date")
             
-            # TaiwanStockPriceAdj usually has 'close' as the adjusted price
-            # Verify if it uses 'close' or 'adj_close'
             price_col = "close" if "close" in df.columns else df.columns[0]
             series = df[price_col].astype(float)
             series.index = series.index.normalize()
             return series.rename(symbol)
     except Exception as e:
-        logger.error(f"[MarketData] FinMind error for {symbol}: {e}")
+        logger.error(f"[MarketData] FinMind error for {symbol} ({dataset}): {e}")
         return pd.Series(dtype=float)
 
 
@@ -357,16 +369,29 @@ async def get_current_price(symbol: str, category: str) -> Optional[float]:
 
 
 async def get_historical_prices(
-    symbol: str, start_date: str, end_date: str
+    symbol: str, start_date: str, end_date: str, adjusted: bool = True
 ) -> pd.Series:
-    """Return daily adjusted close price series."""
+    """Return daily close price series.
+    
+    Args:
+        symbol: 資產代碼
+        start_date: 起始日期 (YYYY-MM-DD)
+        end_date: 結束日期 (YYYY-MM-DD)
+        adjusted: True 返回還原價格（用於 RSI/技術指標計算），
+                  False 返回實際收盤價（用於圖表顯示，對應券商數據）
+    """
     import time
     start_time = time.time()
 
     # Priority 1: FinMind for Taiwan stocks if token is present
+    # FinMind TaiwanStockPriceAdj 為還原價，若需要未還原價則改用 TaiwanStockPrice
     if _is_taiwan_stock(symbol) and FINMIND_API_TOKEN:
-        logger.info(f"[MarketData] Using FinMind for Taiwan adjusted prices: {symbol}")
-        series = await fetch_finmind_adjusted_prices(symbol, start_date, end_date)
+        if adjusted:
+            logger.info(f"[MarketData] Using FinMind adjusted prices for: {symbol}")
+            series = await fetch_finmind_adjusted_prices(symbol, start_date, end_date)
+        else:
+            logger.info(f"[MarketData] Using FinMind unadjusted prices for: {symbol}")
+            series = await fetch_finmind_unadjusted_prices(symbol, start_date, end_date)
         if not series.empty:
             duration = time.time() - start_time
             logger.info(f"[MarketData] FinMind fetched {len(series)} days for {symbol} ({duration:.2f}s)")
@@ -376,20 +401,31 @@ async def get_historical_prices(
     try:
         yf_symbol = _to_yf_symbol(symbol)
         ticker = yf.Ticker(yf_symbol)
-        # ticker.history with auto_adjust=True returns adjusted Close for splits/dividends
-        hist = await asyncio.to_thread(ticker.history, start=start_date, end=end_date, auto_adjust=True)
+        if adjusted:
+            # auto_adjust=True: Close 欄位已還原除息、分割（用於計算 RSI）
+            hist = await asyncio.to_thread(ticker.history, start=start_date, end=end_date, auto_adjust=True)
+            price_col = "Close"
+        else:
+            # auto_adjust=False: Close 為實際收盤價，Adj Close 為還原價
+            hist = await asyncio.to_thread(ticker.history, start=start_date, end=end_date, auto_adjust=False)
+            price_col = "Close"
         duration = time.time() - start_time
         if hist.empty:
             logger.info(f"[MarketData] No yfinance data for {symbol} ({duration:.2f}s)")
             return pd.Series(dtype=float)
             
-        # Standardize index: remove timezone and normalize to date
+        # 時區標準化：以交易所本地時間的日期為準，避免轉成 UTC 造成日期偏移
+        # 台灣股票（Asia/Taipei = UTC+8）：若轉 UTC 則當日 0:00+08:00 → 前日 16:00 UTC → 日期少一天
+        # 美股（America/New_York）：轉 UTC 不影響日期（當日 04:00 UTC）
         if hist.index.tz is not None:
-            hist.index = hist.index.tz_convert("UTC").tz_localize(None)
+            if _is_taiwan_stock(symbol):
+                hist.index = hist.index.tz_convert("Asia/Taipei").tz_localize(None)
+            else:
+                hist.index = hist.index.tz_convert("America/New_York").tz_localize(None)
         hist.index = hist.index.normalize()
         
-        logger.info(f"[MarketData] yfinance fetched {len(hist)} days for {symbol} ({duration:.2f}s)")
-        return hist["Close"].rename(symbol)
+        logger.info(f"[MarketData] yfinance fetched {len(hist)} days for {symbol} (adjusted={adjusted}, {duration:.2f}s)")
+        return hist[price_col].rename(symbol)
     except Exception as e:
         logger.error(f"[MarketData] yfinance error for {symbol}: {e}")
         return pd.Series(dtype=float)
@@ -415,7 +451,12 @@ async def fetch_tw_etf_list() -> list[dict]:
             
         if all_rows:
             return [
-                {"symbol": row["symbol"], "name": row["name"], "category": "tw_etf"}
+                {
+                    # Normalise: ensure .TW suffix so profile saves use consistent format
+                    "symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW",
+                    "name": row["name"],
+                    "category": "tw_etf"
+                }
                 for row in all_rows
             ]
         logger.warning("[MarketData] tw_etf_list table is empty — triggering one-time sync from TWSE.")
@@ -431,7 +472,11 @@ async def fetch_tw_etf_list() -> list[dict]:
         res = sb.table("tw_etf_list").select("symbol, name").order("symbol").execute()
         if res.data:
             return [
-                {"symbol": row["symbol"], "name": row["name"], "category": "tw_etf"}
+                {
+                    "symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW",
+                    "name": row["name"],
+                    "category": "tw_etf"
+                }
                 for row in res.data
             ]
     except Exception as e:
@@ -440,8 +485,8 @@ async def fetch_tw_etf_list() -> list[dict]:
     # Last-resort minimal fallback
     logger.warning("[MarketData] Returning minimal hardcoded TW ETF fallback.")
     return [
-        {"symbol": "0050", "name": "元大台灣50", "category": "tw_etf"},
-        {"symbol": "0056", "name": "元大高股息", "category": "tw_etf"},
+        {"symbol": "0050.TW", "name": "元大台灣50", "category": "tw_etf"},
+        {"symbol": "0056.TW", "name": "元大高股息", "category": "tw_etf"},
         {"symbol": "00878", "name": "國泰永續高股息", "category": "tw_etf"},
         {"symbol": "006208", "name": "富邦台50", "category": "tw_etf"},
     ]

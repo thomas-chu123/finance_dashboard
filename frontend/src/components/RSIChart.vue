@@ -11,6 +11,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps({
   item: {
@@ -31,11 +32,12 @@ const chartRef = ref(null)
 let chart = null
 const isLoading = ref(false)
 const historyData = ref(null)
+const authStore = useAuthStore()
 
-// 從 localStorage 取得 API 基礎 URL 和授權信息
-const API_BASE = window.localStorage.getItem('API_BASE') || 'http://localhost:8000'
+// 取得 API 基礎 URL（優先使用環境變數，否則使用相同域名）
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin)
 
-// Generate sample historical data (備用方案)
+// 產生示例歷史資料（備用方案）
 const generateSampleData = () => {
   const dates = []
   const prices = []
@@ -50,11 +52,11 @@ const generateSampleData = () => {
     date.setDate(date.getDate() - i)
     dates.push(date.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' }))
     
-    // Realistic price movement
+    // 逼真的價格變動
     priceBase += (Math.random() - 0.48) * 2
     prices.push(Math.max(priceBase, 10).toFixed(2))
     
-    // Realistic RSI movement
+    // 逼真的 RSI 變動
     rsiBase = Math.max(10, Math.min(90, rsiBase + (Math.random() - 0.5) * 15))
     rsiValues.push(Math.round(rsiBase))
   }
@@ -70,24 +72,52 @@ let rsiValues = []
 // 從 API 獲取真實的歷史 RSI 數據
 const fetchHistoricalRSIData = async () => {
   if (!props.trackingId) {
-    console.warn('RSIChart: trackingId not provided, using sample data')
+    console.warn('❌ RSIChart: trackingId not provided, using sample data')
     return null
   }
 
   isLoading.value = true
   try {
+    // 優先從 auth store 取得 token，否則從 localStorage 讀取舊 key
+    const token = authStore.token || localStorage.getItem('fd_token')
+    
+    if (!token) {
+      console.warn('❌ RSIChart: No auth token found (checked: fd_token, authStore.token), using sample data')
+      console.debug('  authStore.token:', !!authStore.token)
+      console.debug('  localStorage.fd_token:', !!localStorage.getItem('fd_token'))
+      isLoading.value = false
+      return null
+    }
+
     const headers = {
-      'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+      'Authorization': `Bearer ${token}`
     }
     
-    const response = await axios.get(
-      `${API_BASE}/api/tracking/${props.trackingId}/rsi-history`,
-      { headers }
-    )
+    const url = `${API_BASE}/api/tracking/${props.trackingId}/rsi-history`
+    console.log(`📊 RSIChart: Fetching RSI history from ${url}`)
+    console.debug('  Token present:', !!token)
+    console.debug('  trackingId:', props.trackingId)
     
-    return response.data
+    const response = await axios.get(url, { headers })
+    
+    if (response.data && response.data.dates && response.data.rsi_values && response.data.dates.length > 0) {
+      console.log(`✅ RSIChart: Successfully fetched ${response.data.dates.length} days of RSI data`)
+      return response.data
+    } else {
+      console.warn('❌ RSIChart: API response missing required fields or empty', {
+        hasDates: !!response.data?.dates,
+        hasRsiValues: !!response.data?.rsi_values,
+        datesLength: response.data?.dates?.length || 0
+      })
+      return null
+    }
   } catch (error) {
-    console.warn('Failed to fetch RSI history:', error.message)
+    console.error('❌ RSIChart: Failed to fetch RSI history:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data
+    })
     return null
   } finally {
     isLoading.value = false
@@ -194,28 +224,33 @@ onMounted(async () => {
   // 嘗試從 API 獲取真實數據
   const data = await fetchHistoricalRSIData()
   
-  if (data && data.dates && data.rsi_values) {
+  if (data && data.dates && data.rsi_values && data.dates.length > 0) {
     // 使用真實的 RSI 數據
     historyData.value = data
     dates = data.dates
     rsiValues = data.rsi_values
-    
-    // 由於沒有真實的價格數據，使用模擬價格
-    const now = new Date()
-    let priceBase = props.item.current_price || 100
-    for (let i = 0; i < dates.length; i++) {
-      priceBase += (Math.random() - 0.48) * 2
-      prices.push(Math.max(priceBase, 10).toFixed(2))
+
+    // 優先使用後端回傳的真實收盤價，若無則用模擬資料
+    if (data.prices && data.prices.length === data.dates.length) {
+      prices = data.prices.map(p => parseFloat(p).toFixed(2))
+      console.log(`✅ 使用真實價格數據 (${prices.length} 天)`)
+    } else {
+      let priceBase = props.item.current_price || 100
+      for (let i = 0; i < dates.length; i++) {
+        priceBase += (Math.random() - 0.48) * 2
+        prices.push(Math.max(priceBase, 10).toFixed(2))
+      }
+      console.warn('⚠️ 後端未回傳價格資料，使用模擬價格')
     }
     
-    console.log('✓ 使用真實 RSI 歷史數據')
+    console.log(`✅ 使用真實 RSI 歷史數據 (${data.dates.length} 天)`)
   } else {
     // 備用：使用隨機生成的示例數據
     const sampleData = generateSampleData()
     dates = sampleData.dates
     prices = sampleData.prices
     rsiValues = sampleData.rsiValues
-    console.log('⚠ 使用示例數據 (無法獲取歷史 RSI)')
+    console.warn(`⚠️ 使用示例數據 (無法獲取歷史 RSI)`)
   }
   
   // 初始化圖表
@@ -245,7 +280,19 @@ watch(() => props.item?.id, async (newId) => {
       historyData.value = data
       dates = data.dates
       rsiValues = data.rsi_values
-      
+
+      // 使用真實價格或模擬價格
+      if (data.prices && data.prices.length === data.dates.length) {
+        prices = data.prices.map(p => parseFloat(p).toFixed(2))
+      } else {
+        prices = []
+        let priceBase = props.item.current_price || 100
+        for (let i = 0; i < dates.length; i++) {
+          priceBase += (Math.random() - 0.48) * 2
+          prices.push(Math.max(priceBase, 10).toFixed(2))
+        }
+      }
+
       // 更新圖表
       if (chart) {
         chart.setOption(chartOption.value)

@@ -394,21 +394,31 @@ class RSICalculationService:
             from app.services.technical_indicators import RSICalculator
             import pandas as pd
             
-            # 獲取歷史價格
+            # 計算需要的日曆天數：days 個有效交易日 RSI + rsi_period 預熱
+            # 交易日約為日曆天的 5/7，再加 14 天 buffer（假日/長假）
+            calendar_days_needed = int((days + rsi_period) * 7 / 5) + 14
             end_date = datetime.now(timezone.utc).date()
-            start_date = end_date - timedelta(days=days + 14)  # 多獲取以計算RSI
+            start_date = end_date - timedelta(days=calendar_days_needed)
             
-            logger.debug(f"獲取 {symbol} 的歷史價格: {start_date} 到 {end_date}")
-            
+            logger.debug(f"獲取 {symbol} 的歷史價格: {start_date} 到 {end_date} (需要 {calendar_days_needed} 日曆天以確保足夠交易日)")
+
+            # RSI 計算使用還原價格（adjusted），避免除息造成假訊號
             prices_series = await get_historical_prices(
-                symbol,
-                start_date.isoformat(),
-                end_date.isoformat()
+                symbol, start_date.isoformat(), end_date.isoformat(), adjusted=True
             )
             
             if prices_series is None or prices_series.empty:
                 logger.warning(f"無法獲取 {symbol} 的歷史價格")
                 return None
+            
+            # 圖表顯示使用實際收盤價（unadjusted），對應券商與 Yahoo Finance 顯示的數值
+            display_prices_series = await get_historical_prices(
+                symbol, start_date.isoformat(), end_date.isoformat(), adjusted=False
+            )
+            # 若未還原價格獲取失敗，退回使用還原價格
+            if display_prices_series is None or display_prices_series.empty:
+                logger.warning(f"無法獲取 {symbol} 實際收盤價，退回使用還原價格")
+                display_prices_series = prices_series
             
             close_prices = prices_series.tolist()
             
@@ -416,25 +426,34 @@ class RSICalculationService:
                 logger.warning(f"歷史數據不足: {symbol} 只有 {len(close_prices)} 天")
                 return None
             
-            # 計算 RSI 序列
+            # 計算 RSI 序列（使用還原價格）
             rsi_values = RSICalculator.calculate_rsi_series(close_prices, period=rsi_period)
             
-            # 對齊日期和RSI值
+            # 對齊 adjusted index 與 display prices（以日期索引取值，缺失時退回 adjusted）
             dates_list = prices_series.index.tolist()
+            display_close_list = [
+                float(display_prices_series.get(date, adj_price))
+                for date, adj_price in zip(dates_list, close_prices)
+            ]
             
-            # 只返回最近 days 天的數據（且需要至少有一個有效的RSI值）
-            if len(rsi_values) > days:
-                start_idx = len(rsi_values) - days
-                dates_list = dates_list[-days:]
-                rsi_values = rsi_values[-days:]
+            # 濾除 RSI 預熱期的 None，只保留有效數值的資料點
+            valid_pairs = [
+                (date, rsi, display_price)
+                for date, rsi, display_price in zip(dates_list, rsi_values, display_close_list)
+                if rsi is not None
+            ]
             
-            # 轉換日期格式並過濾None值
+            # 只取最近 days 天的有效資料
+            valid_pairs = valid_pairs[-days:]
+            
+            # 轉換日期格式
             formatted_data = []
-            for date, rsi in zip(dates_list, rsi_values):
+            for date, rsi, display_price in valid_pairs:
                 date_str = pd.Timestamp(date).strftime('%m/%d') if hasattr(date, 'strftime') else str(date)
                 formatted_data.append({
                     "date": date_str,
-                    "rsi": round(rsi, 2) if rsi is not None else None
+                    "rsi": round(rsi, 2),
+                    "price": round(display_price, 4)
                 })
             
             logger.info(f"✓ 獲取 RSI 歷史數據完成: {symbol}, {len(formatted_data)} 天")
@@ -442,12 +461,14 @@ class RSICalculationService:
             # 分開日期和值用於前端圖表
             dates = [item["date"] for item in formatted_data]
             values = [item["rsi"] for item in formatted_data]
+            prices = [item["price"] for item in formatted_data]
             
             return {
                 "symbol": symbol,
                 "period": rsi_period,
                 "dates": dates,
-                "rsi_values": values
+                "rsi_values": values,
+                "prices": prices
             }
         
         except Exception as e:

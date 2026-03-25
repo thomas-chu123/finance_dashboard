@@ -133,19 +133,29 @@
                 <div v-if="item.trigger_mode && item.trigger_mode !== 'price'" class="flex items-center space-x-2">
                   <button 
                     @click="showRSIModal = true; selectedRSIItem = item"
-                    class="flex items-center px-2 py-1 text-sm font-bold rounded-lg transition-all"
+                    class="flex items-center gap-1.5 text-sm font-bold transition-all hover:opacity-70"
                     :class="item.current_rsi !== null && item.current_rsi !== undefined
                       ? item.current_rsi < (item.rsi_below || 30) 
-                        ? 'bg-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/30'
+                        ? 'text-red-600 dark:text-red-400'
                         : item.current_rsi > (item.rsi_above || 70)
-                        ? 'bg-green-500/20 text-green-600 dark:text-green-400 hover:bg-green-500/30'
-                        : 'bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30'
-                      : 'bg-zinc-500/20 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-500/30'"
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                      : 'text-zinc-400'"
                     title="檢視 RSI 詳情"
                   >
-                    <span class="text-base mr-1">📈</span>
+                    <!-- 狀態燈號圓點 -->
+                    <span :class="[
+                      'w-2.5 h-2.5 rounded-full flex-shrink-0',
+                      item.current_rsi !== null && item.current_rsi !== undefined
+                        ? item.current_rsi < (item.rsi_below || 30)
+                          ? 'bg-red-500'
+                          : item.current_rsi > (item.rsi_above || 70)
+                          ? 'bg-green-500'
+                          : 'bg-blue-500'
+                        : 'bg-zinc-400'
+                    ]"></span>
                     <span v-if="item.current_rsi !== null && item.current_rsi !== undefined" class="font-mono">{{ item.current_rsi.toFixed(1) }}</span>
-                    <span v-else>--</span>
+                    <span v-else class="text-zinc-400">--</span>
                   </button>
                 </div>
                 <span v-else class="text-zinc-500 text-sm">—</span>
