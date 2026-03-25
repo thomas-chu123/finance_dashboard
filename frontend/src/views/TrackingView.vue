@@ -116,7 +116,7 @@
                 </span>
               </td>
               <td class="px-4 py-4 text-left">
-                <span v-if="item.current_price" class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ item.current_price.toLocaleString() }}</span>
+                <span v-if="item.current_price" class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ formatPrice(item.current_price) }}</span>
                 <span v-else class="text-zinc-500">—</span>
               </td>
               <td class="px-4 py-4">
@@ -126,7 +126,7 @@
                     <TrendingDown v-else class="w-3 h-3 mr-1" />
                     {{ item.trigger_direction === 'above' ? '突破' : '跌破' }}
                   </span>
-                  <span class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ item.trigger_price || '—' }}</span>
+                  <span class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ formatPrice(item.trigger_price) }}</span>
                 </div>
               </td>
               <td class="px-4 py-4">
@@ -236,7 +236,7 @@
             <div v-if="currentPrice !== null || fetchingPrice" class="flex items-center p-3 bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg">
               <span class="text-sm font-medium text-zinc-500 dark:text-zinc-400 mr-2">目前價格: </span>
               <Loader2 v-if="fetchingPrice" class="w-4 h-4 text-brand-500 animate-spin" />
-              <span v-else class="text-lg font-bold tracking-tight text-[var(--text-primary)]">{{ currentPrice.toLocaleString() }}</span>
+              <span v-else class="text-lg font-bold tracking-tight text-[var(--text-primary)]">{{ formatPrice(currentPrice) }}</span>
             </div>
 
             <div class="relative">
@@ -547,6 +547,14 @@ function categoryBadgeInfo(cat) {
 function channelLabel(ch) {
   const map = { email: 'Email', line: 'LINE', both: 'Email + LINE' }
   return map[ch] || ch
+}
+
+function formatPrice(price) {
+  if (price === null || price === undefined) return '—'
+  return Number(price).toLocaleString('zh-TW', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
 }
 
 function diagnosePageState() {

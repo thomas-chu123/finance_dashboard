@@ -195,8 +195,8 @@ async def check_prices():
                 should_notify = True
                 sb.table("tracked_indices").update({"alert_triggered": True}).eq("id", tracking_id).execute()
                 logger.info(f"[Scheduler] ✓ 首次觸發: {symbol} (price={current_price}, rsi={current_rsi}, mode={trigger_mode})")
-            elif alert_triggered:
-                # 已觸發，檢查 24 小時冷卻時間
+            elif condition_met and alert_triggered:
+                # 條件仍滿足，檢查 24 小時冷卻時間
                 last_notified = item.get("last_notified_at")
                 if not last_notified:
                     should_notify = True
@@ -206,6 +206,10 @@ async def check_prices():
                     if elapsed >= 86400:  # 24 小時
                         should_notify = True
                         logger.info(f"[Scheduler] 每日提醒: {symbol}")
+            elif not condition_met and alert_triggered:
+                # 條件已不再滿足，重置觸發狀態，停止重複通知
+                sb.table("tracked_indices").update({"alert_triggered": False}).eq("id", tracking_id).execute()
+                logger.info(f"[Scheduler] ↺ 重置觸發狀態: {symbol} (price={current_price}, rsi={current_rsi}, mode={trigger_mode})")
 
             if not should_notify:
                 continue
