@@ -9,7 +9,12 @@
     "markdown": true,
     "scm": true
   },
-  // 強制 git commit 使用英文
+  // 強制 git commit message 使用英文 (Conventional Commits)
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "CRITICAL: Always write commit messages in English only. Never use Chinese or any other language. Follow Conventional Commits format strictly: <type>(<scope>): <subject>. Types: feat, fix, refactor, test, docs, ci, style, perf, chore. Subject: imperative mood, lowercase, max 50 chars, no period. Example: feat(backtest): add DCA strategy support"
+    }
+  ],
   "git.ignoreLimitWarning": true,
   "files.exclude": {
     "**/.DS_Store": true

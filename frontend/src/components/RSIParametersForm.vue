@@ -83,9 +83,7 @@
       ❌ {{ validationError }}
     </div>
 
-    <div v-if="!validationError && rsiBelow < rsiAbove" class="p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-sm text-green-600 dark:text-green-400 font-bold">
-      ✅ RSI 參數有效
-    </div>
+
   </div>
 </template>
 

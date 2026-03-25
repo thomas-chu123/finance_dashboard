@@ -8,25 +8,15 @@
           觸發模式
         </span>
       </label>
-      <div class="grid grid-cols-2 gap-3">
-        <button
-          v-for="mode in triggerModes"
-          :key="mode.value"
-          type="button"
-          @click="emit('update:modelValue', mode.value)"
-          :class="[
-            'p-3 rounded-xl font-bold text-sm transition-all border-2',
-            modelValue === mode.value
-              ? `${mode.activeClass} border-transparent shadow-lg`
-              : 'bg-[var(--bg-main)] border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500'
-          ]"
-        >
-          <div class="flex items-center justify-center gap-1.5">
-            <span>{{ mode.icon }}</span>
-            <span>{{ mode.label }}</span>
-          </div>
-        </button>
-      </div>
+      <select
+        :value="modelValue"
+        @change="emit('update:modelValue', $event.target.value)"
+        class="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all hover:border-brand-500 focus:outline-none focus:border-brand-500"
+      >
+        <option v-for="mode in triggerModes" :key="mode.value" :value="mode.value">
+          {{ mode.icon }} {{ mode.label }}
+        </option>
+      </select>
       <p class="mt-2 text-xs text-zinc-500 leading-relaxed">
         {{ modeDescriptions[modelValue] }}
       </p>

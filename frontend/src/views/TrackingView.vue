@@ -143,17 +143,7 @@
                       : 'text-zinc-400'"
                     title="檢視 RSI 詳情"
                   >
-                    <!-- 狀態燈號圓點 -->
-                    <span :class="[
-                      'w-2.5 h-2.5 rounded-full flex-shrink-0',
-                      item.current_rsi !== null && item.current_rsi !== undefined
-                        ? item.current_rsi < (item.rsi_below || 30)
-                          ? 'bg-red-500'
-                          : item.current_rsi > (item.rsi_above || 70)
-                          ? 'bg-green-500'
-                          : 'bg-blue-500'
-                        : 'bg-zinc-400'
-                    ]"></span>
+                    <span class="text-base">📈</span>
                     <span v-if="item.current_rsi !== null && item.current_rsi !== undefined" class="font-mono">{{ item.current_rsi.toFixed(1) }}</span>
                     <span v-else class="text-zinc-400">--</span>
                   </button>
