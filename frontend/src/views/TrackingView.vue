@@ -339,7 +339,7 @@
                 <p class="text-xs text-zinc-500 mt-1">{{ selectedRSIItem?.symbol }} - {{ selectedRSIItem?.name }}</p>
               </div>
             </div>
-            <button @click="showRSIModal = false" class="p-1 text-zinc-500 hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--input-bg)] transition-colors">
+            <button @click="closeRSIModal" class="p-1 text-zinc-500 hover:text-[var(--text-primary)] rounded-lg hover:bg-[var(--input-bg)] transition-colors">
               <X class="w-5 h-5" />
             </button>
           </div>
@@ -351,7 +351,7 @@
 
           <!-- Footer -->
           <div class="px-6 py-4 border-t border-[var(--border-color)] bg-[var(--bg-sidebar)] flex justify-between items-center gap-3">
-            <button class="px-4 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showRSIModal = false">關閉</button>
+            <button class="px-4 py-2 text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="closeRSIModal">關閉</button>
             <div class="flex gap-2">
               <button class="flex items-center justify-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-lg transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed" @click="calculateRSINow(selectedRSIItem)" v-if="selectedRSIItem" :disabled="calculatingRSI">
                 <BarChart2 v-if="!calculatingRSI" class="w-4 h-4 mr-2" />
@@ -713,6 +713,17 @@ async function testAlert(item) {
     alert('發送失敗: ' + (e.response?.data?.detail || e.message))
   } finally {
     testingId.value = null
+  }
+}
+
+async function closeRSIModal() {
+  showRSIModal.value = false
+  // 關閉 modal 後自動重新整理追蹤清單，確保主畫面 RSI 欄位即時更新
+  await trackingStore.fetchAll()
+  // 同步更新 selectedRSIItem，下次開啟時顯示最新數據
+  if (selectedRSIItem.value) {
+    const updated = trackingStore.items.find(i => i.id === selectedRSIItem.value.id)
+    if (updated) selectedRSIItem.value = updated
   }
 }
 
