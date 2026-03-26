@@ -33,6 +33,50 @@ async def send_line_message(user_id: str, message: str) -> dict:
             return {"success": False, "error": str(e)}
 
 
+def _build_rsi_condition_label(
+    current_rsi: float | None,
+    rsi_below: float | None,
+    rsi_above: float | None,
+) -> str:
+    """根據當前 RSI 值與閾值，產生精確的 RSI 觸發條件描述。"""
+    if rsi_below is not None and rsi_above is not None:
+        # 若能判斷哪個觸發則優先顯示已觸發的那個
+        if current_rsi is not None and current_rsi < rsi_below:
+            return f"RSI 閥值跌破 {rsi_below:.0f}"
+        if current_rsi is not None and current_rsi > rsi_above:
+            return f"RSI 閥值突破 {rsi_above:.0f}"
+        return f"RSI 閥值跌破 {rsi_below:.0f} 或突破 {rsi_above:.0f}"
+    if rsi_below is not None:
+        return f"RSI 閥值跌破 {rsi_below:.0f}"
+    if rsi_above is not None:
+        return f"RSI 閥值突破 {rsi_above:.0f}"
+    return "RSI 觸發"
+
+
+def _build_trigger_condition_label(
+    trigger_direction: str,
+    trigger_price: float | None,
+    trigger_mode: str,
+    current_rsi: float | None,
+    rsi_below: float | None,
+    rsi_above: float | None,
+) -> str:
+    """產生完整觸發條件描述，依 trigger_mode 組合價格與 RSI 條件。"""
+    price_dir = "突破" if trigger_direction == "above" else "跌破"
+    price_label = f"價格{price_dir} {trigger_price:.2f}" if trigger_price is not None else ""
+    rsi_label = _build_rsi_condition_label(current_rsi, rsi_below, rsi_above)
+
+    if trigger_mode == "price":
+        return price_label
+    if trigger_mode == "rsi":
+        return rsi_label
+    if trigger_mode == "both":
+        return f"{price_label} 及 {rsi_label}"
+    if trigger_mode == "either":
+        return f"{price_label} 或 {rsi_label}"
+    return price_label
+
+
 def build_alert_message(
     symbol: str,
     name: str,
@@ -45,37 +89,37 @@ def build_alert_message(
     rsi_below: float | None = None,
     rsi_above: float | None = None,
 ) -> str:
-    direction_label = "突破" if trigger_direction == "above" else "跌破"
     arrow = "🔺" if trigger_direction == "above" else "🔻"
-    
+
+    trigger_condition = _build_trigger_condition_label(
+        trigger_direction, trigger_price, trigger_mode,
+        current_rsi, rsi_below, rsi_above
+    )
+
     # RSI 信息行（可選）
     rsi_line = ""
     if current_rsi is not None:
-        rsi_signal = ""
-        if current_rsi < 30:
+        if current_rsi < (rsi_below or 30):
             rsi_signal = "⚠️ 超賣信號"
-        elif current_rsi > 70:
+        elif current_rsi > (rsi_above or 70):
             rsi_signal = "⚠️ 超買信號"
         else:
             rsi_signal = "✅ 正常範圍"
-        
         rsi_line = f"📈 RSI (14)：{current_rsi:.2f} {rsi_signal}\n"
-        if rsi_below is not None and rsi_above is not None:
-            rsi_line += f"   閾值：超賣 {rsi_below:.0f} / 超買 {rsi_above:.0f}\n"
-    
+
     mode_desc = {
         "price": "價格",
         "rsi": "RSI 指標",
         "both": "價格及 RSI",
         "either": "價格或 RSI",
     }.get(trigger_mode, "價格")
-    
+
     return (
         f"\n📊 {mode_desc}觸發通知\n"
         f"━━━━━━━━━━━━━\n"
         f"📌 代碼：{symbol}\n"
         f"📋 名稱：{name}\n"
-        f"🎯 觸發條件：{direction_label} {trigger_price:.2f}\n"
+        f"🎯 觸發條件：{trigger_condition}\n"
         f"{arrow} 目前價格：{current_price:.2f}\n"
         f"{rsi_line}"
         f"━━━━━━━━━━━━━\n"

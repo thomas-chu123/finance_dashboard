@@ -68,6 +68,49 @@ async def send_email(to_email: str, subject: str, body_html: str) -> bool:
         return False
 
 
+def _build_rsi_condition_label(
+    current_rsi: float | None,
+    rsi_below: float | None,
+    rsi_above: float | None,
+) -> str:
+    """根據當前 RSI 值與閾值，產生精確的 RSI 觸發條件描述。"""
+    if rsi_below is not None and rsi_above is not None:
+        if current_rsi is not None and current_rsi < rsi_below:
+            return f"RSI 閥值跌破 {rsi_below:.0f}"
+        if current_rsi is not None and current_rsi > rsi_above:
+            return f"RSI 閥值突破 {rsi_above:.0f}"
+        return f"RSI 閥值跌破 {rsi_below:.0f} 或突破 {rsi_above:.0f}"
+    if rsi_below is not None:
+        return f"RSI 閥值跌破 {rsi_below:.0f}"
+    if rsi_above is not None:
+        return f"RSI 閥值突破 {rsi_above:.0f}"
+    return "RSI 觸發"
+
+
+def _build_trigger_condition_label(
+    trigger_direction: str,
+    trigger_price: float | None,
+    trigger_mode: str,
+    current_rsi: float | None,
+    rsi_below: float | None,
+    rsi_above: float | None,
+) -> str:
+    """產生完整觸發條件描述，依 trigger_mode 組合價格與 RSI 條件。"""
+    price_dir = "突破" if trigger_direction == "above" else "跌破"
+    price_label = f"價格{price_dir} {trigger_price:.2f}" if trigger_price is not None else ""
+    rsi_label = _build_rsi_condition_label(current_rsi, rsi_below, rsi_above)
+
+    if trigger_mode == "price":
+        return price_label
+    if trigger_mode == "rsi":
+        return rsi_label
+    if trigger_mode == "both":
+        return f"{price_label} 及 {rsi_label}"
+    if trigger_mode == "either":
+        return f"{price_label} 或 {rsi_label}"
+    return price_label
+
+
 def build_alert_email(
     symbol: str,
     name: str,
@@ -88,7 +131,12 @@ def build_alert_email(
         "both": "價格及 RSI",
         "either": "價格或 RSI",
     }.get(trigger_mode, "價格")
-    
+
+    trigger_condition = _build_trigger_condition_label(
+        trigger_direction, trigger_price, trigger_mode,
+        current_rsi, rsi_below, rsi_above
+    )
+
     subject = f"📊 投資提醒：{name} ({symbol}) 已{direction_label} {trigger_price:.2f}"
 
     primary = "#34a853"
@@ -98,16 +146,11 @@ def build_alert_email(
     # RSI 信息行（可選）
     rsi_row = ""
     if current_rsi is not None:
-        rsi_color = "#ea4335" if current_rsi < 30 else "#0f9d58" if current_rsi > 70 else "#4285f4"
+        rsi_color = "#ea4335" if current_rsi < (rsi_below or 30) else "#0f9d58" if current_rsi > (rsi_above or 70) else "#4285f4"
         rsi_row = f"""
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">RSI (14)</td>
                   <td style="padding:8px 0;text-align:right;font-size:18px;font-weight:700;color:{rsi_color};">{current_rsi:.2f}</td></tr>
         """
-        if rsi_below is not None and rsi_above is not None:
-            rsi_row += f"""
-              <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">RSI 閾值</td>
-                  <td style="padding:8px 0;text-align:right;font-size:13px;color:#666;">超賣 {rsi_below:.0f} / 超買 {rsi_above:.0f}</td></tr>
-            """
 
     body = f"""
     <!DOCTYPE html>
@@ -130,7 +173,7 @@ def build_alert_email(
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">類別</td>
                   <td style="padding:8px 0;text-align:right;font-weight:600;">{category.upper()}</td></tr>
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">觸發條件</td>
-                  <td style="padding:8px 0;text-align:right;font-weight:600;color:{accent};">{direction_label} {trigger_price:.2f}</td></tr>
+                  <td style="padding:8px 0;text-align:right;font-weight:600;color:{accent};">{trigger_condition}</td></tr>
               <tr><td style="padding:8px 0;color:#5f6368;font-size:14px;">目前價格</td>
                   <td style="padding:8px 0;text-align:right;font-size:24px;font-weight:700;color:{accent};">{current_price:.2f}</td></tr>
               {rsi_row}
