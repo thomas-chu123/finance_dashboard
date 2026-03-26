@@ -110,7 +110,12 @@
               <td class="px-4 py-4">
                 <span class="font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</span>
               </td>
-              <td class="px-4 py-4 text-sm text-[var(--text-primary)] font-medium">{{ item.name }}</td>
+              <td class="px-4 py-4 whitespace-nowrap">
+                <button
+                  @click="openQuoteUrl(item.symbol, item.category)"
+                  class="text-sm text-[var(--text-primary)] font-medium underline decoration-dotted underline-offset-2 hover:text-brand-600 dark:hover:text-brand-400 transition-colors text-left"
+                >{{ item.name }}</button>
+              </td>
               <td class="px-4 py-4 whitespace-nowrap">
                 <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider whitespace-nowrap', categoryBadgeInfo(item.category).class]">
                   {{ categoryBadgeInfo(item.category).label }}
@@ -125,14 +130,14 @@
                   {{ triggerModeLabel(item.trigger_mode).icon }} {{ triggerModeLabel(item.trigger_mode).label }}
                 </span>
               </td>
-              <td class="px-4 py-4">
+              <td class="px-4 py-4 whitespace-nowrap">
                 <div v-if="item.trigger_price" class="flex items-center space-x-2">
-                  <span v-if="item.trigger_direction" :class="['flex items-center text-[11px] font-bold tracking-wider uppercase', item.trigger_direction === 'above' ? 'text-rose-600 dark:text-rose-400' : 'text-brand-600 dark:text-brand-400']">
+                  <span v-if="item.trigger_direction" :class="['flex items-center text-[11px] font-bold tracking-wider uppercase whitespace-nowrap', item.trigger_direction === 'above' ? 'text-rose-600 dark:text-rose-400' : 'text-brand-600 dark:text-brand-400']">
                     <TrendingUp v-if="item.trigger_direction === 'above'" class="w-3 h-3 mr-1" />
                     <TrendingDown v-else class="w-3 h-3 mr-1" />
                     {{ item.trigger_direction === 'above' ? '突破' : '跌破' }}
                   </span>
-                  <span class="font-mono text-sm font-bold text-[var(--text-primary)]">{{ formatPrice(item.trigger_price) }}</span>
+                  <span class="font-mono text-sm font-bold text-[var(--text-primary)] whitespace-nowrap">{{ formatPrice(item.trigger_price) }}</span>
                 </div>
                 <span v-else class="text-zinc-500 text-sm">—</span>
               </td>
@@ -564,6 +569,21 @@ function triggerModeLabel(mode) {
     either: { label: '價格或RSI', icon: '🔀', class: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30' }
   }
   return map[mode] || map['price']
+}
+
+function openQuoteUrl(symbol, category = null) {
+  if (!symbol) return
+  const upper = symbol.toUpperCase()
+  const isNumericTwCode = /^\d{4,6}$/.test(upper)
+  if (category === 'tw_etf' || isNumericTwCode) {
+    let finalSymbol = upper
+    if (!upper.includes('.')) finalSymbol = upper + '.TW'
+    window.open(`https://tw.stock.yahoo.com/quote/${finalSymbol}`, '_blank', 'noopener,noreferrer')
+  } else if (category === 'exchange') {
+    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank', 'noopener,noreferrer')
+  } else {
+    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank', 'noopener,noreferrer')
+  }
 }
 
 function formatPrice(price) {
