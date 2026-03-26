@@ -159,3 +159,15 @@ class BacktestPortfolioResponse(BaseModel):
     results_json: Optional[dict]
     items: Optional[List[dict]] = None
     created_at: str
+
+
+class ComparePortfolioConfig(BaseModel):
+    name: str
+    items: List[BacktestItem]
+
+
+class BacktestCompareRequest(BaseModel):
+    portfolios: List[ComparePortfolioConfig]
+    start_date: str
+    end_date: str
+    initial_amount: float = 10000

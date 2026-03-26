@@ -2,12 +2,43 @@
   <div>
     <div class="backtest-header">
       <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
-      <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-900 dark:text-gray-900 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved">
-        <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
-        <FolderOpen v-else class="w-4 h-4 mr-2" />
-        {{ showSaved ? '執行回測' : '已儲存' }}
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- Tab 選擇 -->
+        <div class="flex bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg p-1">
+          <button
+            :class="['px-3 py-1.5 text-sm font-medium rounded-md transition-all',
+              activeTab === 'single'
+                ? 'bg-brand-500 text-white shadow-sm'
+                : 'text-muted hover:text-[var(--text-primary)]']"
+            @click="activeTab = 'single'">
+            <BarChart3 class="w-4 h-4 mr-1.5 inline" />單一回測
+          </button>
+          <button
+            :class="['px-3 py-1.5 text-sm font-medium rounded-md transition-all',
+              activeTab === 'compare'
+                ? 'bg-brand-500 text-white shadow-sm'
+                : 'text-muted hover:text-[var(--text-primary)]']"
+            @click="activeTab = 'compare'">
+            <Scale class="w-4 h-4 mr-1.5 inline" />組合比較
+          </button>
+        </div>
+        <!-- 已儲存按鈕 -->
+        <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-900 dark:text-gray-900 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved; if (activeTab !== 'single') activeTab = 'single'">
+          <BarChart3 v-if="showSaved && activeTab === 'single'" class="w-4 h-4 mr-2" />
+          <FolderOpen v-else class="w-4 h-4 mr-2" />
+          已儲存
+        </button>
+      </div>
     </div>
+
+    <!-- 組合比較 Tab -->
+    <BacktestCompareTab
+      v-if="activeTab === 'compare'"
+      :saved-portfolios="savedPortfolios"
+    />
+
+    <!-- 單一回測 Tab -->
+    <template v-if="activeTab === 'single'">
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
@@ -44,13 +75,13 @@
             <div class="mt-3">
               <div class="text-xs text-muted mb-2">組合資產</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500 text-white">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
             </div>
             <div class="mt-3">
-              <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-white text-zinc-800 border border-zinc-200 rounded-lg hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700 transition-all w-full" @click="addToTracking(p.items)">
+              <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-white text-zinc-900 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-all w-full" @click="addToTracking(p.items)">
                 <Activity class="w-4 h-4 mr-2" />一鍵加入追蹤
               </button>
             </div>
@@ -364,6 +395,8 @@
         </div>
       </div>
     </Transition>
+
+    </template><!-- end single tab -->
   </div>
 </template>
 
@@ -373,11 +406,13 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2 } from 'lucide-vue-next'
+import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
 
 // Remove local API_BASE declaration
+const activeTab = ref('single')  // 'single' | 'compare'
 const showSaved = ref(false)
 const savedPortfolios = ref([])
 const symbolSearch = ref('')
