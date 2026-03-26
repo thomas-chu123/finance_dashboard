@@ -401,6 +401,7 @@ const calculatingRSI = ref(false)
 
 const fundamentalsData = ref({})
 const loadingFundamentals = ref(false)
+const symbolCatalog = ref({})
 
 const categories = [
   { value: 'all', label: '全部' },
@@ -571,16 +572,32 @@ function triggerModeLabel(mode) {
   return map[mode] || map['price']
 }
 
+async function loadSymbolCatalog() {
+  try {
+    const res = await axios.get(`${API_BASE}/api/market/symbol-catalog`)
+    symbolCatalog.value = res.data
+  } catch (e) {
+    console.error('[TrackingView] Failed to load symbol catalog:', e)
+  }
+}
+
 function openQuoteUrl(symbol, category = null) {
   if (!symbol) return
   const upper = symbol.toUpperCase()
+
+  // 優先從後端 SSOT 取得正確 URL（處理 WTX&、BZ=F、^VIX 等特殊符號）
+  const config = symbolCatalog.value[upper]
+  if (config && config.url_path) {
+    window.open(`https://${config.domain}/${config.url_path}`, '_blank', 'noopener,noreferrer')
+    return
+  }
+
+  // Fallback
   const isNumericTwCode = /^\d{4,6}$/.test(upper)
   if (category === 'tw_etf' || isNumericTwCode) {
     let finalSymbol = upper
     if (!upper.includes('.')) finalSymbol = upper + '.TW'
     window.open(`https://tw.stock.yahoo.com/quote/${finalSymbol}`, '_blank', 'noopener,noreferrer')
-  } else if (category === 'exchange') {
-    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank', 'noopener,noreferrer')
   } else {
     window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank', 'noopener,noreferrer')
   }
@@ -834,6 +851,13 @@ onMounted(async () => {
     console.log('[TrackingView] ✓ Available symbols loaded')
   } catch (e) {
     console.error('[TrackingView] Failed to fetch available symbols:', e)
+  }
+
+  try {
+    await loadSymbolCatalog()
+    console.log('[TrackingView] ✓ Symbol catalog loaded')
+  } catch (e) {
+    console.error('[TrackingView] Failed to load symbol catalog:', e)
   }
 })
 </script>
