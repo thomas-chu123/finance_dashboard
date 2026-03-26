@@ -84,15 +84,16 @@
               <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
                 尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
               </div>
-              <div v-else class="min-w-[600px]">
-                <div class="grid grid-cols-6 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
+              <div v-else class="min-w-[700px]">
+                <div class="grid grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
                   <div class="col-span-1">代碼</div>
                   <div class="col-span-2">名稱 / 類別</div>
                   <div class="col-span-1">目前價格</div>
-                  <div class="col-span-1">觸發門檻</div>
+                  <div class="col-span-1">價格門檻</div>
+                  <div class="col-span-1">RSI 指標</div>
                   <div class="col-span-1">狀態</div>
                 </div>
-                <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-6 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                   <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
                   <div class="col-span-2 flex flex-col">
                     <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
@@ -104,6 +105,18 @@
                       <TrendingUp v-if="item.trigger_direction === 'above'" :size="12" class="inline text-rose-500 mb-0.5" />
                       <TrendingDown v-else :size="12" class="inline text-brand-500 mb-0.5" />
                       {{ item.trigger_price }}
+                    </span>
+                    <span v-else class="text-zinc-500">—</span>
+                  </div>
+                  <div class="col-span-1 font-mono text-sm">
+                    <span v-if="item.current_rsi !== null && item.current_rsi !== undefined"
+                      :class="[
+                        'font-bold',
+                        item.current_rsi < (item.rsi_below ?? 30) ? 'text-red-500 dark:text-red-400' :
+                        item.current_rsi > (item.rsi_above ?? 70) ? 'text-green-500 dark:text-green-400' :
+                        'text-blue-500 dark:text-blue-400'
+                      ]">
+                      {{ item.current_rsi.toFixed(1) }}
                     </span>
                     <span v-else class="text-zinc-500">—</span>
                   </div>
