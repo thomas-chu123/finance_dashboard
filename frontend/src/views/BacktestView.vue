@@ -10,7 +10,7 @@
               activeTab === 'single'
                 ? 'bg-brand-500 text-white shadow-sm'
                 : 'text-muted hover:text-[var(--text-primary)]']"
-            @click="activeTab = 'single'">
+            @click="activeTab = 'single'; showSaved = false">
             <BarChart3 class="w-4 h-4 mr-1.5 inline" />單一回測
           </button>
           <button
@@ -18,13 +18,18 @@
               activeTab === 'compare'
                 ? 'bg-brand-500 text-white shadow-sm'
                 : 'text-muted hover:text-[var(--text-primary)]']"
-            @click="activeTab = 'compare'">
+            @click="activeTab = 'compare'; showSaved = false">
             <Scale class="w-4 h-4 mr-1.5 inline" />組合比較
           </button>
         </div>
         <!-- 已儲存按鈕 -->
-        <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-900 dark:text-gray-900 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved; if (activeTab !== 'single') activeTab = 'single'">
-          <BarChart3 v-if="showSaved && activeTab === 'single'" class="w-4 h-4 mr-2" />
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
+            showSaved
+              ? 'bg-brand-500/10 border-brand-500 text-brand-600 dark:text-brand-400'
+              : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-900 dark:text-gray-100 hover:bg-[var(--bg-sidebar)]']"
+          @click="showSaved = !showSaved; activeTab = 'single'">
+          <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
           <FolderOpen v-else class="w-4 h-4 mr-2" />
           已儲存
         </button>
