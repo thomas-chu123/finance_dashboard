@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">指數追蹤管理</h2>
-      <div class="flex gap-2">
+      <div v-if="!isMobile" class="flex gap-2">
         <button class="flex items-center justify-center px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-xl transition-all text-sm font-bold" @click="async () => { console.log('Manual refresh triggered'); diagnosePageState(); await trackingStore.fetchAll(); console.log('Manual refresh completed'); }">
           <Loader2 class="w-4 h-4 mr-2" />
           重新加載
@@ -15,10 +15,10 @@
     </div>
 
     <!-- Filter tabs -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div class="flex flex-wrap gap-2">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden">
+      <div class="flex overflow-x-auto scrollbar-none gap-2 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         <button v-for="cat in categories" :key="cat.value"
-          :class="['px-4 py-1.5 rounded-full text-sm font-bold transition-colors border relative', activeCategory === cat.value ? 'bg-brand-500 border-brand-500 text-white shadow-sm' : 'bg-transparent border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
+          :class="['px-4 py-1.5 rounded-full text-sm font-bold transition-colors border relative whitespace-nowrap', activeCategory === cat.value ? 'bg-brand-500 border-brand-500 text-white shadow-sm' : 'bg-transparent border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
           @click="activeCategory = cat.value">
           {{ cat.label }}
           <span v-if="cat.value === 'all'" class="ml-1 text-xs opacity-70">({{ trackingStore.items.length }})</span>
@@ -89,7 +89,7 @@
         <div class="text-4xl mb-4 opacity-50">📭</div>
         <div class="text-lg">此類別尚無追蹤項目</div>
       </div>
-      <div v-else class="overflow-x-auto">
+      <div v-else-if="!isMobile" class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
             <tr class="text-xs text-zinc-500 dark:text-zinc-400 border-b border-[var(--border-color)]">
@@ -184,7 +184,7 @@
                     <Loader2 v-if="testingId === item.id" class="w-4 h-4 animate-spin" />
                     <Bell v-else class="w-4 h-4" />
                   </button>
-                  <button class="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-500/10" @click="confirmDelete(item)" title="刪除">
+                  <button class="p-1.5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50/50 dark:hover:bg-rose-500/10" @click="confirmDelete(item)" title="刪除">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -192,6 +192,78 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Mobile Card List -->
+      <div v-else class="divide-y divide-[var(--border-color)]">
+        <div v-for="item in filteredItems" :key="item.id" class="p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="font-extrabold text-brand-600 dark:text-brand-400 text-lg leading-tight">{{ item.symbol }}</span>
+              <button @click="openQuoteUrl(item.symbol, item.category)" class="text-xs text-zinc-500 underline decoration-dotted underline-offset-2 text-left">
+                {{ item.name }}
+              </button>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+              <span v-if="item.current_price" class="font-mono font-black text-[var(--text-primary)] text-lg">
+                {{ formatPrice(item.current_price) }}
+              </span>
+              <span :class="['px-2 py-0.5 text-[9px] font-black rounded uppercase tracking-tighter', categoryBadgeInfo(item.category).class]">
+                {{ categoryBadgeInfo(item.category).label }}
+              </span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-[11px]">
+            <div class="bg-[var(--bg-main)]/40 p-2 rounded-lg border border-[var(--border-color)]/30">
+              <div class="text-zinc-500 font-bold mb-1 uppercase tracking-widest text-[9px]">觸發模式</div>
+              <div class="flex items-center gap-1 font-bold text-[var(--text-primary)]">
+                {{ triggerModeLabel(item.trigger_mode).icon }} {{ triggerModeLabel(item.trigger_mode).label }}
+              </div>
+            </div>
+            <div class="bg-[var(--bg-main)]/40 p-2 rounded-lg border border-[var(--border-color)]/30">
+              <div class="text-zinc-500 font-bold mb-1 uppercase tracking-widest text-[9px]">觸發條件</div>
+              <div v-if="item.trigger_price" class="flex items-center gap-1 font-bold text-[var(--text-primary)]">
+                 <TrendingUp v-if="item.trigger_direction === 'above'" class="w-3 h-3 text-rose-500" />
+                 <TrendingDown v-else class="w-3 h-3 text-brand-500" />
+                 {{ formatPrice(item.trigger_price) }}
+              </div>
+              <div v-else class="text-zinc-400">尚未設定</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center gap-3">
+              <button 
+                v-if="item.trigger_mode !== 'price'"
+                @click="showRSIModal = true; selectedRSIItem = item"
+                class="flex items-center gap-1 px-2 py-1 bg-brand-500/10 rounded-lg"
+              >
+                <span class="text-sm">📈</span>
+                <span class="font-mono font-bold text-brand-600 dark:text-brand-400">
+                  {{ item.current_rsi ? item.current_rsi.toFixed(1) : '--' }}
+                </span>
+              </button>
+              <span class="flex items-center gap-1 text-[10px] font-bold text-zinc-500">
+                <Mail v-if="item.notify_channel === 'email' || item.notify_channel === 'both'" class="w-3 h-3" />
+                <MessageCircle v-if="item.notify_channel === 'line' || item.notify_channel === 'both'" class="w-3 h-3" />
+                {{ channelLabel(item.notify_channel) }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="relative inline-flex items-center cursor-pointer scale-90">
+                <input type="checkbox" :checked="item.is_active" @change="toggleActive(item)" class="sr-only peer">
+                <div class="w-9 h-5 bg-zinc-300 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-zinc-600 peer-checked:bg-brand-500"></div>
+              </label>
+              <button @click="openEdit(item)" class="p-2 text-zinc-400 hover:text-brand-500">
+                <Edit2 class="w-4 h-4" />
+              </button>
+              <button @click="confirmDelete(item)" class="p-2 text-zinc-400 hover:text-rose-500">
+                <Trash2 class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Stats Footer -->
@@ -211,10 +283,10 @@
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-95"
     >
-      <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+      <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity" @click="closeModal"></div>
         
-        <div class="relative bg-[var(--bg-main)] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden ring-2 ring-brand-500/20">
+        <div class="relative bg-[var(--bg-main)] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden ring-2 ring-brand-500/20 h-[90vh] sm:h-auto">
           <div class="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-sidebar)]/50">
             <h3 class="text-lg font-bold tracking-tight text-[var(--text-primary)] flex items-center">
               <PlusCircle v-if="!editItem" class="w-5 h-5 mr-2 text-brand-500" />
@@ -226,7 +298,7 @@
             </button>
           </div>
           
-          <div class="p-6 space-y-4 max-h-[calc(100vh-10rem)] overflow-y-auto">
+          <div class="p-6 space-y-4 h-[calc(90vh-8rem)] sm:max-h-[70vh] overflow-y-auto pb-safe">
             <div v-if="modalError" class="p-3 text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 dark:text-rose-400 rounded-lg flex items-start">
               <AlertCircle class="w-4 h-4 mr-2 mt-0.5 shrink-0" />
               {{ modalError }}
@@ -333,8 +405,8 @@
       leave-active-class="transition ease-in duration-200"
       leave-from-class="opacity-100"
       leave-to-class="opacity-0">
-      <div v-if="showRSIModal" class="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[100vh] overflow-hidden flex flex-col">
+      <div v-if="showRSIModal" class="fixed inset-0 z-50 bg-black/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-2xl w-full h-[95vh] sm:h-auto max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
           <!-- Header -->
           <div class="px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-sidebar)] flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -372,6 +444,22 @@
         </div>
       </div>
     </Transition>
+
+    <!-- Floating Action Button (FAB) for Mobile -->
+    <div v-if="isMobile" class="fixed bottom-20 right-4 flex flex-col gap-3 z-40 safe-area-bottom">
+      <button 
+        class="w-12 h-12 bg-[var(--bg-main)] text-zinc-600 dark:text-zinc-400 rounded-full shadow-xl border border-[var(--border-color)] flex items-center justify-center transition-all active:scale-90"
+        @click="trackingStore.fetchAll()"
+      >
+        <Loader2 class="w-6 h-6" />
+      </button>
+      <button 
+        class="w-14 h-14 bg-brand-500 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 shadow-brand-500/40"
+        @click="showAddModal = true"
+      >
+        <Plus class="w-8 h-8" />
+      </button>
+    </div>
   </div>
 </template>
 
@@ -384,12 +472,14 @@ import {
 } from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import TriggerModeSelector from '../components/TriggerModeSelector.vue'
 import RSIParametersForm from '../components/RSIParametersForm.vue'
 import RSIMonitoringDashboard from '../components/RSIMonitoringDashboard.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 const showAddModal = ref(false)
 const editItem = ref(null)
 const saving = ref(false)

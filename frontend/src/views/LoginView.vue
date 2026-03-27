@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center relative overflow-hidden bg-[var(--bg-main)] transition-colors duration-300">
-    <div class="relative z-10 w-full max-w-[420px] p-6">
+  <div class="min-h-screen flex items-center justify-center relative overflow-hidden bg-[var(--bg-main)] transition-colors duration-300 p-4">
+    <div class="relative z-10 w-full max-w-md bg-[var(--bg-main)] sm:bg-transparent rounded-2xl p-6 sm:p-0 border border-[var(--border-color)] sm:border-none shadow-xl sm:shadow-none">
       <div class="text-center mb-10">
         <div class="flex justify-center mb-6">
           <div class="p-4 bg-[#00df81]/10 rounded-[1.25rem]">

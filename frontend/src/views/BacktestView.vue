@@ -1,11 +1,11 @@
 <template>
   <div>
-    <div class="backtest-header">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
         <!-- Tab 選擇 -->
         <button
-          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
             activeTab === 'single' && !showSaved
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
@@ -13,7 +13,7 @@
           <BarChart3 class="w-4 h-4 mr-2" />單一回測
         </button>
         <button
-          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
             activeTab === 'compare' && !showSaved
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
@@ -22,7 +22,7 @@
         </button>
         <!-- 已儲存按鈕 -->
         <button
-          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
             showSaved
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
@@ -128,9 +128,9 @@
               </div>
 
               <!-- Symbol type tabs -->
-              <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
+              <div class="flex gap-2 mb-6 overflow-x-auto scrollbar-none pb-1">
                 <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
@@ -256,23 +256,23 @@
 
       <!-- Results -->
       <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
-          <div class="flex items-center gap-3">
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
               <Activity class="w-4 h-4 mr-2" />加入追蹤
             </button>
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+            <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
               <Save class="w-4 h-4 mr-2" />儲存回測
             </button>
           </div>
         </div>
 
         <!-- Metrics -->
-        <div class="metrics-grid mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
@@ -325,7 +325,7 @@
           <!-- Portfolio growth chart -->
           <div class="glass-card">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
-            <div class="p-3 sm:p-4" style="height:360px;">
+            <div class="p-3 sm:p-4" :style="{ height: isMobile ? '280px' : '400px' }">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
           </div>
@@ -423,11 +423,13 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2 } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 
 // Remove local API_BASE declaration
 const activeTab = ref('single')  // 'single' | 'compare'

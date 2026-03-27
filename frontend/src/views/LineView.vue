@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-5xl mx-auto space-y-6">
+  <div class="max-w-2xl mx-auto space-y-6 pb-20">
     <div class="flex items-center gap-3 mb-2">
       <div class="p-2 bg-brand-500/10 rounded-lg group-hover:bg-brand-500/20 transition-colors">
         <MessageCircle class="w-6 h-6 text-brand-500" />
@@ -101,7 +101,7 @@
           <qrcode-vue
             v-if="qrCodeUrl"
             :value="qrCodeUrl"
-            :size="180"
+            :size="isMobile ? 160 : 180"
             level="M"
             class="mb-6 border-[6px] border-white rounded-xl shadow-sm bg-white"
           />
@@ -125,12 +125,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useAuthStore, API_BASE_URL } from '../stores/auth'
 import axios from 'axios'
+import { useAuthStore, API_BASE_URL } from '../stores/auth'
 import QrcodeVue from 'qrcode.vue'
-import { CheckCircle2, Loader2, Link as LinkIcon, QrCode, RefreshCcw, MessageCircle } from 'lucide-vue-next'
+import { CheckCircle2, Loader2, Link as LinkIcon, QrCode, RefreshCcw, MessageCircle, Bell } from 'lucide-vue-next'
+import { useBreakpoint } from '../composables/useBreakpoint'
 
 const auth = useAuthStore()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 const isBound = computed(() => !!auth.profile?.line_user_id)
 const bindingCode = ref('')
 const loadingCode = ref(false)
