@@ -236,6 +236,8 @@ async def toggle_all_tracking(body: ToggleAllRequest, authorization: str = Heade
     user_id = get_user_id(authorization)
     sb = get_supabase()
     
+    logger.info(f"[DEBUG] 開始批次更新追蹤狀態: user_id={user_id}, target_is_active={body.is_active}")
+    
     res = (
         sb.table("tracked_indices")
         .update({"is_active": body.is_active})
@@ -243,8 +245,15 @@ async def toggle_all_tracking(body: ToggleAllRequest, authorization: str = Heade
         .execute()
     )
     
-    logger.info(f"✓ 已更新所有追蹤項目狀態為: {body.is_active} (user={user_id})")
-    return {"message": f"Updated {len(res.data) if res.data else 0} items to {body.is_active}"}
+    count = len(res.data) if res.data else 0
+    logger.info(f"✓ 批次更新完成: 已更新 {count} 個項目為 {body.is_active} (user={user_id})")
+    
+    return {
+        "message": f"Updated {count} items to {body.is_active}",
+        "count": count,
+        "is_active": body.is_active
+    }
+
 
 
 
