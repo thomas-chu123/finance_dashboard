@@ -1,6 +1,7 @@
 # 🚀 Finance Dashboard - Code Review & Future Plan
 
 **日期**：2026年3月26日  
+**最後更新**：2026年3月27日  
 **狀態**：📝 規劃中  
 
 本文件基於對目前 `finance_dashboard` 專案（Vue 3 + FastAPI + Supabase + Redis）的架構與功能審查，提出系統優化建議與未來中長期的功能發展藍圖。
@@ -49,8 +50,16 @@
 
 ### Phase 3: 智慧化與社交化 (Long-term)
 5. **🤖 AI 專屬市場分析師 (AI Market Briefing)**
-   - **描述**：整合 OpenAI 或 Gemini API。
-   - **功能**：系統每日自動讀取使用者「追蹤清單」中標的之最新新聞標題與價格變動，利用 LLM 生成一段專屬的「早報」或「盤後總結」，推播至 LINE 或顯示於 Dashboard。
+   - **描述**：整合 Brave Search + Google Gemini API。
+   - **功能**：系統每日於 **08:00、13:00、18:00（Asia/Taipei）** 自動排程，抓取使用者追蹤指數的 Top 3 最新新聞，利用 Gemini 1.5 Flash 生成繁體中文摘要，顯示於 Dashboard 可拖曳卡片。
+   - **狀態**：✅ 已規劃 — 詳見 [`plan/feature-ai-briefing-1.md`](../../plan/feature-ai-briefing-1.md)
+   - **技術設計**：
+     - 後端新增 `services/brave_search_service.py`、`services/gemini_service.py`、`services/news_briefing_service.py`
+     - 新增 `routers/briefing.py`（`GET /api/briefing/latest`、`POST /api/briefing/trigger`）
+     - APScheduler 新增三條 cron job（08:00 / 13:00 / 18:00）
+     - Supabase 新增 `market_briefings` 表（含 RLS）
+     - 前端新增 `components/AIDailyBriefing.vue` 可拖曳卡片
+     - **零新依賴**：直接使用現有 `httpx` 呼叫 Brave Search 與 Gemini REST API
 6. **🔗 回測與投組分享功能 (Social Sharing)**
    - **描述**：讓使用者能將自己設定好的回測參數或最佳化投組公開。
    - **功能**：產生一個 Snapshot 唯讀連結（如 `finance.skynetapp.org/share/abc-123`），方便使用者在社群論壇上分享自己的投資策略與回報圖表。
