@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="optimize-header mb-6">
+    <div class="mb-6">
       <h2 class="text-xl font-bold text-[var(--text-primary)]">投資組合最佳化</h2>
-      <div class="text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+      <div class="text-xs sm:text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
     </div>
 
     <!-- Optimization Config -->
@@ -19,9 +19,9 @@
             </div>
 
             <!-- Symbol type tabs -->
-            <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
+            <div class="flex gap-2 mb-6 overflow-x-auto scrollbar-none pb-1">
               <button v-for="t in symbolTypes" :key="t.value"
-                :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-muted)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                 @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
             </div>
 
@@ -124,7 +124,7 @@
                 <div class="fw-600 text-accent">{{ results.max_sharpe.sharpe.toFixed(3) }}</div>
               </div>
             </div>
-            <div style="height: 250px;">
+            <div :style="{ height: isMobile ? '200px' : '250px' }">
               <v-chart :option="maxSharpePieOption" autoresize />
             </div>
           </div>
@@ -153,7 +153,7 @@
                 <div class="fw-600 text-accent">{{ results.min_volatility.sharpe.toFixed(3) }}</div>
               </div>
             </div>
-            <div style="height: 250px;">
+            <div :style="{ height: isMobile ? '200px' : '250px' }">
               <v-chart :option="minVolPieOption" autoresize />
             </div>
           </div>
@@ -166,7 +166,7 @@
           <h3>效率前緣 (Efficient Frontier)</h3>
           <span class="text-sm text-[var(--text-muted)]">顯示在相同風險下能產生的最高預期報酬</span>
         </div>
-        <div class="p-3 sm:p-4" style="height:380px;">
+        <div class="p-3 sm:p-4" :style="{ height: isMobile ? '280px' : '380px' }">
           <v-chart :option="efficientFrontierOption" autoresize />
         </div>
       </div>
@@ -181,9 +181,11 @@ import { useRouter } from 'vue-router'
 import { Trophy, Shield, Dna, X, Check, Loader2 } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
+import { useBreakpoint } from '../composables/useBreakpoint'
 
 const auth = useAuthStore()
 const router = useRouter()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 // Remove local API_BASE declaration
 
 const symbolSearch = ref('')
@@ -330,7 +332,7 @@ const efficientFrontierOption = computed(() => {
       name: '風險 (年化波動率 %)',
       nameLocation: 'middle',
       nameGap: 25,
-      axisLabel: { color: '#8b949e' },
+      axisLabel: { color: '#8b949e', show: !isMobile.value },
       splitLine: { lineStyle: { color: 'rgba(139, 148, 158, 0.1)' } },
       scale: true
     },
@@ -339,7 +341,7 @@ const efficientFrontierOption = computed(() => {
       name: '預期報酬 (%)',
       nameLocation: 'middle',
       nameGap: 40,
-      axisLabel: { color: '#8b949e' },
+      axisLabel: { color: '#8b949e', show: !isMobile.value },
       splitLine: { lineStyle: { color: 'rgba(139, 148, 158, 0.1)' } },
       scale: true
     },

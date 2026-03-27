@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="flex-between mb-24">
-      <h2 class="text-[var(--text-primary)]">使用者管理</h2>
+    <div class="flex flex-row items-center justify-between gap-4 mb-6 sm:mb-12">
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">使用者管理</h2>
     </div>
 
     <!-- My profile -->
@@ -59,7 +59,7 @@
         <button class="flex items-center px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="loadUsers"><RefreshCw class="w-4 h-4 mr-2" />重新整理</button>
       </div>
       <div v-if="usersLoading" class="flex justify-center items-center p-12"><Loader2 class="w-8 h-8 text-brand-500 animate-spin" /></div>
-      <div v-else class="overflow-x-auto">
+      <div v-else-if="!isMobile" class="overflow-x-auto">
         <table class="w-full text-sm text-left">
           <thead class="text-xs text-[var(--text-muted)] uppercase bg-[var(--input-bg)] border-b border-[var(--border-color)]">
             <tr><th class="px-6 py-4 font-medium">Email</th><th class="px-6 py-4 font-medium">姓名</th><th class="px-6 py-4 font-medium">LINE</th><th class="px-6 py-4 font-medium">Email通知</th><th class="px-6 py-4 font-medium">LINE通知</th><th class="px-6 py-4 font-medium">角色</th><th class="px-6 py-4 font-medium">操作</th></tr>
@@ -81,6 +81,40 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Mobile User Cards -->
+      <div v-else class="divide-y divide-[var(--border-color)]">
+        <div v-for="u in users" :key="u.id" class="p-4 space-y-3">
+          <div class="flex items-center justify-between">
+             <div class="flex flex-col">
+               <span class="font-bold text-[var(--text-primary)]">{{ u.display_name || '無名稱' }}</span>
+               <span class="text-xs text-zinc-500">{{ u.email }}</span>
+             </div>
+             <span :class="['px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider', u.is_admin ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20']">
+               {{ u.is_admin ? '管理員' : '一般' }}
+             </span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center gap-2 text-zinc-500">
+               <Mail class="w-3 h-3" />
+               <span>Email 通知:</span>
+               <span :class="u.notify_email ? 'text-brand-500 font-bold' : 'text-rose-500'">{{ u.notify_email ? '是' : '否' }}</span>
+            </div>
+            <div class="flex items-center gap-2 text-zinc-500">
+               <MessageCircle class="w-3 h-3" />
+               <span>LINE 通知:</span>
+               <span :class="u.notify_line ? 'text-brand-500 font-bold' : 'text-rose-500'">{{ u.notify_line ? '是' : '否' }}</span>
+            </div>
+          </div>
+
+          <div v-if="u.id !== auth.userId" class="pt-2">
+            <button class="w-full py-2 text-xs font-bold border border-[var(--border-color)] rounded-lg text-zinc-500 hover:text-brand-500 hover:border-brand-500 transition-colors" @click="toggleAdmin(u)">
+              {{ u.is_admin ? '撤銷管理員權限' : '設為管理員' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -90,8 +124,10 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { Save, Mail, MessageCircle, RefreshCw, Loader2 } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
+import { useBreakpoint } from '../composables/useBreakpoint'
 
 const auth = useAuthStore()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 // Remove local API_BASE declaration
 
 const profileForm = reactive({
