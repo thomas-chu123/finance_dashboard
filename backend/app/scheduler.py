@@ -193,7 +193,6 @@ async def check_prices():
             if condition_met and not alert_triggered:
                 # 首次觸發
                 should_notify = True
-                sb.table("tracked_indices").update({"alert_triggered": True}).eq("id", tracking_id).execute()
                 logger.info(f"[Scheduler] ✓ 首次觸發: {symbol} (price={current_price}, rsi={current_rsi}, mode={trigger_mode})")
             elif condition_met and alert_triggered:
                 # 條件仍滿足，檢查 24 小時冷卻時間
@@ -221,6 +220,13 @@ async def check_prices():
 
             email = profile.get("email")
             line_user_id = profile.get("line_user_id")
+
+            if not send_email_flag and not send_line_flag:
+                logger.warning(
+                    f"[Scheduler] ⚠ {symbol} 條件已觸發但無可用通知管道 "
+                    f"(notify_channel={notify_channel}, notify_email={profile.get('notify_email')}, "
+                    f"notify_line={profile.get('notify_line')}, line_user_id={'有' if line_user_id else '無'})"
+                )
 
             success = False
             channel_used = []
@@ -262,11 +268,12 @@ async def check_prices():
                     success = True
                     channel_used.append("line")
 
-            # 8. 更新通知時間戳
+            # 8. 更新通知時間戳，並在首次成功後才標記 alert_triggered
             if success:
-                sb.table("tracked_indices").update({
-                    "last_notified_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", tracking_id).execute()
+                update_fields = {"last_notified_at": datetime.now(timezone.utc).isoformat()}
+                if not alert_triggered:
+                    update_fields["alert_triggered"] = True
+                sb.table("tracked_indices").update(update_fields).eq("id", tracking_id).execute()
 
             # 9. 記錄警報日誌
             sb.table("alert_logs").insert({
