@@ -15,7 +15,7 @@
     </div>
 
     <!-- Filter tabs -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="flex overflow-x-auto scrollbar-none gap-2 pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         <button v-for="cat in categories" :key="cat.value"
           :class="['px-4 py-1.5 rounded-full text-sm font-bold transition-colors border relative whitespace-nowrap', activeCategory === cat.value ? 'bg-brand-500 border-brand-500 text-white shadow-sm' : 'bg-transparent border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
