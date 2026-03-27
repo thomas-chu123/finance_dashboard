@@ -161,7 +161,7 @@
                   <div class="col-span-1 hidden sm:block">狀態</div>
                 </div>
                 <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
-                  <div class="col-span-1 sm:col-span-2 text-[10px] sm:text-[11px] text-zinc-500">{{ formatDate(log.created_at).split(',')[1] }}</div>
+                  <div class="col-span-1 sm:col-span-2 text-[10px] sm:text-[11px] text-zinc-500">{{ formatLogTime(log.created_at) }}</div>
                   <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
                   <div class="col-span-1 font-mono text-sm text-zinc-500 hidden sm:block">{{ log.trigger_price }}</div>
                   <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
@@ -523,6 +523,15 @@ const activeCount = computed(() => trackingStore.items.filter(i => i.is_active).
 
 function formatDate(d) {
   return new Date(d).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+}
+
+function formatLogTime(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  })
 }
 
 function formatPrice(p) {

@@ -33,9 +33,9 @@
             您尚未連結 LINE 帳號，請按照右側的步驟進行綁定。
           </p>
           
-          <div v-if="isBound && auth.profile?.line_user_id" class="mt-6 p-3 bg-[var(--bg-main)]/50 rounded-xl font-mono text-xs flex items-center overflow-x-auto border border-[var(--border-color)] shadow-inner">
-            <span class="text-[var(--text-muted)] mr-2 shrink-0 select-none font-sans font-medium text-sm">LINE User ID:</span>
-            <span class="text-brand-500 whitespace-nowrap font-bold select-all tracking-wide flex-1 break-all min-w-0">{{ auth.profile.line_user_id }}</span>
+          <div v-if="isBound && auth.profile?.line_user_id" class="mt-6 p-3 bg-[var(--bg-main)]/50 rounded-xl font-mono text-xs border border-[var(--border-color)] shadow-inner">
+            <span class="text-[var(--text-muted)] block font-sans font-medium text-xs mb-1 select-none">LINE User ID:</span>
+            <span class="text-brand-500 font-bold select-all tracking-wide break-all">{{ auth.profile.line_user_id }}</span>
           </div>
         </div>
       </div>
