@@ -215,8 +215,10 @@ async def check_prices():
                 continue
 
             # 7. 發送通知
-            send_email_flag = notify_channel in ("email", "both") and profile.get("notify_email")
-            send_line_flag = notify_channel in ("line", "both") and profile.get("notify_line")
+            global_notify = profile.get("global_notify", True)
+            send_email_flag = global_notify and notify_channel in ("email", "both") and profile.get("notify_email")
+            send_line_flag = global_notify and notify_channel in ("line", "both") and profile.get("notify_line")
+
             email = profile.get("email")
             line_user_id = profile.get("line_user_id")
 

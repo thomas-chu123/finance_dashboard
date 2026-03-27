@@ -71,6 +71,33 @@ export const useAuthStore = defineStore('auth', {
       this.profile = res.data
     },
 
+    async toggleGlobalNotify() {
+      if (!this.profile) return
+      const current = this.profile.global_notify !== false // defaults to true
+      const newValue = !current
+      
+      // Optimitistic UI update for the bell
+      this.profile.global_notify = newValue
+      try {
+        // 1. Also update all tracking items' is_active status
+        await axios.put(`${API_BASE}/api/tracking/toggle-all/status`, 
+          { is_active: newValue },
+          { headers: this.headers }
+        )
+        
+        // 2. Update the user profile
+        await this.updateProfile({ global_notify: newValue })
+        
+        // 3. Refresh UI Page as requested
+        window.location.reload()
+      } catch (e) {
+        // Revert on failure
+        this.profile.global_notify = current
+        console.error('Failed to toggle global_notify', e)
+        alert('切換通知狀態失敗，請稍後再試。')
+      }
+    },
+
     logout() {
       this.token = null
       this.userId = null

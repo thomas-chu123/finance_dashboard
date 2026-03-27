@@ -137,9 +137,13 @@
           >
             <component :is="isDark ? Sun : Moon" :size="20" />
           </button>
-          <button class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
-            <Bell :size="20" />
-            <span class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-[var(--bg-header)]"></span>
+          <button 
+            @click="auth.toggleGlobalNotify()"
+            class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            :title="auth.profile?.global_notify !== false ? '關閉全部追蹤通知' : '開啟全部追蹤通知'"
+          >
+            <component :is="auth.profile?.global_notify !== false ? Bell : BellOff" :size="20" />
+            <span v-if="auth.profile?.global_notify !== false" class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-[var(--bg-header)]"></span>
           </button>
           <div class="h-8 w-[1px] bg-[var(--border-color)] mx-1 sm:mx-2"></div>
           <div class="flex flex-col items-end">
@@ -175,6 +179,7 @@ import {
   MessageCircle, 
   Search, 
   Bell, 
+  BellOff,
   Sun, 
   Moon, 
   Menu, 
