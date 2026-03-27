@@ -4,31 +4,29 @@
       <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
       <div class="flex items-center gap-2">
         <!-- Tab 選擇 -->
-        <div class="flex bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg p-1">
-          <button
-            :class="['px-3 py-1.5 text-sm font-medium rounded-md transition-all',
-              activeTab === 'single'
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-muted hover:text-[var(--text-primary)]']"
-            @click="activeTab = 'single'; showSaved = false">
-            <BarChart3 class="w-4 h-4 mr-1.5 inline" />單一回測
-          </button>
-          <button
-            :class="['px-3 py-1.5 text-sm font-medium rounded-md transition-all',
-              activeTab === 'compare'
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-muted hover:text-[var(--text-primary)]']"
-            @click="activeTab = 'compare'; showSaved = false">
-            <Scale class="w-4 h-4 mr-1.5 inline" />組合比較
-          </button>
-        </div>
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
+            activeTab === 'single' && !showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="activeTab = 'single'; showSaved = false">
+          <BarChart3 class="w-4 h-4 mr-2" />單一回測
+        </button>
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
+            activeTab === 'compare' && !showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="activeTab = 'compare'; showSaved = false">
+          <Scale class="w-4 h-4 mr-2" />組合比較
+        </button>
         <!-- 已儲存按鈕 -->
         <button
           :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border',
             showSaved
-              ? 'bg-brand-500/10 border-brand-500 text-brand-600 dark:text-brand-400'
-              : 'bg-[var(--input-bg)] border-[var(--border-color)] text-gray-900 dark:text-gray-100 hover:bg-[var(--bg-sidebar)]']"
-          @click="showSaved = !showSaved; activeTab = 'single'">
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="showSaved = true; activeTab = 'single'">
           <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
           <FolderOpen v-else class="w-4 h-4 mr-2" />
           已儲存
@@ -63,8 +61,8 @@
               <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
             </div>
           </div>
-          <div class="p-3 sm:p-4" v-if="p.results_json?.metrics">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+          <div class="p-3 sm:p-4">
+            <div v-if="p.results_json?.metrics" class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">CAGR</div>
                 <div class="fw-600" :class="(p.results_json.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">{{ p.results_json.metrics.cagr }}%</div>
@@ -74,13 +72,28 @@
                 <div class="fw-600 text-accent">{{ p.results_json.metrics.sharpe_ratio }}</div>
               </div>
               <div>
+                <div class="text-xs text-muted">MDD</div>
                 <div class="fw-600 text-brand-600">{{ p.results_json.metrics.max_drawdown }}%</div>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+              <div>
+                <div class="text-xs text-muted">CAGR</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Sharpe</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">MDD</div>
+                <div class="fw-600 text-muted">--</div>
               </div>
             </div>
             <div class="mt-3">
               <div class="text-xs text-muted mb-2">組合資產</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500 text-white">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500 text-white">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
