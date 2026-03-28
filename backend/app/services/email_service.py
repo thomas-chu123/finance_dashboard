@@ -112,8 +112,13 @@ def _build_trigger_condition_label(
     if trigger_mode == "rsi":
         return rsi_label
     if trigger_mode == "both":
-        parts = [p for p in (price_label, rsi_label) if p]
-        return " 及 ".join(parts) if parts else price_label
+        # "both" 模式：只顯示實際已觸發的條件（防禦性寫法）
+        parts = []
+        if price_condition_met and price_label:
+            parts.append(price_label)
+        if rsi_condition_met and rsi_label:
+            parts.append(rsi_label)
+        return " 及 ".join(parts) if parts else (price_label or rsi_label)
     if trigger_mode == "either":
         # 只顯示實際觸發的條件，不顯示未觸發的條件
         if price_condition_met and rsi_condition_met:

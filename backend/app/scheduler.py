@@ -272,20 +272,26 @@ async def check_prices():
                 update_fields = {"last_notified_at": datetime.now(timezone.utc).isoformat()}
                 if not alert_triggered:
                     update_fields["alert_triggered"] = True
-                sb.table("tracked_indices").update(update_fields).eq("id", tracking_id).execute()
+                try:
+                    sb.table("tracked_indices").update(update_fields).eq("id", tracking_id).execute()
+                except Exception as upd_err:
+                    logger.error(f"[Scheduler] Failed to update tracked_indices for {symbol}: {upd_err}")
 
-            # 9. 記錄警報日誌
-            sb.table("alert_logs").insert({
-                "user_id": item["user_id"],
-                "tracked_index_id": tracking_id,
-                "symbol": symbol,
-                "trigger_price": item.get("trigger_price"),
-                "current_price": current_price,
-                "current_rsi": current_rsi,
-                "trigger_mode": trigger_mode,
-                "channel": ",".join(channel_used) if channel_used else notify_channel,
-                "status": "sent" if success else "failed",
-            }).execute()
+            # 9. 記錄警報日誌（獨立 try/except，不阻斷流程）
+            try:
+                sb.table("alert_logs").insert({
+                    "user_id": item["user_id"],
+                    "tracked_index_id": tracking_id,
+                    "symbol": symbol,
+                    "trigger_price": item.get("trigger_price"),
+                    "current_price": current_price,
+                    "current_rsi": current_rsi,
+                    "trigger_mode": trigger_mode,
+                    "channel": ",".join(channel_used) if channel_used else notify_channel,
+                    "status": "sent" if success else "failed",
+                }).execute()
+            except Exception as log_err:
+                logger.error(f"[Scheduler] Failed to save alert_log for {symbol}: {log_err}")
 
         except Exception as e:
             logger.error(f"[Scheduler] Error processing {symbol}: {e}")
