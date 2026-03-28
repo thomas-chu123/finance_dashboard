@@ -160,11 +160,6 @@ async def check_prices():
                     if updated.data:
                         current_rsi = updated.data.get("current_rsi")
 
-            # Truncate prices to 2 decimal places (discard everything after 2 decimals, not rounding)
-            truncated_current = int(current_price * 100) / 100
-            trigger_price = item.get("trigger_price")
-            truncated_trigger = int(trigger_price * 100) / 100 if trigger_price else None
-
             # 3. 檢查價格條件
             price_condition_met = False
             trigger_price = item.get("trigger_price")
@@ -236,14 +231,16 @@ async def check_prices():
                     symbol=symbol,
                     name=item["name"],
                     category=category,
-                    current_price=truncated_current,
-                    trigger_price=truncated_trigger or truncated_current,
+                    current_price=current_price,
+                    trigger_price=float(trigger_price) if trigger_price is not None else current_price,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
                     trigger_mode=trigger_mode,
                     current_rsi=current_rsi,
                     rsi_below=item.get("rsi_below"),
                     rsi_above=item.get("rsi_above"),
+                    price_condition_met=price_condition_met,
+                    rsi_condition_met=rsi_condition_met,
                 )
                 ok = await send_email(email, subject, body)
                 if ok:
@@ -254,14 +251,16 @@ async def check_prices():
                 msg = build_alert_message(
                     symbol=symbol,
                     name=item["name"],
-                    current_price=truncated_current,
-                    trigger_price=truncated_trigger or truncated_current,
+                    current_price=current_price,
+                    trigger_price=float(trigger_price) if trigger_price is not None else current_price,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
                     trigger_mode=trigger_mode,
                     current_rsi=current_rsi,
                     rsi_below=item.get("rsi_below"),
                     rsi_above=item.get("rsi_above"),
+                    price_condition_met=price_condition_met,
+                    rsi_condition_met=rsi_condition_met,
                 )
                 res = await send_line_message(line_user_id, msg)
                 if res.get("success"):

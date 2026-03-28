@@ -10,6 +10,7 @@ __pycache__/
 backend.log
 frontend.log
 *.log
+.pytest_cache/
 
 # Frontend
 frontend/node_modules/
