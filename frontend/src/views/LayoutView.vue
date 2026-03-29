@@ -174,8 +174,8 @@
                   flex items-center justify-around h-16 safe-area-bottom">
         <router-link v-for="item in mobileNavItems" :key="item.path" :to="item.path"
           class="flex flex-col items-center gap-1 px-3 py-2 min-w-[64px]
-                 text-zinc-500 transition-colors"
-          active-class="text-brand-500">
+                 text-zinc-500 transition-all duration-200 rounded-xl"
+          exact-active-class="bg-brand-500/15 text-zinc-900 dark:text-zinc-100">
           <component :is="item.icon" class="w-5 h-5" />
           <span class="text-[10px] font-bold">{{ item.label }}</span>
         </router-link>

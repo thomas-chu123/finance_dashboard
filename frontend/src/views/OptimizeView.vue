@@ -57,13 +57,13 @@
         <div class="glass-card">
           <div class="p-3 sm:p-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div class="space-y-1 mb-2">
+              <div class="space-y-1 mb-2 min-w-0">
                 <label class="block text-sm font-medium text-[var(--text-muted)]">回測開始日期</label>
-                <input v-model="optConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+                <input v-model="optConfig.start_date" type="date" class="w-full max-w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
               </div>
-              <div class="space-y-1 mb-2">
+              <div class="space-y-1 mb-2 min-w-0">
                 <label class="block text-sm font-medium text-[var(--text-muted)]">結束日期</label>
-                <input v-model="optConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+                <input v-model="optConfig.end_date" type="date" class="w-full max-w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
               </div>
             </div>
           </div>
