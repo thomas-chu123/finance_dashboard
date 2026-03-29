@@ -15,12 +15,25 @@
   # 列出最近 session 清單
   python tests/debug_ai_brief.py --sessions
 
+  # 直接測試單一 symbol（不寫 DB，印出搜尋+摘要結果）— 自動讀取 .env 中的 AI_SUMMARY
+  python tests/debug_ai_brief.py --test-symbol VTI
+  python tests/debug_ai_brief.py --test-symbol 台積電 --category tw_etf
+
+  # 強制指定提供商（不修改 .env，僅本次測試）
+  python tests/debug_ai_brief.py --test-symbol VTI --ai-summary TAVILY
+  python tests/debug_ai_brief.py --test-symbol VTI --ai-summary BRAVE_GEMINI
+
+  # 顯示目前 .env 中的提供商設定
+  python tests/debug_ai_brief.py --show-config
+
   # 指定帳密（否則自動讀 .env 中的 DEBUG_EMAIL / DEBUG_PASSWORD）
   python tests/debug_ai_brief.py --trigger --email me@example.com --password secret
 """
 
 import argparse
+import asyncio
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -29,6 +42,10 @@ from pathlib import Path
 
 BASE_URL = "http://localhost:8005"
 
+
+# ---------------------------------------------------------------------------
+# HTTP helpers
+# ---------------------------------------------------------------------------
 
 def _request(method: str, path: str, token: str | None = None, body: dict | None = None) -> dict:
     url = BASE_URL + path
@@ -56,8 +73,13 @@ def login(email: str, password: str) -> str:
     return token
 
 
-def _load_env_credentials() -> tuple[str | None, str | None]:
-    email = password = None
+# ---------------------------------------------------------------------------
+# .env helpers
+# ---------------------------------------------------------------------------
+
+def _load_env() -> dict[str, str]:
+    """讀取 .env 中所有 KEY=VALUE，回傳 dict."""
+    env: dict[str, str] = {}
     env_paths = [
         Path(__file__).parent.parent / "backend" / "app" / ".env",
         Path(__file__).parent.parent / ".env",
@@ -66,12 +88,20 @@ def _load_env_credentials() -> tuple[str | None, str | None]:
         if env_path.exists():
             for line in env_path.read_text().splitlines():
                 line = line.strip()
-                if line.startswith("DEBUG_EMAIL="):
-                    email = email or line.split("=", 1)[1].strip()
-                elif line.startswith("DEBUG_PASSWORD="):
-                    password = password or line.split("=", 1)[1].strip()
-    return email, password
+                if "=" in line and not line.startswith("#"):
+                    k, _, v = line.partition("=")
+                    env.setdefault(k.strip(), v.strip())
+    return env
 
+
+def _load_env_credentials() -> tuple[str | None, str | None]:
+    env = _load_env()
+    return env.get("DEBUG_EMAIL"), env.get("DEBUG_PASSWORD")
+
+
+# ---------------------------------------------------------------------------
+# Print helpers
+# ---------------------------------------------------------------------------
 
 def print_latest(data: dict) -> None:
     session_time = data.get("session_time")
@@ -102,20 +132,166 @@ def print_sessions(sessions: list) -> None:
         ))
 
 
+def show_config() -> None:
+    """顯示目前 .env 中的 AI Briefing 相關設定."""
+    env = _load_env()
+    provider = env.get("AI_SUMMARY", "BRAVE_GEMINI (預設)")
+    brave_key = env.get("BRAVE_SEARCH_API_KEY", "")
+    gemini_key = env.get("GEMINI_API_KEY", "")
+    tavily_key = env.get("TAVILY_SEARCH_API_KEY", "")
+
+    def mask(key: str) -> str:
+        return (key[:6] + "..." + key[-4:]) if len(key) > 12 else ("(未設定)" if not key else key)
+
+    print("\n=== AI Briefing 設定 ===\n")
+    print(f"  AI_SUMMARY            : {provider}")
+    print(f"  BRAVE_SEARCH_API_KEY  : {mask(brave_key)}")
+    print(f"  GEMINI_API_KEY        : {mask(gemini_key)}")
+    print(f"  TAVILY_SEARCH_API_KEY : {mask(tavily_key)}")
+    print()
+
+    if provider.upper() == "TAVILY":
+        if not tavily_key:
+            print("  [!] AI_SUMMARY=TAVILY 但 TAVILY_SEARCH_API_KEY 未設定！")
+        else:
+            print("  [OK] Tavily 已設定，將跳過 Brave+Gemini 呼叫")
+    else:
+        missing = []
+        if not brave_key:
+            missing.append("BRAVE_SEARCH_API_KEY")
+        if not gemini_key:
+            missing.append("GEMINI_API_KEY")
+        if missing:
+            print("  [!] 缺少必要 key：" + ", ".join(missing))
+        else:
+            print("  [OK] Brave+Gemini 均已設定")
+
+
+# ---------------------------------------------------------------------------
+# Direct single-symbol test（不需登入，直接在 backend 環境執行）
+# ---------------------------------------------------------------------------
+
+async def _test_symbol_async(symbol: str, symbol_name: str, category: str, ai_summary: str | None) -> None:
+    """直接呼叫 service function 測試單一 symbol，不走 HTTP，不寫 DB."""
+    # 動態設定 AI_SUMMARY 環境變數（若有指定 --ai-summary）
+    env_map = _load_env()
+    provider = (ai_summary or env_map.get("AI_SUMMARY", "BRAVE_GEMINI")).upper()
+
+    # 把 .env 中的 key 補入環境（若尚未存在）
+    for k, v in env_map.items():
+        os.environ.setdefault(k, v)
+    os.environ["AI_SUMMARY"] = provider
+
+    # 必須在設定環境後才匯入（避免 lru_cache 提前讀到空值）
+    import importlib, sys as _sys
+
+    # 清除 lru_cache 以讓 get_settings() 重新讀環境變數
+    for mod_name in list(_sys.modules.keys()):
+        if "app.config" in mod_name or "app.services" in mod_name:
+            del _sys.modules[mod_name]
+
+    # 設定 PYTHONPATH
+    backend_path = str(Path(__file__).parent.parent / "backend")
+    if backend_path not in _sys.path:
+        _sys.path.insert(0, backend_path)
+
+    if category == "tw_etf":
+        finance_hint = "台灣ETF 股票"
+    elif category == "exchange":
+        finance_hint = "外匯 匯率走勢"
+    else:
+        finance_hint = "ETF stock fund"
+
+    query = f"{symbol_name} {symbol} {finance_hint}" if symbol_name != symbol else f"{symbol_name} {finance_hint}"
+
+    print(f"\n=== 直接測試 symbol={symbol}  provider={provider} ===")
+    print(f"  query: {query}\n")
+
+    if provider == "TAVILY":
+        from app.services.tavily_service import search_and_summarize
+        news_items, summary = await search_and_summarize(
+            symbol=symbol,
+            symbol_name=symbol_name,
+            query=query,
+            session_hour=8,
+        )
+    else:
+        from app.services.brave_search_service import search_news
+        from app.services.gemini_service import generate_market_summary
+        news_items = await search_news(query=query, count=3)
+        summary = await generate_market_summary(
+            symbol=symbol,
+            symbol_name=symbol_name,
+            news_items=news_items,
+            session_hour=8,
+        )
+
+    print(f"  新聞數量：{len(news_items)}")
+    for i, item in enumerate(news_items, 1):
+        title = item.get("title", "(無標題)")[:80]
+        url = item.get("url", "")[:80]
+        date = item.get("published_date", "")
+        print(f"  [{i}] {title}")
+        print(f"       {url}  ({date})")
+
+    print(f"\n  摘要（{len(summary)} 字）：")
+    if summary:
+        # 每 60 字換行顯示
+        for i in range(0, len(summary), 60):
+            print("    " + summary[i:i+60])
+    else:
+        print("    (無摘要)")
+    print()
+
+
+def test_symbol(symbol: str, symbol_name: str, category: str, ai_summary: str | None) -> None:
+    asyncio.run(_test_symbol_async(symbol, symbol_name, category, ai_summary))
+
+
+# ---------------------------------------------------------------------------
+# main
+# ---------------------------------------------------------------------------
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="AI Briefing Debug Tool")
-    parser.add_argument("--trigger",  action="store_true", help="Manually trigger briefing session")
-    parser.add_argument("--latest",   action="store_true", help="Show latest briefing result")
-    parser.add_argument("--sessions", action="store_true", help="List recent sessions")
+    parser.add_argument("--trigger",     action="store_true", help="Manually trigger briefing session")
+    parser.add_argument("--latest",      action="store_true", help="Show latest briefing result")
+    parser.add_argument("--sessions",    action="store_true", help="List recent sessions")
+    parser.add_argument("--show-config", action="store_true", help="Show current AI summary provider config")
+    parser.add_argument("--test-symbol", metavar="SYMBOL",
+                        help="Directly test search+summary for a single symbol (no DB write)")
+    parser.add_argument("--name",     default=None,
+                        help="Symbol display name for --test-symbol (default: same as symbol)")
+    parser.add_argument("--category", default="us_etf",
+                        choices=["us_etf", "tw_etf", "exchange", "stock"],
+                        help="Category for --test-symbol (default: us_etf)")
+    parser.add_argument("--ai-summary", default=None,
+                        choices=["TAVILY", "BRAVE_GEMINI"],
+                        help="Override AI_SUMMARY provider for --test-symbol only")
     parser.add_argument("--wait", type=int, default=60,
                         help="Seconds to wait after trigger before showing result (default: 60)")
     parser.add_argument("--email",    default=None, help="Login email")
     parser.add_argument("--password", default=None, help="Login password")
     args = parser.parse_args()
 
-    # 未指定動作時，預設顯示最新早報
-    if not (args.trigger or args.latest or args.sessions):
+    # --show-config 和 --test-symbol 不需要 HTTP 登入
+    if args.show_config:
+        show_config()
+        if not (args.trigger or args.latest or args.sessions or args.test_symbol):
+            return
+
+    if args.test_symbol:
+        symbol_name = args.name or args.test_symbol
+        test_symbol(args.test_symbol, symbol_name, args.category, args.ai_summary)
+        if not (args.trigger or args.latest or args.sessions):
+            return
+
+    # 未指定 HTTP 動作時，預設顯示最新早報
+    if not (args.trigger or args.latest or args.sessions or args.show_config or args.test_symbol):
         args.latest = True
+
+    if not (args.trigger or args.latest or args.sessions):
+        return
 
     email = args.email
     password = args.password

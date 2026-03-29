@@ -49,11 +49,14 @@ async def search_and_summarize(
         return [], ""
 
     session_label = SESSION_LABEL_MAP.get(session_hour, "市場快報")
-    # 在 query 中附加語言指示以提升繁體中文輸出機率
+
+    # 將 query 包裹在繁體中文指令中：
+    #   前置中文要求 → Tavily answer 生成時會遵循語言指示
+    #   後置原始英文關鍵字 → 確保搜尋命中率不下降
     localized_query = (
-        f"{query} {session_label} 繁體中文摘要"
-        if any("\u4e00" <= ch <= "\u9fff" for ch in symbol_name)
-        else query
+        f"請以繁體中文撰寫100到150字的{session_label}市場摘要，"
+        f"分析 {symbol_name}（{symbol}）的最新市場動態與投資要點。"
+        f"搜尋關鍵字：{query}"
     )
 
     payload = {
@@ -61,7 +64,7 @@ async def search_and_summarize(
         "query": localized_query,
         "search_depth": "basic",
         "topic": "finance",
-        "include_answer": True,
+        "include_answer": "advanced",
         "max_results": max_results,
     }
 
