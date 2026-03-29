@@ -118,6 +118,10 @@ async def run_market_briefing_session() -> dict:
                 session_hour=session_hour,
             )
 
+            # Gemini free tier 限制 10 RPM，每次呼叫後等 7 秒（≈ 8.5 RPM）
+            if news_items:
+                await asyncio.sleep(7)
+
             status = "completed" if summary_text else "failed"
             error_message = None if summary_text else "Gemini 回傳空摘要"
 

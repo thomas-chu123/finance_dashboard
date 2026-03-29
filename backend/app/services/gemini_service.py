@@ -1,6 +1,7 @@
 """
-Google Gemini 1.5 Flash API 服務 — 生成市場新聞摘要（使用 httpx REST 呼叫）.
+Google Gemini API 服務 — 生成市場新聞摘要（使用 httpx REST 呼叫）.
 """
+import asyncio
 import logging
 import httpx
 from app.config import get_settings
@@ -10,7 +11,7 @@ settings = get_settings()
 
 GEMINI_URL = (
     "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-1.5-flash:generateContent"
+    "gemini-2.5-flash-lite:generateContent"
 )
 
 SESSION_LABEL_MAP = {
@@ -77,12 +78,20 @@ async def generate_market_summary(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                GEMINI_URL,
-                params={"key": api_key},
-                json=payload,
-            )
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            # 429 指數退避重試（最多 3 次）
+            for attempt in range(3):
+                resp = await client.post(
+                    GEMINI_URL,
+                    params={"key": api_key},
+                    json=payload,
+                )
+                if resp.status_code == 429:
+                    wait = 15 * (2 ** attempt)  # 15s → 30s → 60s
+                    logger.warning(f"[Gemini] 429 rate limit for {symbol}，等候 {wait}s 後重試（第 {attempt + 1} 次）")
+                    await asyncio.sleep(wait)
+                    continue
+                break
 
         if resp.status_code != 200:
             logger.error(f"[Gemini] HTTP {resp.status_code} for {symbol}: {resp.text[:300]}")
