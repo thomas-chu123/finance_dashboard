@@ -15,6 +15,7 @@ from app.services.email_service import send_email, build_alert_email
 from app.services.line_service import send_line_message, build_alert_message
 from app.services.tw_etf_sync import sync_tw_etf_list
 from app.services.us_etf_sync import sync_us_etf_list
+from app.services.news_briefing_service import run_market_briefing_session
 from app.services.rsi_service import get_rsi_calculation_service
 
 logger = logging.getLogger(__name__)
@@ -160,11 +161,6 @@ async def check_prices():
                     if updated.data:
                         current_rsi = updated.data.get("current_rsi")
 
-            # Truncate prices to 2 decimal places (discard everything after 2 decimals, not rounding)
-            truncated_current = int(current_price * 100) / 100
-            trigger_price = item.get("trigger_price")
-            truncated_trigger = int(trigger_price * 100) / 100 if trigger_price else None
-
             # 3. 檢查價格條件
             price_condition_met = False
             trigger_price = item.get("trigger_price")
@@ -193,10 +189,9 @@ async def check_prices():
             if condition_met and not alert_triggered:
                 # 首次觸發
                 should_notify = True
-                sb.table("tracked_indices").update({"alert_triggered": True}).eq("id", tracking_id).execute()
                 logger.info(f"[Scheduler] ✓ 首次觸發: {symbol} (price={current_price}, rsi={current_rsi}, mode={trigger_mode})")
-            elif alert_triggered:
-                # 已觸發，檢查 24 小時冷卻時間
+            elif condition_met and alert_triggered:
+                # 條件仍滿足，檢查 24 小時冷卻時間
                 last_notified = item.get("last_notified_at")
                 if not last_notified:
                     should_notify = True
@@ -206,15 +201,28 @@ async def check_prices():
                     if elapsed >= 86400:  # 24 小時
                         should_notify = True
                         logger.info(f"[Scheduler] 每日提醒: {symbol}")
+            elif not condition_met and alert_triggered:
+                # 條件已不再滿足，重置觸發狀態，停止重複通知
+                sb.table("tracked_indices").update({"alert_triggered": False}).eq("id", tracking_id).execute()
+                logger.info(f"[Scheduler] ↺ 重置觸發狀態: {symbol} (price={current_price}, rsi={current_rsi}, mode={trigger_mode})")
 
             if not should_notify:
                 continue
 
             # 7. 發送通知
-            send_email_flag = notify_channel in ("email", "both") and profile.get("notify_email")
-            send_line_flag = notify_channel in ("line", "both") and profile.get("notify_line")
+            global_notify = profile.get("global_notify", True)
+            send_email_flag = global_notify and notify_channel in ("email", "both") and profile.get("notify_email")
+            send_line_flag = global_notify and notify_channel in ("line", "both") and profile.get("notify_line")
+
             email = profile.get("email")
             line_user_id = profile.get("line_user_id")
+
+            if not send_email_flag and not send_line_flag:
+                logger.warning(
+                    f"[Scheduler] ⚠ {symbol} 條件已觸發但無可用通知管道 "
+                    f"(notify_channel={notify_channel}, notify_email={profile.get('notify_email')}, "
+                    f"notify_line={profile.get('notify_line')}, line_user_id={'有' if line_user_id else '無'})"
+                )
 
             success = False
             channel_used = []
@@ -224,14 +232,16 @@ async def check_prices():
                     symbol=symbol,
                     name=item["name"],
                     category=category,
-                    current_price=truncated_current,
-                    trigger_price=truncated_trigger or truncated_current,
+                    current_price=current_price,
+                    trigger_price=float(trigger_price) if trigger_price is not None else current_price,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
                     trigger_mode=trigger_mode,
                     current_rsi=current_rsi,
                     rsi_below=item.get("rsi_below"),
                     rsi_above=item.get("rsi_above"),
+                    price_condition_met=price_condition_met,
+                    rsi_condition_met=rsi_condition_met,
                 )
                 ok = await send_email(email, subject, body)
                 if ok:
@@ -242,38 +252,47 @@ async def check_prices():
                 msg = build_alert_message(
                     symbol=symbol,
                     name=item["name"],
-                    current_price=truncated_current,
-                    trigger_price=truncated_trigger or truncated_current,
+                    current_price=current_price,
+                    trigger_price=float(trigger_price) if trigger_price is not None else current_price,
                     trigger_direction=item.get("trigger_direction", "above"),
                     tracking_id=tracking_id,
                     trigger_mode=trigger_mode,
                     current_rsi=current_rsi,
                     rsi_below=item.get("rsi_below"),
                     rsi_above=item.get("rsi_above"),
+                    price_condition_met=price_condition_met,
+                    rsi_condition_met=rsi_condition_met,
                 )
                 res = await send_line_message(line_user_id, msg)
                 if res.get("success"):
                     success = True
                     channel_used.append("line")
 
-            # 8. 更新通知時間戳
+            # 8. 更新通知時間戳，並在首次成功後才標記 alert_triggered
             if success:
-                sb.table("tracked_indices").update({
-                    "last_notified_at": datetime.now(timezone.utc).isoformat(),
-                }).eq("id", tracking_id).execute()
+                update_fields = {"last_notified_at": datetime.now(timezone.utc).isoformat()}
+                if not alert_triggered:
+                    update_fields["alert_triggered"] = True
+                try:
+                    sb.table("tracked_indices").update(update_fields).eq("id", tracking_id).execute()
+                except Exception as upd_err:
+                    logger.error(f"[Scheduler] Failed to update tracked_indices for {symbol}: {upd_err}")
 
-            # 9. 記錄警報日誌
-            sb.table("alert_logs").insert({
-                "user_id": item["user_id"],
-                "tracked_index_id": tracking_id,
-                "symbol": symbol,
-                "trigger_price": item.get("trigger_price"),
-                "current_price": current_price,
-                "current_rsi": current_rsi,
-                "trigger_mode": trigger_mode,
-                "channel": ",".join(channel_used) if channel_used else notify_channel,
-                "status": "sent" if success else "failed",
-            }).execute()
+            # 9. 記錄警報日誌（獨立 try/except，不阻斷流程）
+            try:
+                sb.table("alert_logs").insert({
+                    "user_id": item["user_id"],
+                    "tracked_index_id": tracking_id,
+                    "symbol": symbol,
+                    "trigger_price": item.get("trigger_price"),
+                    "current_price": current_price,
+                    "current_rsi": current_rsi,
+                    "trigger_mode": trigger_mode,
+                    "channel": ",".join(channel_used) if channel_used else notify_channel,
+                    "status": "sent" if success else "failed",
+                }).execute()
+            except Exception as log_err:
+                logger.error(f"[Scheduler] Failed to save alert_log for {symbol}: {log_err}")
 
         except Exception as e:
             logger.error(f"[Scheduler] Error processing {symbol}: {e}")
@@ -300,11 +319,27 @@ async def run_us_etf_sync():
         logger.error(f"[Scheduler] US ETF sync failed: {e}")
 
 
+async def run_briefing_job():
+    """Wrapper to run market briefing session and log outcome."""
+    try:
+        stats = await run_market_briefing_session()
+        logger.info(f"[Scheduler] Briefing job complete: {stats}")
+    except Exception as e:
+        logger.error(f"[Scheduler] Briefing job failed: {e}")
+
+
 def start_scheduler():
     scheduler.add_job(check_prices, "interval", minutes=30, id="price_check", replace_existing=True)
     # Sync TW ETF list daily at 01:00 Asia/Taipei
     scheduler.add_job(run_tw_etf_sync, "cron", hour=1, minute=0, id="tw_etf_sync", replace_existing=True)
     # Sync US ETF list daily at 02:00 Asia/Taipei
     scheduler.add_job(run_us_etf_sync, "cron", hour=2, minute=0, id="us_etf_sync", replace_existing=True)
+    # AI Market Briefing: 08:00, 13:00, 18:00 Asia/Taipei
+    scheduler.add_job(run_briefing_job, "cron", hour=8, minute=0, id="briefing_0800", replace_existing=True)
+    scheduler.add_job(run_briefing_job, "cron", hour=13, minute=0, id="briefing_1300", replace_existing=True)
+    scheduler.add_job(run_briefing_job, "cron", hour=18, minute=0, id="briefing_1800", replace_existing=True)
     scheduler.start()
-    logger.info("[Scheduler] Started: price_check (every 30 min), tw_etf_sync (daily 01:00), us_etf_sync (daily 02:00)")
+    logger.info(
+        "[Scheduler] Started: price_check (every 30 min), tw_etf_sync (daily 01:00), "
+        "us_etf_sync (daily 02:00), briefing (08:00/13:00/18:00)"
+    )

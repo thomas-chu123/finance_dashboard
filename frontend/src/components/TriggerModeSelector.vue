@@ -8,17 +8,24 @@
           觸發模式
         </span>
       </label>
-      <select
-        :value="modelValue"
-        @change="emit('update:modelValue', $event.target.value)"
-        class="w-full px-3 py-2.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] font-bold text-sm cursor-pointer transition-all hover:border-brand-500 focus:outline-none focus:border-brand-500"
-      >
-        <option v-for="mode in triggerModes" :key="mode.value" :value="mode.value">
-          {{ mode.icon }} {{ mode.label }}
-        </option>
-      </select>
-      <p class="mt-2 text-xs text-zinc-500 leading-relaxed">
-        {{ modeDescriptions[modelValue] }}
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          v-for="mode in triggerModes"
+          :key="mode.value"
+          @click="emit('update:modelValue', mode.value)"
+          :class="[
+            'flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all gap-2 text-center',
+            modelValue === mode.value 
+              ? 'border-brand-500 bg-brand-500/10 text-brand-600 dark:text-brand-400' 
+              : 'border-[var(--border-color)] text-zinc-400 hover:border-brand-500/50'
+          ]"
+        >
+          <span class="text-xl">{{ mode.icon }}</span>
+          <span class="text-xs font-black uppercase tracking-tight">{{ mode.label }}</span>
+        </button>
+      </div>
+      <p class="mt-3 text-[11px] text-zinc-500 leading-relaxed font-bold bg-[var(--bg-sidebar)]/50 p-3 rounded-lg border border-[var(--border-color)]">
+        💡 {{ modeDescriptions[modelValue] }}
       </p>
     </div>
 

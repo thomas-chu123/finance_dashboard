@@ -35,7 +35,9 @@ class ProfileUpdate(BaseModel):
     line_binding_expires_at: Optional[str] = None
     notify_email: Optional[bool] = None
     notify_line: Optional[bool] = None
+    global_notify: Optional[bool] = None
     dashboard_quotes: Optional[List[dict]] = None
+
 
 
 class ProfileResponse(BaseModel):
@@ -47,6 +49,7 @@ class ProfileResponse(BaseModel):
     line_binding_expires_at: Optional[str] = None
     notify_email: bool
     notify_line: bool
+    global_notify: bool = True
     is_admin: bool
     dashboard_quotes: Optional[List[dict]] = None
     created_at: Optional[str]
@@ -159,3 +162,15 @@ class BacktestPortfolioResponse(BaseModel):
     results_json: Optional[dict]
     items: Optional[List[dict]] = None
     created_at: str
+
+
+class ComparePortfolioConfig(BaseModel):
+    name: str
+    items: List[BacktestItem]
+
+
+class BacktestCompareRequest(BaseModel):
+    portfolios: List[ComparePortfolioConfig]
+    start_date: str
+    end_date: str
+    initial_amount: float = 10000

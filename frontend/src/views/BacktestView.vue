@@ -1,13 +1,47 @@
 <template>
   <div>
-    <div class="backtest-header">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <h2 class="text-xl font-bold text-[var(--text-primary)]">回測管理</h2>
-      <button class="flex items-center px-4 py-2 text-sm font-medium bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg text-gray-900 dark:text-gray-900 hover:bg-[var(--bg-sidebar)] transition-all shadow-sm" @click="showSaved = !showSaved">
-        <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
-        <FolderOpen v-else class="w-4 h-4 mr-2" />
-        {{ showSaved ? '執行回測' : '已儲存' }}
-      </button>
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
+        <!-- Tab 選擇 -->
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            activeTab === 'single' && !showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="activeTab = 'single'; showSaved = false">
+          <BarChart3 class="w-4 h-4 mr-2" />單一回測
+        </button>
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            activeTab === 'compare' && !showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="activeTab = 'compare'; showSaved = false">
+          <Scale class="w-4 h-4 mr-2" />組合比較
+        </button>
+        <!-- 已儲存按鈕 -->
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="showSaved = true; activeTab = 'single'">
+          <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
+          <FolderOpen v-else class="w-4 h-4 mr-2" />
+          已儲存
+        </button>
+      </div>
     </div>
+
+    <!-- 組合比較 Tab -->
+    <BacktestCompareTab
+      v-if="activeTab === 'compare'"
+      :saved-portfolios="savedPortfolios"
+    />
+
+    <!-- 單一回測 Tab -->
+    <template v-if="activeTab === 'single'">
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
@@ -27,8 +61,8 @@
               <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
             </div>
           </div>
-          <div class="p-3 sm:p-4" v-if="p.results_json?.metrics">
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+          <div class="p-3 sm:p-4">
+            <div v-if="p.results_json?.metrics" class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">CAGR</div>
                 <div class="fw-600" :class="(p.results_json.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">{{ p.results_json.metrics.cagr }}%</div>
@@ -38,19 +72,34 @@
                 <div class="fw-600 text-accent">{{ p.results_json.metrics.sharpe_ratio }}</div>
               </div>
               <div>
+                <div class="text-xs text-muted">MDD</div>
                 <div class="fw-600 text-brand-600">{{ p.results_json.metrics.max_drawdown }}%</div>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+              <div>
+                <div class="text-xs text-muted">CAGR</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Sharpe</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">MDD</div>
+                <div class="fw-600 text-muted">--</div>
               </div>
             </div>
             <div class="mt-3">
               <div class="text-xs text-muted mb-2">組合資產</div>
               <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-white dark:bg-emerald-600 dark:text-white">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500 text-white">
                   {{ item.symbol }} {{ item.weight }}%
                 </span>
               </div>
             </div>
             <div class="mt-3">
-              <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm w-full" @click="addToTracking(p.items)">
+              <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-white text-zinc-900 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-all w-full" @click="addToTracking(p.items)">
                 <Activity class="w-4 h-4 mr-2" />一鍵加入追蹤
               </button>
             </div>
@@ -79,9 +128,9 @@
               </div>
 
               <!-- Symbol type tabs -->
-              <div class="flex gap-4 mb-6" style="flex-wrap:wrap;">
+              <div class="flex gap-2 mb-6 overflow-x-auto scrollbar-none pb-1">
                 <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
@@ -106,13 +155,13 @@
           <div class="glass-card">
             <div class="p-3 sm:p-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div class="space-y-1 mb-2">
+                <div class="space-y-1 mb-2 min-w-0">
                   <label class="block text-sm font-medium text-muted">開始日期</label>
-                  <input v-model="btConfig.start_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+                  <input v-model="btConfig.start_date" type="date" class="w-full max-w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
-                <div class="space-y-1 mb-2">
+                <div class="space-y-1 mb-2 min-w-0">
                   <label class="block text-sm font-medium text-muted">結束日期</label>
-                  <input v-model="btConfig.end_date" type="date" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+                  <input v-model="btConfig.end_date" type="date" class="w-full max-w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
                 </div>
               </div>
               <div class="space-y-1 mb-2">
@@ -207,23 +256,23 @@
 
       <!-- Results -->
       <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
-          <div class="flex items-center gap-3">
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
+          <div class="flex items-center gap-3 w-full sm:w-auto">
+            <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
               <Activity class="w-4 h-4 mr-2" />加入追蹤
             </button>
-            <button class="flex items-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+            <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
               <Save class="w-4 h-4 mr-2" />儲存回測
             </button>
           </div>
         </div>
 
         <!-- Metrics -->
-        <div class="metrics-grid mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
@@ -276,7 +325,7 @@
           <!-- Portfolio growth chart -->
           <div class="glass-card">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
-            <div class="p-3 sm:p-4" style="height:360px;">
+            <div class="p-3 sm:p-4" :style="{ height: isMobile ? '280px' : '400px' }">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
           </div>
@@ -364,6 +413,8 @@
         </div>
       </div>
     </Transition>
+
+    </template><!-- end single tab -->
   </div>
 </template>
 
@@ -372,12 +423,16 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2 } from 'lucide-vue-next'
+import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 
 // Remove local API_BASE declaration
+const activeTab = ref('single')  // 'single' | 'compare'
 const showSaved = ref(false)
 const savedPortfolios = ref([])
 const symbolSearch = ref('')

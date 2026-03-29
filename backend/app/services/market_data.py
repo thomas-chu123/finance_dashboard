@@ -23,6 +23,12 @@ SYMBOL_MAP = {
     "TAIEX": "^TWII",
 }
 
+# RSI 代理映射：當符號本身無歷史數據時，使用相關性高的代理符號計算 RSI
+# WTX& = 台指數夜盤，yfinance 無歷史數據，使用 ^TWII (TAIEX) 作為代理
+RSI_PROXY_MAP = {
+    "WTX&": "^TWII",
+}
+
 # 完整的符號目錄（SSOT - Single Source of Truth）
 # 儲存所有支援的符號、映射、類別和顯示信息
 SYMBOL_CATALOG = {
@@ -398,8 +404,16 @@ async def get_historical_prices(
             return series
 
     # Priority 2: yfinance (Default for US and fallback for TW)
+    # 若符號本身無歷史數據，使用代理符號（例如 WTX& → ^TWII）
+    rsi_proxy = RSI_PROXY_MAP.get(symbol.upper())
+    if rsi_proxy:
+        logger.info(f"[MarketData] {symbol} 無歷史數據，使用 RSI 代理: {rsi_proxy}")
+        symbol_for_yf = rsi_proxy
+    else:
+        symbol_for_yf = symbol
+
     try:
-        yf_symbol = _to_yf_symbol(symbol)
+        yf_symbol = _to_yf_symbol(symbol_for_yf)
         ticker = yf.Ticker(yf_symbol)
         if adjusted:
             # auto_adjust=True: Close 欄位已還原除息、分割（用於計算 RSI）

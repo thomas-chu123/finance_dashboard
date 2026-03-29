@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full bg-[var(--bg-main)] rounded-xl border border-[var(--border-color)]" style="height: 400px;">
+  <div class="w-full bg-[var(--bg-main)] rounded-xl border border-[var(--border-color)] overflow-hidden relative" :style="{ height: isMobile ? '300px' : '400px' }">
     <div ref="chartRef" class="w-full h-full"></div>
     <div v-if="isLoading" class="absolute inset-0 bg-black/20 rounded-xl flex items-center justify-center">
       <div class="text-zinc-400 text-sm font-bold">載入歷史數據中...</div>
@@ -12,6 +12,7 @@ import { ref, watch, onMounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth'
+import { useBreakpoint } from '@/composables/useBreakpoint'
 
 const props = defineProps({
   item: {
@@ -33,6 +34,7 @@ let chart = null
 const isLoading = ref(false)
 const historyData = ref(null)
 const authStore = useAuthStore()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 
 // 取得 API 基礎 URL（優先使用環境變數，否則使用相同域名）
 const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin)
@@ -137,14 +139,15 @@ const chartOption = computed(() => ({
   legend: {
     data: ['價格', 'RSI'],
     textStyle: {
-      color: props.darkMode ? '#d1d5db' : '#4b5563'
+      color: props.darkMode ? '#d1d5db' : '#4b5563',
+      fontSize: isMobile.value ? 10 : 12
     },
-    top: 10,
+    top: 5,
     left: 'center'
   },
   grid: [
-    { left: '10%', right: '5%', top: '60px', height: '43%' },
-    { left: '10%', right: '5%', top: '72%', height: '25%' }
+    { left: isMobile.value ? '12%' : '10%', right: '5%', top: isMobile.value ? '40px' : '60px', height: isMobile.value ? '35%' : '43%' },
+    { left: isMobile.value ? '12%' : '10%', right: '5%', top: isMobile.value ? '70%' : '72%', height: isMobile.value ? '22%' : '25%' }
   ],
   xAxis: [
     {
@@ -152,7 +155,11 @@ const chartOption = computed(() => ({
       data: dates,
       gridIndex: 0,
       boundaryGap: false,
-      axisLabel: { color: props.darkMode ? '#9ca3af' : '#6b7280', interval: 5 },
+      axisLabel: { 
+        color: props.darkMode ? '#9ca3af' : '#6b7280', 
+        interval: isMobile.value ? 7 : 5,
+        fontSize: isMobile.value ? 9 : 11
+      },
       axisLine: { lineStyle: { color: props.darkMode ? '#374151' : '#e5e7eb' } }
     },
     {

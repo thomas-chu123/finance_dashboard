@@ -56,6 +56,11 @@
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">總覽</span>
           </router-link>
 
+          <router-link to="/briefing" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/briefing' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="AI 市場早報" @click="handleMenuItemClick('/briefing')">
+            <Newspaper :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/briefing' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">AI 市場早報</span>
+          </router-link>
+
           <router-link to="/tracking" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/tracking' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="指數追蹤" @click="handleMenuItemClick('/tracking')">
             <TrendingUp :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/tracking' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">指數追蹤</span>
@@ -76,6 +81,11 @@
           <router-link to="/users" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/users' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="使用者管理" @click="handleMenuItemClick('/users')">
             <Users :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/users' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用者管理</span>
+          </router-link>
+
+          <router-link to="/notifications" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/notifications' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="通知記錄" @click="handleMenuItemClick('/notifications')">
+            <Bell :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/notifications' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">通知記錄</span>
           </router-link>
 
           <router-link to="/line" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/line' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="LINE 通知" @click="handleMenuItemClick('/line')">
@@ -119,6 +129,13 @@
           >
             <component :is="isSidebarOpen ? X : Menu" :size="20" />
           </button>
+          <!-- Mobile Search Toggle -->
+          <button 
+            @click="toggleSearchModal"
+            class="sm:hidden p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
+          >
+            <Search :size="20" />
+          </button>
           <div class="relative max-w-md w-full hidden sm:block">
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="16" />
             <input 
@@ -137,9 +154,13 @@
           >
             <component :is="isDark ? Sun : Moon" :size="20" />
           </button>
-          <button class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
-            <Bell :size="20" />
-            <span class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-[var(--bg-header)]"></span>
+          <button 
+            @click="auth.toggleGlobalNotify()"
+            class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
+            :title="auth.profile?.global_notify !== false ? '關閉全部追蹤通知' : '開啟全部追蹤通知'"
+          >
+            <component :is="auth.profile?.global_notify !== false ? Bell : BellOff" :size="20" />
+            <span v-if="auth.profile?.global_notify !== false" class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-[var(--bg-header)]"></span>
           </button>
           <div class="h-8 w-[1px] bg-[var(--border-color)] mx-1 sm:mx-2"></div>
           <div class="flex flex-col items-end">
@@ -153,9 +174,46 @@
       </header>
 
       <!-- Dashboard Content -->
-      <div class="flex-1 overflow-y-auto custom-scrollbar relative p-6">
+      <div class="flex-1 overflow-y-auto custom-scrollbar relative p-4 sm:p-6 pb-20 lg:pb-6">
         <router-view />
       </div>
+
+      <!-- Mobile Bottom Navigation -->
+      <nav class="fixed bottom-0 left-0 right-0 z-50 lg:hidden
+                  bg-[var(--bg-sidebar)] border-t border-[var(--border-color)]
+                  flex items-center justify-around h-16 safe-area-bottom">
+        <router-link v-for="item in mobileNavItems" :key="item.path" :to="item.path"
+          class="flex flex-col items-center gap-1 px-3 py-2 min-w-[64px]
+                 text-zinc-500 transition-all duration-200 rounded-xl"
+          exact-active-class="bg-green-100 !text-zinc-900">
+          <component :is="item.icon" class="w-5 h-5" />
+          <span class="text-[10px] font-bold">{{ item.label }}</span>
+        </router-link>
+      </nav>
+
+      <!-- Mobile Search Modal -->
+      <Teleport to="body">
+        <div v-if="isSearchModalOpen" 
+             class="fixed inset-0 z-[60] bg-[var(--bg-main)] safe-area-top slide-up">
+          <div class="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
+            <button @click="isSearchModalOpen = false" class="p-2 text-zinc-500">
+              <ChevronLeft :size="24" />
+            </button>
+            <div class="relative flex-1">
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="18" />
+              <input 
+                type="text" 
+                placeholder="搜尋名稱、代碼..." 
+                class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-3 pl-11 pr-4 text-base focus:outline-none focus:border-brand-500/50 text-[var(--text-primary)]"
+                autofocus
+              />
+            </div>
+          </div>
+          <div class="p-6 text-center text-zinc-500">
+            <p class="text-sm">輸入關鍵字開始搜尋...</p>
+          </div>
+        </div>
+      </Teleport>
     </main>
   </div>
 </template>
@@ -165,9 +223,11 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import { 
   Globe, 
   LayoutDashboard, 
+  Newspaper,
   TrendingUp, 
   RefreshCcw, 
   Target, 
@@ -175,6 +235,7 @@ import {
   MessageCircle, 
   Search, 
   Bell, 
+  BellOff,
   Sun, 
   Moon, 
   Menu, 
@@ -187,22 +248,21 @@ import {
 const router = useRouter()
 const auth = useAuthStore()
 const { isDark, toggleDark } = useTheme()
+const { isMobile, isTablet, isDesktop, isLargeScreen } = useBreakpoint()
 
 const isSidebarOpen = ref(true)
 const isSidebarCollapsed = ref(false)
-const isLargeScreen = ref(window.innerWidth >= 1024)
+const isSearchModalOpen = ref(false)
 
 const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
 
-// 更新大螢幕狀態
-function handleResize() {
-  isLargeScreen.value = window.innerWidth >= 1024
-  // 大螢幕時自動打開sidebar
-  if (isLargeScreen.value) {
-    isSidebarOpen.value = true
-  }
-}
+const mobileNavItems = [
+  { path: '/', label: '總覽', icon: LayoutDashboard },
+  { path: '/tracking', label: '追蹤', icon: TrendingUp },
+  { path: '/backtest', label: '回測', icon: RefreshCcw },
+  { path: '/optimize', label: '最佳化', icon: Target },
+]
 
 // 關閉sidebar和backdrop
 function closeSidebar() {
@@ -239,6 +299,10 @@ router.afterEach(() => {
   closeSidebarOnMobile()
 })
 
+function toggleSearchModal() {
+  isSearchModalOpen.value = !isSearchModalOpen.value
+}
+
 onMounted(async () => {
   console.log('[LayoutView.onMounted] Starting profile initialization...', { hasToken: !!auth.token, apiBase: import.meta.env.VITE_API_BASE_URL })
   try {
@@ -253,12 +317,11 @@ onMounted(async () => {
   } catch (error) {
     console.error('[LayoutView.onMounted] ✗ Failed to load profile:', error)
   }
-  window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
 })
+
 
 function handleLogout() {
   auth.logout()

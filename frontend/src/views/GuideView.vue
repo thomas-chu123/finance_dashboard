@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-2xl mx-auto p-4 sm:p-0">
     <!-- Page Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">使用說明</h1>
@@ -184,6 +184,9 @@ import {
   MessageCircle,
   Lightbulb
 } from 'lucide-vue-next'
+import { useBreakpoint } from '../composables/useBreakpoint'
+
+const { isMobile } = useBreakpoint()
 </script>
 
 <style scoped>

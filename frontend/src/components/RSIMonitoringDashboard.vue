@@ -62,7 +62,7 @@
     <!-- 配置資訊 -->
     <div class="bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl p-3">
       <div class="text-sm font-bold text-[var(--text-primary)] mb-2">配置資訊</div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
         <div>
           <div class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">觸發模式</div>
           <div class="font-bold text-[var(--text-primary)]">{{ triggerModeLabel(item.trigger_mode) }}</div>

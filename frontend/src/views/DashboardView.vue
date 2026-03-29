@@ -84,22 +84,25 @@
               <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
                 尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
               </div>
-              <div v-else class="min-w-[600px]">
-                <div class="grid grid-cols-6 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
+              <div v-else class="min-w-[400px] sm:min-w-[700px]">
+                <div class="grid grid-cols-4 sm:grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
                   <div class="col-span-1">代碼</div>
-                  <div class="col-span-2">名稱 / 類別</div>
+                  <div class="col-span-2">名稱 <span class="hidden sm:inline">/ 類別</span></div>
                   <div class="col-span-1">目前價格</div>
-                  <div class="col-span-1">觸發門檻</div>
-                  <div class="col-span-1">狀態</div>
+                  <div class="col-span-1 hidden sm:block">價格門檻</div>
+                  <div class="col-span-1 hidden sm:block">RSI 指標</div>
+                  <div class="col-span-1 hidden sm:block">狀態</div>
                 </div>
-                <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-6 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                   <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
                   <div class="col-span-2 flex flex-col">
                     <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
-                    <span class="text-[10px] text-zinc-500 uppercase mt-0.5">{{ item.category }}</span>
+                    <span class="text-[10px] text-zinc-500 uppercase mt-0.5 hidden sm:block">{{ item.category }}</span>
                   </div>
                   <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ item.current_price ? item.current_price.toLocaleString() : '—' }}</div>
-                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">
+                  
+                  <!-- Hidden on mobile -->
+                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)] hidden sm:block">
                     <span v-if="item.trigger_price">
                       <TrendingUp v-if="item.trigger_direction === 'above'" :size="12" class="inline text-rose-500 mb-0.5" />
                       <TrendingDown v-else :size="12" class="inline text-brand-500 mb-0.5" />
@@ -107,55 +110,21 @@
                     </span>
                     <span v-else class="text-zinc-500">—</span>
                   </div>
-                  <div class="col-span-1">
+                  <div class="col-span-1 font-mono text-sm hidden sm:block">
+                    <span v-if="item.current_rsi !== null && item.current_rsi !== undefined"
+                      :class="[
+                        'font-bold',
+                        item.current_rsi < (item.rsi_below ?? 30) ? 'text-red-500 dark:text-red-400' :
+                        item.current_rsi > (item.rsi_above ?? 70) ? 'text-green-500 dark:text-green-400' :
+                        'text-blue-500 dark:text-blue-400'
+                      ]">
+                      {{ item.current_rsi.toFixed(1) }}
+                    </span>
+                    <span v-else class="text-zinc-500">—</span>
+                  </div>
+                  <div class="col-span-1 hidden sm:block">
                     <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', item.is_active ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
                       {{ item.is_active ? '啟用' : '停用' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Alert Logs Card -->
-          <div
-            v-if="cardId === 'alert-logs'"
-            class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
-            draggable="true"
-            @dragstart="handleDragStart($event, getCardIndex(cardId))"
-            @dragend="handleDragEnd($event)"
-            @dragenter="handleDragEnter($event, getCardIndex(cardId))"
-            @dragover="handleDragOver($event)"
-            @dragleave="handleDragLeave($event)"
-            @drop="handleCardDrop($event, getCardIndex(cardId))"
-            :class="{ 'drag-over': dragOverIndex === getCardIndex(cardId) && isDragging }"
-            data-card-id="alert-logs"
-          >
-            <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-              <h3 class="font-bold text-lg text-[var(--text-primary)]">🔔 最近通知記錄</h3>
-            </div>
-            <div class="overflow-x-auto">
-              <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
-              <div v-else class="min-w-[600px]">
-                <div class="grid grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
-                  <div class="col-span-2 flex items-center gap-1">時間 <Clock :size="12" /></div>
-                  <div class="col-span-1">代碼</div>
-                  <div class="col-span-1">觸發價</div>
-                  <div class="col-span-1">實際價</div>
-                  <div class="col-span-1">方式</div>
-                  <div class="col-span-1">狀態</div>
-                </div>
-                <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
-                  <div class="col-span-2 text-[11px] text-zinc-500">{{ formatDate(log.created_at) }}</div>
-                  <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
-                  <div class="col-span-1 font-mono text-sm text-zinc-500">{{ log.trigger_price }}</div>
-                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
-                  <div class="col-span-1">
-                    <span class="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider">{{ log.channel }}</span>
-                  </div>
-                  <div class="col-span-1">
-                    <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', log.status === 'sent' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
-                      {{ log.status }}
                     </span>
                   </div>
                 </div>
@@ -345,9 +314,10 @@ import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { useDashboardStore } from '../stores/dashboard'
 import { useDragDrop } from '../composables/useDragDrop'
+import { useBreakpoint } from '../composables/useBreakpoint'
 import preferencesAPI from '../api/preferences'
 import {
-  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
+  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -356,6 +326,7 @@ const dashboardStore = useDashboardStore()
 
 // Main dashboard cards drag & drop
 const { handleDragStart, handleDragEnd, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, dragOverIndex, isDragging } = useDragDrop()
+const { isMobile, isTablet, isDesktop } = useBreakpoint()
 
 // Quote cards drag & drop
 const {
@@ -645,7 +616,7 @@ async function handleCardDrop(event, toIndex) {
  * 主要內容區的卡片 ID 清單，依 cardOrder 排序（排除 sidebar）
  * Bug 1 修正：透過 computed 讓 v-for 能響應 cardOrder 的變化
  */
-const MAIN_CARD_IDS = ['tracking-table', 'alert-logs']
+const MAIN_CARD_IDS = ['tracking-table']
 const mainContentCards = computed(() =>
   dashboardStore.cardOrder.filter(id => MAIN_CARD_IDS.includes(id))
 )

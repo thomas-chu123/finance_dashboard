@@ -1,11 +1,14 @@
 """Market data router — live quotes and notification test."""
 import asyncio
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_supabase
 from app.services.email_service import send_email, build_alert_email
 from app.services.line_service import send_line_message, build_alert_message
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/market", tags=["market"])
 
@@ -192,5 +195,23 @@ async def test_alert(tracking_id: str):
             results["line"] = "sent" if resp.get("success") else f"failed: {resp.get('error')}"
         except Exception as e:
             results["line"] = f"failed: {e}"
+
+    # 記錄測試警報到 alert_logs
+    channel_used = [ch for ch in ("email", "line") if results.get(ch) == "sent"]
+    success = bool(channel_used)
+    try:
+        sb.table("alert_logs").insert({
+            "user_id": item["user_id"],
+            "tracked_index_id": tracking_id,
+            "symbol": symbol,
+            "trigger_price": item.get("trigger_price"),
+            "current_price": current_price,
+            "current_rsi": current_rsi,
+            "trigger_mode": trigger_mode,
+            "channel": ",".join(channel_used) if channel_used else channel,
+            "status": "sent" if success else "failed",
+        }).execute()
+    except Exception as log_err:
+        logger.error(f"[TestAlert] Failed to save alert_log for {symbol}: {log_err}")
 
     return {"status": "ok", "results": results, "symbol": symbol}

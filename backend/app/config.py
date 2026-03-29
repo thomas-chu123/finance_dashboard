@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     line_channel_secret: str = ""
     line_bot_user_id: str = ""
 
+    # AI Briefing
+    brave_search_api_key: str = ""
+    gemini_api_key: str = ""
+
     # App
     app_base_url: str = "http://localhost:5173"
     backend_base_url: str = "http://localhost:8005"

@@ -299,7 +299,7 @@ class RSICalculationService:
             res = self.sb.table("tracked_indices").select(
                 "id, symbol, category, rsi_period"
             ).eq("is_active", True).in_(
-                "trigger_mode", ["rsi", "both"]
+                "trigger_mode", ["rsi", "both", "either"]
             ).execute()
             
             if not res.data:

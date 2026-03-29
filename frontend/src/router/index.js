@@ -19,6 +19,11 @@ const routes = [
         component: () => import('../views/DashboardView.vue'),
       },
       {
+        path: 'briefing',
+        name: 'Briefing',
+        component: () => import('../views/BriefingView.vue'),
+      },
+      {
         path: 'tracking',
         name: 'Tracking',
         component: () => import('../views/TrackingView.vue'),
@@ -37,6 +42,11 @@ const routes = [
         path: 'users',
         name: 'Users',
         component: () => import('../views/UsersView.vue'),
+      },
+      {
+        path: 'notifications',
+        name: 'NotificationLogs',
+        component: () => import('../views/NotificationLogsView.vue'),
       },
       {
         path: 'line',
