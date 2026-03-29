@@ -103,9 +103,10 @@ async def run_market_briefing_session() -> dict:
         symbol = item["symbol"]
         symbol_name = item["name"]
         try:
-            # 搜尋新聞
+            # 搜尋新聞（避免 symbol_name == symbol 時產生重複字串）
+            search_query = symbol_name if symbol_name == symbol else f"{symbol_name} {symbol}"
             news_items = await search_news(
-                query=f"{symbol_name} {symbol}",
+                query=search_query,
                 count=3,
             )
 

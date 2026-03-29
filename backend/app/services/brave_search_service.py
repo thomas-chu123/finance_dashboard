@@ -36,7 +36,6 @@ async def search_news(query: str, count: int = 3) -> list[dict]:
     params = {
         "q": query,
         "count": count,
-        "search_lang": "zh-cht,en",
     }
 
     try:
