@@ -9,7 +9,6 @@ export const useDashboardStore = defineStore('dashboard', {
     cardOrder: [
       'market-ticker',
       'tracking-table',
-      'alert-logs',
       'status-sidebar'
     ],
     
@@ -142,7 +141,6 @@ export const useDashboardStore = defineStore('dashboard', {
       this.cardOrder = [
         'market-ticker',
         'tracking-table',
-        'alert-logs',
         'status-sidebar'
       ]
       localStorage.removeItem('dashboard_card_order')

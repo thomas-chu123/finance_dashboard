@@ -78,6 +78,11 @@
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用者管理</span>
           </router-link>
 
+          <router-link to="/notifications" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/notifications' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="通知記錄" @click="handleMenuItemClick('/notifications')">
+            <Bell :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/notifications' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">通知記錄</span>
+          </router-link>
+
           <router-link to="/line" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/line' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="LINE 通知" @click="handleMenuItemClick('/line')">
             <MessageCircle :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/line' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">LINE 通知</span>

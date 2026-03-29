@@ -39,6 +39,11 @@ const routes = [
         component: () => import('../views/UsersView.vue'),
       },
       {
+        path: 'notifications',
+        name: 'NotificationLogs',
+        component: () => import('../views/NotificationLogsView.vue'),
+      },
+      {
         path: 'line',
         name: 'Line',
         component: () => import('../views/LineView.vue'),

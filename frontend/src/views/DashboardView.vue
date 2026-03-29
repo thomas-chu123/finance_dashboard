@@ -132,52 +132,6 @@
             </div>
           </div>
 
-          <!-- Alert Logs Card -->
-          <div
-            v-if="cardId === 'alert-logs'"
-            class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
-            draggable="true"
-            @dragstart="handleDragStart($event, getCardIndex(cardId))"
-            @dragend="handleDragEnd($event)"
-            @dragenter="handleDragEnter($event, getCardIndex(cardId))"
-            @dragover="handleDragOver($event)"
-            @dragleave="handleDragLeave($event)"
-            @drop="handleCardDrop($event, getCardIndex(cardId))"
-            :class="{ 'drag-over': dragOverIndex === getCardIndex(cardId) && isDragging }"
-            data-card-id="alert-logs"
-          >
-            <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-              <h3 class="font-bold text-lg text-[var(--text-primary)]">🔔 最近通知記錄</h3>
-            </div>
-            <div class="overflow-x-auto">
-              <div v-if="!trackingStore.alertLogs.length" class="p-4 py-12 text-left text-zinc-500">尚無通知記錄</div>
-              <div v-else class="min-w-[400px] sm:min-w-[600px]">
-                <div class="grid grid-cols-4 sm:grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
-                  <div class="col-span-1 sm:col-span-2 flex items-center gap-1">時間 <Clock :size="12" class="hidden sm:inline" /></div>
-                  <div class="col-span-1">代碼</div>
-                  <div class="col-span-1 hidden sm:block">觸發價</div>
-                  <div class="col-span-1">目前價</div>
-                  <div class="col-span-1">方式</div>
-                  <div class="col-span-1 hidden sm:block">狀態</div>
-                </div>
-                <div v-for="log in trackingStore.alertLogs.slice(0, 8)" :key="log.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
-                  <div class="col-span-1 sm:col-span-2 text-[10px] sm:text-[11px] text-zinc-500">{{ formatLogTime(log.created_at) }}</div>
-                  <div class="col-span-1 font-bold text-sm text-[var(--text-primary)]">{{ log.symbol }}</div>
-                  <div class="col-span-1 font-mono text-sm text-zinc-500 hidden sm:block">{{ log.trigger_price }}</div>
-                  <div class="col-span-1 font-mono text-sm text-[var(--text-primary)]">{{ log.current_price }}</div>
-                  <div class="col-span-1">
-                    <span class="px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] sm:text-[10px] font-bold rounded uppercase tracking-wider">{{ log.channel }}</span>
-                  </div>
-                  <div class="col-span-1 hidden sm:block">
-                    <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', log.status === 'sent' ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
-                      {{ log.status }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </template>
       </div>
 
@@ -363,7 +317,7 @@ import { useDragDrop } from '../composables/useDragDrop'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import preferencesAPI from '../api/preferences'
 import {
-  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
+  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -525,15 +479,6 @@ function formatDate(d) {
   return new Date(d).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
 }
 
-function formatLogTime(d) {
-  if (!d) return '—'
-  return new Date(d).toLocaleString('zh-TW', {
-    timeZone: 'Asia/Taipei',
-    month: 'numeric', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  })
-}
-
 function formatPrice(p) {
   if (p === null || p === undefined) return 'N/A'
   return parseFloat(p) >= 1000
@@ -671,7 +616,7 @@ async function handleCardDrop(event, toIndex) {
  * 主要內容區的卡片 ID 清單，依 cardOrder 排序（排除 sidebar）
  * Bug 1 修正：透過 computed 讓 v-for 能響應 cardOrder 的變化
  */
-const MAIN_CARD_IDS = ['tracking-table', 'alert-logs']
+const MAIN_CARD_IDS = ['tracking-table']
 const mainContentCards = computed(() =>
   dashboardStore.cardOrder.filter(id => MAIN_CARD_IDS.includes(id))
 )
