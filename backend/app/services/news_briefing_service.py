@@ -113,6 +113,8 @@ async def run_market_briefing_session() -> dict:
                 finance_hint = "台灣ETF 股票"
             elif category == "us_etf":
                 finance_hint = "ETF stock fund"
+            elif category == "exchange":
+                finance_hint = "外匯 匯率走勢"
             else:
                 finance_hint = "stock market finance"
 
