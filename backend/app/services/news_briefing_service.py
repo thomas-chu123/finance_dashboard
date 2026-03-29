@@ -1,15 +1,22 @@
 """
-AI 每日市場早報主編排服務 — 協調 Brave Search + Gemini + Supabase 寫入.
+AI 每日市場早報主編排服務 — 協調 Brave Search + Gemini / Tavily + Supabase 寫入.
+
+提供商由 .env 中的 AI_SUMMARY 環境變數控制：
+  AI_SUMMARY=BRAVE_GEMINI  (預設) — 使用 Brave Search 取新聞 + Gemini 生成摘要
+  AI_SUMMARY=TAVILY        — 使用 Tavily Search API（一次呼叫同時完成搜尋和摘要）
 """
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 
+from app.config import get_settings
 from app.database import get_supabase
 from app.services.brave_search_service import search_news
 from app.services.gemini_service import generate_market_summary
+from app.services.tavily_service import search_and_summarize as tavily_search_and_summarize
 
 logger = logging.getLogger(__name__)
+settings = get_settings()
 
 # Brave Search 免費方案限制：每次排程最多處理 20 個 unique symbols
 MAX_SYMBOLS_PER_SESSION = 20
@@ -102,6 +109,10 @@ async def run_market_briefing_session() -> dict:
     success_count = 0
     failed_count = 0
 
+    use_tavily = settings.ai_summary.upper() == "TAVILY"
+    provider_label = "Tavily" if use_tavily else "Brave+Gemini"
+    logger.info(f"[Briefing] 使用摘要提供商：{provider_label}")
+
     # 2. 逐個 symbol 處理
     for item in symbols:
         symbol = item["symbol"]
@@ -123,25 +134,36 @@ async def run_market_briefing_session() -> dict:
                 search_query = f"{symbol_name} {finance_hint}"
             else:
                 search_query = f"{symbol_name} {symbol} {finance_hint}"
-            news_items = await search_news(
-                query=search_query,
-                count=3,
-            )
 
-            # 生成 AI 摘要
-            summary_text = await generate_market_summary(
-                symbol=symbol,
-                symbol_name=symbol_name,
-                news_items=news_items,
-                session_hour=session_hour,
-            )
+            if use_tavily:
+                # --- Tavily 路徑：搜尋 + 摘要一次完成 ---
+                news_items, summary_text = await tavily_search_and_summarize(
+                    symbol=symbol,
+                    symbol_name=symbol_name,
+                    query=search_query,
+                    session_hour=session_hour,
+                )
+            else:
+                # --- Brave + Gemini 路徑（原有邏輯）---
+                news_items = await search_news(
+                    query=search_query,
+                    count=3,
+                )
 
-            # Gemini free tier 限制 10 RPM，每次呼叫後等 7 秒（≈ 8.5 RPM）
-            if news_items:
-                await asyncio.sleep(7)
+                # 生成 AI 摘要
+                summary_text = await generate_market_summary(
+                    symbol=symbol,
+                    symbol_name=symbol_name,
+                    news_items=news_items,
+                    session_hour=session_hour,
+                )
+
+                # Gemini free tier 限制 10 RPM，每次呼叫後等 7 秒（≈ 8.5 RPM）
+                if news_items:
+                    await asyncio.sleep(7)
 
             status = "completed" if summary_text else "failed"
-            error_message = None if summary_text else "Gemini 回傳空摘要"
+            error_message = None if summary_text else f"{provider_label} 回傳空摘要"
 
             # Upsert 至 market_briefings
             sb.table("market_briefings").upsert(
@@ -182,8 +204,8 @@ async def run_market_briefing_session() -> dict:
             except Exception as db_err:
                 logger.error(f"[Briefing] 寫入失敗狀態至 DB 也失敗 {symbol}: {db_err}")
 
-        # 保護 Gemini rate limit（15 RPM）
-        await asyncio.sleep(1)
+        # 保護 Brave+Gemini rate limit；Tavily 不需要此延遲但保留最小間隔
+        await asyncio.sleep(1 if not use_tavily else 0.2)
 
     stats = {"total": total, "success": success_count, "failed": failed_count}
     logger.info(f"[Briefing] 排程完成: {stats}")

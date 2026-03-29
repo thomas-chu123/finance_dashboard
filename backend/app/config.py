@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     # AI Briefing
     brave_search_api_key: str = ""
     gemini_api_key: str = ""
+    # AI_SUMMARY 選擇摘要提供商：BRAVE_GEMINI（預設）或 TAVILY
+    ai_summary: str = "BRAVE_GEMINI"
+    tavily_search_api_key: str = ""
 
     # App
     app_base_url: str = "http://localhost:5173"
