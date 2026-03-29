@@ -50,22 +50,25 @@ async def search_and_summarize(
 
     session_label = SESSION_LABEL_MAP.get(session_hour, "市場快報")
 
-    # 將 query 包裹在繁體中文指令中：
-    #   前置中文要求 → Tavily answer 生成時會遵循語言指示
-    #   後置原始英文關鍵字 → 確保搜尋命中率不下降
+    # 結構化指令：明確要求字數、段落結構、繁體中文
+    # 後置英文關鍵字確保 Tavily 搜尋命中率不下降
     localized_query = (
-        f"請以繁體中文撰寫100到150字的{session_label}市場摘要，"
-        f"分析 {symbol_name}（{symbol}）的最新市場動態與投資要點。"
+        f"請以繁體中文撰寫 150 至 200 字的詳細{session_label}市場分析報告，"
+        f"針對 {symbol_name}（{symbol}）涵蓋以下三個面向，以完整段落呈現，勿使用條列：\n"
+        f"(1) 近期主要市場動態與價格走勢；\n"
+        f"(2) 驅動因素（總體經濟、產業趨勢、政策等）；\n"
+        f"(3) 投資者應關注的機會與風險。\n"
         f"搜尋關鍵字：{query}"
     )
 
     payload = {
         "api_key": api_key,
         "query": localized_query,
-        "search_depth": "basic",
+        "search_depth": "advanced",     # 深度爬取頁面完整內文
         "topic": "finance",
-        "include_answer": "advanced",
-        "max_results": max_results,
+        "include_answer": "advanced",    # 啟用詳盡 AI 合成摘要
+        "include_raw_content": True,     # 傳入完整頁面文字作為分析素材
+        "max_results": 5,                # 更多來源 → 更豐富的分析依據
     }
 
     try:
@@ -81,6 +84,7 @@ async def search_and_summarize(
         data = resp.json()
 
         # 將 Tavily results 轉換成相容 news_items 格式
+        # max_results 參數控制回傳給呼叫方的新聞數（payload 固定抓 5 筆取最佳素材）
         news_items: list[dict] = []
         for item in data.get("results", [])[:max_results]:
             news_items.append({
@@ -101,5 +105,4 @@ async def search_and_summarize(
 
     except Exception as e:
         logger.error(f"[Tavily] 搜尋摘要失敗 symbol={symbol}: {e}")
-        return [], ""
         return [], ""
