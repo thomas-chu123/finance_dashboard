@@ -68,7 +68,7 @@ async def run_market_briefing_session() -> dict:
 
     # 1. 查詢所有 is_active=True 的唯一 symbol
     try:
-        res = sb.table("tracked_indices").select("symbol, name").eq("is_active", True).execute()
+        res = sb.table("tracked_indices").select("symbol, name, category").eq("is_active", True).execute()
     except Exception as e:
         logger.error(f"[Briefing] 查詢 tracked_indices 失敗: {e}")
         return {"total": 0, "success": 0, "failed": 0}
@@ -84,7 +84,11 @@ async def run_market_briefing_session() -> dict:
         sym = row.get("symbol", "")
         if sym and sym not in seen:
             seen.add(sym)
-            symbols.append({"symbol": sym, "name": row.get("name", sym)})
+            symbols.append({
+                "symbol": sym,
+                "name": row.get("name", sym),
+                "category": row.get("category", "us_etf"),
+            })
 
     # 限制上限
     if len(symbols) > MAX_SYMBOLS_PER_SESSION:
@@ -102,9 +106,21 @@ async def run_market_briefing_session() -> dict:
     for item in symbols:
         symbol = item["symbol"]
         symbol_name = item["name"]
+        category = item.get("category", "us_etf")
         try:
-            # 搜尋新聞（避免 symbol_name == symbol 時產生重複字串）
-            search_query = symbol_name if symbol_name == symbol else f"{symbol_name} {symbol}"
+            # 根據 category 附加金融關鍵字，避免搜到非金融內容（如 VT → Vermont）
+            if category == "tw_etf":
+                finance_hint = "台灣ETF 股票"
+            elif category == "us_etf":
+                finance_hint = "ETF stock fund"
+            else:
+                finance_hint = "stock market finance"
+
+            # 搜尋新聞：name 與 symbol 相同時不重複，再加金融 hint
+            if symbol_name == symbol:
+                search_query = f"{symbol_name} {finance_hint}"
+            else:
+                search_query = f"{symbol_name} {symbol} {finance_hint}"
             news_items = await search_news(
                 query=search_query,
                 count=3,

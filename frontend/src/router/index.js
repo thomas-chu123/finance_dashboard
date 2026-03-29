@@ -19,6 +19,11 @@ const routes = [
         component: () => import('../views/DashboardView.vue'),
       },
       {
+        path: 'briefing',
+        name: 'Briefing',
+        component: () => import('../views/BriefingView.vue'),
+      },
+      {
         path: 'tracking',
         name: 'Tracking',
         component: () => import('../views/TrackingView.vue'),

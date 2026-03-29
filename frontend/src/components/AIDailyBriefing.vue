@@ -4,7 +4,7 @@
     <div class="border-b border-[var(--border-color)] pb-4 mb-5 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <h3 class="font-bold text-lg text-[var(--text-primary)]">🤖 AI 市場早報</h3>
-        <span v-if="briefingStore.sessionTime" class="text-[11px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 rounded px-2 py-0.5">
+        <span v-if="briefingStore.sessionTime" class="text-[11px] font-medium text-brand-700 dark:text-brand-400 bg-brand-500/10 rounded-md px-2 py-0.5">
           {{ formattedSessionTime }}
         </span>
       </div>
@@ -51,7 +51,7 @@
         <!-- Symbol header -->
         <div class="flex items-start justify-between gap-3 p-4">
           <div class="flex items-center gap-2 shrink-0">
-            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-brand-100 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 uppercase tracking-wider">
+            <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-brand-500/10 text-brand-700 dark:text-brand-400 uppercase tracking-wider">
               {{ item.symbol }}
             </span>
             <span class="text-sm text-[var(--text-primary)] font-medium">{{ item.symbol_name }}</span>
@@ -59,7 +59,7 @@
           <!-- status badge -->
           <span
             v-if="item.status === 'failed'"
-            class="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 font-medium"
+            class="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-red-400 dark:border-red-500 text-red-500 dark:text-red-400 font-medium"
           >生成失敗</span>
         </div>
 

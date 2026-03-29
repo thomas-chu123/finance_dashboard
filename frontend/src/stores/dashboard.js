@@ -7,7 +7,6 @@ export const useDashboardStore = defineStore('dashboard', {
   state: () => ({
     // 卡片順序 ID 陣列
     cardOrder: [
-      'ai-briefing',
       'market-ticker',
       'tracking-table',
       'status-sidebar'
@@ -60,7 +59,13 @@ export const useDashboardStore = defineStore('dashboard', {
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            this.cardOrder = parsed
+            // 合併新卡片：確保新功能卡片不會因舊快取而遺失
+            const DEFAULT_CARDS = ['market-ticker', 'tracking-table', 'status-sidebar']
+            const merged = [
+              ...parsed.filter(id => id !== 'ai-briefing'),
+              ...DEFAULT_CARDS.filter(id => !parsed.includes(id)),
+            ]
+            this.cardOrder = merged
             return true
           }
         }
@@ -94,7 +99,14 @@ export const useDashboardStore = defineStore('dashboard', {
           { headers: { Authorization: `Bearer ${token}` } }
         )
         if (response.data?.card_order && Array.isArray(response.data.card_order)) {
-          this.cardOrder = response.data.card_order
+          // 合併新卡片：確保新功能卡片（如 ai-briefing）不會因舊偏好設定而遺失
+          const DEFAULT_CARDS = ['market-ticker', 'tracking-table', 'status-sidebar']
+          const loaded = response.data.card_order.filter(id => id !== 'ai-briefing')
+          const merged = [
+            ...loaded,
+            ...DEFAULT_CARDS.filter(id => !loaded.includes(id)),
+          ]
+          this.cardOrder = merged
           console.log('Loaded card order from server:', this.cardOrder)
           this.saveToLocalStorage()
           return true
@@ -140,6 +152,7 @@ export const useDashboardStore = defineStore('dashboard', {
      */
     resetToDefault() {
       this.cardOrder = [
+        'ai-briefing',
         'market-ticker',
         'tracking-table',
         'status-sidebar'

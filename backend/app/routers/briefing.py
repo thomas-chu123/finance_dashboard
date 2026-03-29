@@ -16,48 +16,57 @@ router = APIRouter(prefix="/api/briefing", tags=["briefing"])
 @router.get("/latest")
 async def get_latest_briefing(authorization: str = Header(default="")):
     """
-    取得最新一次排程批次的所有 symbol 早報摘要.
+    取得最新一次排程批次中，屬於目前使用者追蹤清單的 symbol 早報摘要.
 
     Returns:
         {"session_time": str, "items": [...]}
     """
-    get_user_id(authorization)  # JWT 認證
+    user_id = get_user_id(authorization)
     sb = get_supabase()
 
-    # 找最新 session_time
+    # 1. 查出該使用者追蹤的 is_active symbol 集合
     try:
-        latest_res = (
-            sb.table("market_briefings")
-            .select("session_time")
-            .order("session_time", desc=True)
-            .limit(1)
+        tracking_res = (
+            sb.table("tracked_indices")
+            .select("symbol")
+            .eq("user_id", user_id)
+            .eq("is_active", True)
             .execute()
         )
     except Exception as e:
-        logger.error(f"[Briefing API] 查詢最新 session_time 失敗: {e}")
+        logger.error(f"[Briefing API] 查詢 tracked_indices 失敗: {e}")
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
 
-    if not latest_res.data:
+    user_symbols = {row["symbol"] for row in (tracking_res.data or [])}
+    if not user_symbols:
         return {"session_time": None, "items": []}
 
-    session_time = latest_res.data[0]["session_time"]
-
-    # 取該 session 所有 items
+    # 2. 一次查詢取最近 50 筆 briefing（含 session_time），再從最新 session 過濾並只保留使用者追蹤的 symbols
     try:
         items_res = (
             sb.table("market_briefings")
-            .select("symbol, symbol_name, summary_text, news_json, status, error_message")
-            .eq("session_time", session_time)
+            .select("session_time, symbol, symbol_name, summary_text, news_json, status, error_message")
+            .order("session_time", desc=True)
             .order("symbol")
+            .limit(50)
             .execute()
         )
     except Exception as e:
-        logger.error(f"[Briefing API] 查詢 items 失敗: {e}")
+        logger.error(f"[Briefing API] 查詢 market_briefings 失敗: {e}")
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
+
+    if not items_res.data:
+        return {"session_time": None, "items": []}
+
+    session_time = items_res.data[0]["session_time"]
+    items = [
+        r for r in items_res.data
+        if r["session_time"] == session_time and r["symbol"] in user_symbols
+    ]
 
     return {
         "session_time": session_time,
-        "items": items_res.data or [],
+        "items": items,
     }
 
 
