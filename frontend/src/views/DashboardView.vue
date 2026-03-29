@@ -59,6 +59,23 @@
 
         <template v-for="cardId in mainContentCards" :key="cardId">
 
+          <!-- AI 市場早報卡片 -->
+          <div
+            v-if="cardId === 'ai-briefing'"
+            class="glass-card rounded-2xl overflow-hidden cursor-grab active:cursor-grabbing transition-all"
+            draggable="true"
+            @dragstart="handleDragStart($event, getCardIndex(cardId))"
+            @dragend="handleDragEnd($event)"
+            @dragenter="handleDragEnter($event, getCardIndex(cardId))"
+            @dragover="handleDragOver($event)"
+            @dragleave="handleDragLeave($event)"
+            @drop="handleCardDrop($event, getCardIndex(cardId))"
+            :class="{ 'drag-over': dragOverIndex === getCardIndex(cardId) && isDragging }"
+            data-card-id="ai-briefing"
+          >
+            <AIDailyBriefing />
+          </div>
+
           <!-- Tracking Table Card -->
           <div
             v-if="cardId === 'tracking-table'"
@@ -362,6 +379,7 @@ import { useDashboardStore } from '../stores/dashboard'
 import { useDragDrop } from '../composables/useDragDrop'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import preferencesAPI from '../api/preferences'
+import AIDailyBriefing from '../components/AIDailyBriefing.vue'
 import {
   TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Clock, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
 } from 'lucide-vue-next'
@@ -671,7 +689,7 @@ async function handleCardDrop(event, toIndex) {
  * 主要內容區的卡片 ID 清單，依 cardOrder 排序（排除 sidebar）
  * Bug 1 修正：透過 computed 讓 v-for 能響應 cardOrder 的變化
  */
-const MAIN_CARD_IDS = ['tracking-table', 'alert-logs']
+const MAIN_CARD_IDS = ['ai-briefing', 'tracking-table', 'alert-logs']
 const mainContentCards = computed(() =>
   dashboardStore.cardOrder.filter(id => MAIN_CARD_IDS.includes(id))
 )

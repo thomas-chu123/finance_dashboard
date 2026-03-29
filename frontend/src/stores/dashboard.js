@@ -7,6 +7,7 @@ export const useDashboardStore = defineStore('dashboard', {
   state: () => ({
     // 卡片順序 ID 陣列
     cardOrder: [
+      'ai-briefing',
       'market-ticker',
       'tracking-table',
       'alert-logs',
