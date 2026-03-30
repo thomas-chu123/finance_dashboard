@@ -4,6 +4,7 @@ Tavily Search API 服務 — 一次呼叫完成「新聞搜尋 + AI 摘要」.
 Tavily 的 `include_answer=True` 參數會在搜尋結果上直接生成 AI 合成摘要，
 因此不需額外呼叫 Gemini，也不受 Gemini 10 RPM 限制。
 """
+import datetime
 import logging
 import httpx
 from app.config import get_settings
@@ -50,15 +51,18 @@ async def search_and_summarize(
 
     session_label = SESSION_LABEL_MAP.get(session_hour, "市場快報")
 
+    year_of_today = datetime.now().year
+
     # 結構化指令：明確要求字數、段落結構、繁體中文
     # 後置英文關鍵字確保 Tavily 搜尋命中率不下降
     localized_query = (
-        f"請以繁體中文撰寫 150 至 200 字的詳細{session_label}市場分析報告，"
+        f"請以繁體中文撰寫 300 至 500 字的詳細{session_label}市場分析報告，"
         f"針對 {symbol_name}（{symbol}）涵蓋以下三個面向，以完整段落呈現，勿使用條列：\n"
         f"(1) 近期主要市場動態與價格走勢；\n"
         f"(2) 驅動因素（總體經濟、產業趨勢、政策等）；\n"
         f"(3) 投資者應關注的機會與風險。\n"
-        f"搜尋關鍵字：{query}"
+        f"搜尋關鍵字：{query}\n"
+        f"{year_of_today} 年內的新聞為主"
     )
 
     payload = {
@@ -68,6 +72,7 @@ async def search_and_summarize(
         "topic": "finance",
         "include_answer": "advanced",    # 啟用詳盡 AI 合成摘要
         "include_raw_content": True,     # 傳入完整頁面文字作為分析素材
+        "time_range": "24h",             # 搜尋過去 24 小時內的新聞
         "max_results": 5,                # 更多來源 → 更豐富的分析依據
     }
 
