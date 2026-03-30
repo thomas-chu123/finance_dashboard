@@ -13,12 +13,18 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from redis import asyncio as aioredis
 import os
+import socket
 import logging
 from logging.handlers import RotatingFileHandler
 from pydantic import BaseModel
 from typing import Optional, Any
 
 settings = get_settings()
+
+# syslog 格式：Mon DD HH:MM:SS hostname process[pid]: message
+_HOSTNAME = socket.gethostname()
+_SYSLOG_FORMAT = f"%(asctime)s {_HOSTNAME} %(name)s[%(process)d]: %(message)s"
+_SYSLOG_DATE = "%b %d %H:%M:%S"
 
 # Setup backend logger
 logging.basicConfig(
@@ -27,15 +33,23 @@ logging.basicConfig(
         logging.StreamHandler()
     ],
     level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+    format=_SYSLOG_FORMAT,
+    datefmt=_SYSLOG_DATE,
 )
 
 # Setup frontend logger
 frontend_logger = logging.getLogger("frontend")
 frontend_logger.setLevel(logging.INFO)
-fh = RotatingFileHandler("frontend.log", maxBytes=10485760, backupCount=5)
-fh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s [FRONTEND] %(message)s"))
-frontend_logger.addHandler(fh)
+_frontend_formatter = logging.Formatter(
+    f"%(asctime)s {_HOSTNAME} FRONTEND[%(process)d]: %(message)s",
+    datefmt=_SYSLOG_DATE,
+)
+_fh = RotatingFileHandler("frontend.log", maxBytes=10485760, backupCount=5)
+_fh.setFormatter(_frontend_formatter)
+frontend_logger.addHandler(_fh)
+_sh = logging.StreamHandler()
+_sh.setFormatter(_frontend_formatter)
+frontend_logger.addHandler(_sh)
 frontend_logger.propagate = False
 
 class LogMessage(BaseModel):
@@ -47,6 +61,15 @@ class LogMessage(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 覆寫 uvicorn loggers 的 formatter，統一輸出格式
+    _uv_formatter = logging.Formatter(
+        f"%(asctime)s {_HOSTNAME} %(name)s[%(process)d]: %(message)s",
+        datefmt=_SYSLOG_DATE,
+    )
+    for _uv_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        for _handler in logging.getLogger(_uv_name).handlers:
+            _handler.setFormatter(_uv_formatter)
+
     # Log current configuration
     logger = logging.getLogger("app.main")
     logger.info(f"Allowed CORS origins: {['http://localhost:5173', 'http://localhost:3100', settings.app_base_url]}")
@@ -123,8 +146,6 @@ async def receive_frontend_logs(log: LogMessage):
     log_text = f"{log.url} - {log.message}"
     if log.details:
         log_text += f" - {log.details}"
-    
-    print(f"[FRONTEND_LOG] {log_text}", flush=True)
     
     if log.level.lower() == "error":
         frontend_logger.error(log_text)

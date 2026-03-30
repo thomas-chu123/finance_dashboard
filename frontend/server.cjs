@@ -1,8 +1,26 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const PORT = process.env.PM2_SERVE_PORT || 3100;
+
+// syslog 格式：Mon DD HH:MM:SS hostname process[pid]: message
+const HOSTNAME = os.hostname();
+const PROC = `finance-frontend[${process.pid}]`;
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function syslogTime() {
+  const d = new Date();
+  const mon = MONTHS[d.getMonth()];
+  const day = String(d.getDate()).padStart(2, ' ');
+  const hms = d.toTimeString().slice(0, 8);
+  return `${mon} ${day} ${hms}`;
+}
+
+function log(msg)   { console.log(`${syslogTime()} ${HOSTNAME} ${PROC}: ${msg}`); }
+function error(msg) { console.error(`${syslogTime()} ${HOSTNAME} ${PROC}: ${msg}`); }
+
 const DIST_DIR = path.resolve(__dirname, './dist');
 
 const MIME_TYPES = {
@@ -37,16 +55,11 @@ const server = http.createServer((req, res) => {
       proxyRes.pipe(res, { end: true });
       
       const duration = Date.now() - start;
-      const taipeiTime = new Intl.DateTimeFormat('sv-SE', {
-        timeZone: 'Asia/Taipei',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-      }).format(new Date());
-      console.log(`[${taipeiTime}] [PROXY] ${req.method} ${req.url} ${proxyRes.statusCode} - ${duration}ms`);
+      log(`PROXY ${req.method} ${req.url} ${proxyRes.statusCode} - ${duration}ms`);
     });
 
     proxyReq.on('error', (err) => {
-      console.error(`Proxy Error: ${err.message}`);
+      error(`Proxy Error: ${err.message}`);
       res.writeHead(502);
       res.end('Bad Gateway');
     });
@@ -88,6 +101,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Frontend server (SPA) running at http://0.0.0.0:${PORT}/`);
-  console.log(`Serving files from: ${DIST_DIR}`);
+  log(`Frontend server (SPA) running at http://0.0.0.0:${PORT}/`);
+  log(`Serving files from: ${DIST_DIR}`);
 });
