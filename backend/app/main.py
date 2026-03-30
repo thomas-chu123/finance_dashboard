@@ -21,10 +21,9 @@ from typing import Optional, Any
 
 settings = get_settings()
 
-# syslog 格式：Mon DD HH:MM:SS hostname process[pid]: message
+# syslog 格式：hostname process[pid]: message（時間由 PM2 提供）
 _HOSTNAME = socket.gethostname()
-_SYSLOG_FORMAT = f"%(asctime)s {_HOSTNAME} %(name)s[%(process)d]: %(message)s"
-_SYSLOG_DATE = "%b %d %H:%M:%S"
+_SYSLOG_FORMAT = f"{_HOSTNAME} %(name)s[%(process)d]: %(message)s"
 
 # Setup backend logger
 logging.basicConfig(
@@ -34,15 +33,13 @@ logging.basicConfig(
     ],
     level=logging.INFO,
     format=_SYSLOG_FORMAT,
-    datefmt=_SYSLOG_DATE,
 )
 
 # Setup frontend logger
 frontend_logger = logging.getLogger("frontend")
 frontend_logger.setLevel(logging.INFO)
 _frontend_formatter = logging.Formatter(
-    f"%(asctime)s {_HOSTNAME} FRONTEND[%(process)d]: %(message)s",
-    datefmt=_SYSLOG_DATE,
+    f"{_HOSTNAME} FRONTEND[%(process)d]: %(message)s",
 )
 _fh = RotatingFileHandler("frontend.log", maxBytes=10485760, backupCount=5)
 _fh.setFormatter(_frontend_formatter)
@@ -63,8 +60,7 @@ class LogMessage(BaseModel):
 async def lifespan(app: FastAPI):
     # 覆寫 uvicorn loggers 的 formatter，統一輸出格式
     _uv_formatter = logging.Formatter(
-        f"%(asctime)s {_HOSTNAME} %(name)s[%(process)d]: %(message)s",
-        datefmt=_SYSLOG_DATE,
+        f"{_HOSTNAME} %(name)s[%(process)d]: %(message)s",
     )
     for _uv_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         for _handler in logging.getLogger(_uv_name).handlers:

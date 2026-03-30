@@ -5,21 +5,12 @@ const os = require('os');
 
 const PORT = process.env.PM2_SERVE_PORT || 3100;
 
-// syslog 格式：Mon DD HH:MM:SS hostname process[pid]: message
+// syslog 格式：hostname process[pid]: message（時間由 PM2 提供）
 const HOSTNAME = os.hostname();
 const PROC = `finance-frontend[${process.pid}]`;
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function syslogTime() {
-  const d = new Date();
-  const mon = MONTHS[d.getMonth()];
-  const day = String(d.getDate()).padStart(2, ' ');
-  const hms = d.toTimeString().slice(0, 8);
-  return `${mon} ${day} ${hms}`;
-}
-
-function log(msg)   { console.log(`${syslogTime()} ${HOSTNAME} ${PROC}: ${msg}`); }
-function error(msg) { console.error(`${syslogTime()} ${HOSTNAME} ${PROC}: ${msg}`); }
+function log(msg)   { console.log(`${HOSTNAME} ${PROC}: ${msg}`); }
+function error(msg) { console.error(`${HOSTNAME} ${PROC}: ${msg}`); }
 
 const DIST_DIR = path.resolve(__dirname, './dist');
 
