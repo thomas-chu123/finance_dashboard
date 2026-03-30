@@ -56,7 +56,7 @@ async def search_and_summarize(
     # 結構化指令：明確要求字數、段落結構、繁體中文
     # 後置英文關鍵字確保 Tavily 搜尋命中率不下降
     localized_query = (
-        f"請以繁體中文撰寫 300 至 500 字的詳細{session_label}市場分析報告，"
+        f"請以繁體中文撰寫 150 至 200 字的詳細{session_label}市場分析報告，"
         f"針對 {symbol_name}（{symbol}）涵蓋以下三個面向，以完整段落呈現，勿使用條列：\n"
         f"(1) 近期主要市場動態與價格走勢；\n"
         f"(2) 驅動因素（總體經濟、產業趨勢、政策等）；\n"
@@ -71,9 +71,9 @@ async def search_and_summarize(
         "search_depth": "advanced",     # 深度爬取頁面完整內文
         "topic": "finance",
         "include_answer": "advanced",    # 啟用詳盡 AI 合成摘要
-        "include_raw_content": True,     # 傳入完整頁面文字作為分析素材
-        "time_range": "day",             # 搜尋過去 24 小時內的新聞
-        "max_results": 5,                # 更多來源 → 更豐富的分析依據
+        "include_raw_content": False,     # 傳入完整頁面文字作為分析素材
+        "time_range": "week",             # 搜尋過去 24 小時內的新聞
+        "max_results": max_results,                # 更多來源 → 更豐富的分析依據
     }
 
     try:
