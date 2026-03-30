@@ -51,7 +51,7 @@ async def search_and_summarize(
 
     session_label = SESSION_LABEL_MAP.get(session_hour, "市場快報")
 
-    year_of_today = datetime.now().year
+    year_of_today = datetime.datetime.now().year
 
     # 結構化指令：明確要求字數、段落結構、繁體中文
     # 後置英文關鍵字確保 Tavily 搜尋命中率不下降
@@ -72,7 +72,7 @@ async def search_and_summarize(
         "topic": "finance",
         "include_answer": "advanced",    # 啟用詳盡 AI 合成摘要
         "include_raw_content": True,     # 傳入完整頁面文字作為分析素材
-        "time_range": "24h",             # 搜尋過去 24 小時內的新聞
+        "time_range": "day",             # 搜尋過去 24 小時內的新聞
         "max_results": 5,                # 更多來源 → 更豐富的分析依據
     }
 
