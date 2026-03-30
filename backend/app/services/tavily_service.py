@@ -4,6 +4,7 @@ Tavily Search API 服務 — 一次呼叫完成「新聞搜尋 + AI 摘要」.
 Tavily 的 `include_answer=True` 參數會在搜尋結果上直接生成 AI 合成摘要，
 因此不需額外呼叫 Gemini，也不受 Gemini 10 RPM 限制。
 """
+import asyncio
 import datetime
 import logging
 import re
@@ -106,10 +107,20 @@ async def search_and_summarize(
         "max_results": max_results,                # 更多來源 → 更豐富的分析依據
     }
 
-    try:
+    # ── 內部單次請求（含可重試例外的判斷） ────────────────────────────
+    async def _do_request(q: str) -> tuple[list[dict], str]:
+        """發送一次 Tavily 請求；HTTP 5xx / 429 / 連線問題時拋出例外，讓 retry 層處理。"""
+        current_payload = {**payload, "query": q}
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(TAVILY_SEARCH_URL, json=payload)
+            resp = await client.post(TAVILY_SEARCH_URL, json=current_payload)
 
+        if resp.status_code in (429, 500, 502, 503, 504):
+            # 可重試的 HTTP 狀態碼
+            raise httpx.HTTPStatusError(
+                f"HTTP {resp.status_code}",
+                request=resp.request,
+                response=resp,
+            )
         if resp.status_code != 200:
             logger.error(
                 f"[Tavily] HTTP {resp.status_code} for symbol={symbol}: {resp.text[:300]}"
@@ -117,28 +128,67 @@ async def search_and_summarize(
             return [], ""
 
         data = resp.json()
-
-        # 將 Tavily results 轉換成相容 news_items 格式
-        # max_results 參數控制回傳給呼叫方的新聞數（payload 固定抓 5 筆取最佳素材）
-        news_items: list[dict] = []
+        news: list[dict] = []
         for item in data.get("results", [])[:max_results]:
-            news_items.append({
+            news.append({
                 "title": item.get("title", ""),
                 "url": item.get("url", ""),
                 "description": item.get("content", ""),
                 "published_date": item.get("published_date", ""),
             })
-
-        # Tavily answer 作為 AI 摘要，將 【URL】 引用標記轉為編號來源註記
         raw_answer: str = (data.get("answer") or "").strip()
-        summary_text = _format_citations(raw_answer)
+        summary = _format_citations(raw_answer)
+        return news, summary
 
-        logger.info(
-            f"[Tavily] symbol={symbol} → {len(news_items)} 篇新聞，"
-            f"摘要長度={len(summary_text)} 字"
-        )
-        return news_items, summary_text
+    # ── Retry 包裝（最多 3 次，指數退避 1 / 2 / 4 秒） ─────────────────
+    MAX_RETRIES = 3
+    RETRYABLE = (
+        httpx.TimeoutException,
+        httpx.ConnectError,
+        httpx.RemoteProtocolError,
+        httpx.HTTPStatusError,
+    )
 
-    except Exception as e:
-        logger.error(f"[Tavily] 搜尋摘要失敗 symbol={symbol}: {e}")
+    news_items: list[dict] = []
+    summary_text: str = ""
+    last_error: Exception | None = None
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            news_items, summary_text = await _do_request(localized_query)
+            last_error = None
+            break  # 成功，跳出 retry 迴圈
+        except RETRYABLE as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                wait = 2 ** (attempt - 1)  # 1s → 2s → 4s
+                logger.warning(
+                    f"[Tavily] symbol={symbol} 第 {attempt} 次失敗，"
+                    f"{wait}s 後重試: {e}"
+                )
+                await asyncio.sleep(wait)
+            else:
+                logger.error(
+                    f"[Tavily] symbol={symbol} 已重試 {MAX_RETRIES} 次仍失敗: {e}"
+                )
+        except Exception as e:
+            logger.error(f"[Tavily] 搜尋摘要失敗 symbol={symbol}: {e}")
+            return [], ""
+
+    if last_error is not None:
         return [], ""
+
+    # ── Fallback：若繁中結構化 prompt 無摘要，改用精簡英文 query 再試一次 ──
+    if not summary_text:
+        fallback_query = f"{symbol} {symbol_name} stock news {datetime.datetime.now().year}"
+        logger.info(f"[Tavily] symbol={symbol} 摘要為空，嘗試英文 fallback query")
+        try:
+            news_items, summary_text = await _do_request(fallback_query)
+        except Exception as e:
+            logger.warning(f"[Tavily] symbol={symbol} fallback 也失敗: {e}")
+
+    logger.info(
+        f"[Tavily] symbol={symbol} → {len(news_items)} 篇新聞，"
+        f"摘要長度={len(summary_text)} 字"
+    )
+    return news_items, summary_text
