@@ -65,9 +65,11 @@
 
         <!-- AI 摘要 -->
         <div class="px-4 pb-3">
-          <p v-if="item.summary_text" class="text-sm text-[var(--text-primary)] leading-relaxed">
-            {{ item.summary_text }}
-          </p>
+          <p
+            v-if="item.summary_text"
+            class="text-sm text-[var(--text-primary)] leading-relaxed"
+            v-html="renderSummary(item.summary_text)"
+          ></p>
           <p v-else class="text-sm text-zinc-400 italic">無摘要</p>
         </div>
 
@@ -129,6 +131,46 @@ function toggleNews(symbol) {
   }
   // 觸發響應性更新
   expandedSymbols.value = new Set(expandedSymbols.value)
+}
+
+/** 安全轉義 HTML 特殊字元 */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+/**
+ * 將 summary_text 中的編號引用 [N] 轉為可點擊超連結上標。
+ * 格式預期：文字[1]文字[2]\n\n參考來源：\n[1] url1\n[2] url2
+ */
+function renderSummary(text) {
+  if (!text) return ''
+
+  const REFS_HEADER = '\n\n參考來源：\n'
+  const sepIdx = text.indexOf(REFS_HEADER)
+  let mainText = text
+  const refMap = {}
+
+  if (sepIdx !== -1) {
+    mainText = text.slice(0, sepIdx)
+    const refLines = text.slice(sepIdx + REFS_HEADER.length).split('\n')
+    for (const line of refLines) {
+      const m = line.match(/^\[(\d+)\]\s+(https?:\/\/\S+)$/)
+      if (m) refMap[m[1]] = m[2]
+    }
+  }
+
+  // 先 escape 主文 HTML，再將 [N] 插入超連結
+  const html = escapeHtml(mainText).replace(/\[(\d+)\]/g, (_, n) => {
+    const url = refMap[n]
+    if (!url) return `[${n}]`
+    return `<sup><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-brand-500 hover:text-brand-400">[${n}]</a></sup>`
+  })
+
+  return html
 }
 
 async function handleRefresh() {
