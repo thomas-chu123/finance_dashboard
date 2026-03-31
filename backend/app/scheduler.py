@@ -16,6 +16,8 @@ from app.services.line_service import send_line_message, build_alert_message
 from app.services.tw_etf_sync import sync_tw_etf_list
 from app.services.us_etf_sync import sync_us_etf_list
 from app.services.news_briefing_service import run_market_briefing_session
+from app.services.dividend_sync import sync_dividend_calendar
+from app.services.dividend_notify_service import check_and_send_dividend_notifications
 from app.services.rsi_service import get_rsi_calculation_service
 
 logger = logging.getLogger(__name__)
@@ -328,6 +330,24 @@ async def run_briefing_job():
         logger.error(f"[Scheduler] Briefing job failed: {e}")
 
 
+async def run_dividend_sync():
+    """Wrapper to run dividend calendar sync and log outcome."""
+    try:
+        count = await sync_dividend_calendar()
+        logger.info(f"[Scheduler] Dividend sync complete: {count} records updated.")
+    except Exception as e:
+        logger.error(f"[Scheduler] Dividend sync failed: {e}")
+
+
+async def run_dividend_notify_check():
+    """Wrapper to check and send dividend reminders to tracked-stock owners."""
+    try:
+        stats = await check_and_send_dividend_notifications()
+        logger.info(f"[Scheduler] Dividend notify complete: {stats}")
+    except Exception as e:
+        logger.error(f"[Scheduler] Dividend notify failed: {e}")
+
+
 def start_scheduler():
     scheduler.add_job(check_prices, "interval", minutes=30, id="price_check", replace_existing=True)
     # Sync TW ETF list daily at 01:00 Asia/Taipei
@@ -338,8 +358,13 @@ def start_scheduler():
     scheduler.add_job(run_briefing_job, "cron", hour=8, minute=0, id="briefing_0800", replace_existing=True)
     scheduler.add_job(run_briefing_job, "cron", hour=13, minute=0, id="briefing_1300", replace_existing=True)
     scheduler.add_job(run_briefing_job, "cron", hour=18, minute=0, id="briefing_1800", replace_existing=True)
+    # Dividend calendar sync at 06:00 Asia/Taipei
+    scheduler.add_job(run_dividend_sync, "cron", hour=6, minute=0, id="dividend_sync", replace_existing=True)
+    # Dividend notification check at 06:30 (after sync completes)
+    scheduler.add_job(run_dividend_notify_check, "cron", hour=6, minute=30, id="dividend_notify", replace_existing=True)
     scheduler.start()
     logger.info(
         "[Scheduler] Started: price_check (every 30 min), tw_etf_sync (daily 01:00), "
-        "us_etf_sync (daily 02:00), briefing (08:00/13:00/18:00)"
+        "us_etf_sync (daily 02:00), briefing (08:00/13:00/18:00), "
+        "dividend_sync (06:00), dividend_notify (06:30)"
     )

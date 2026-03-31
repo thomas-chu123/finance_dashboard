@@ -61,6 +61,11 @@
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">AI 市場早報</span>
           </router-link>
 
+          <router-link to="/dividend-calendar" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/dividend-calendar' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="除權息日曆" @click="handleMenuItemClick('/dividend-calendar')">
+            <CalendarDays :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/dividend-calendar' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">除權息日曆</span>
+          </router-link>
+
           <router-link to="/tracking" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/tracking' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="指數追蹤" @click="handleMenuItemClick('/tracking')">
             <TrendingUp :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/tracking' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">指數追蹤</span>
@@ -228,6 +233,7 @@ import {
   Globe, 
   LayoutDashboard, 
   Newspaper,
+  CalendarDays,
   TrendingUp, 
   RefreshCcw, 
   Target, 
