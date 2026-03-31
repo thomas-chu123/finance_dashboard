@@ -1,9 +1,10 @@
 """
-AI 每日市場早報主編排服務 — 協調 Brave Search + Gemini / Tavily + Supabase 寫入.
+AI 每日市場早報主編排服務 — 協調 Brave Search + Gemini / Tavily / SearXNG + Ollama + Supabase 寫入.
 
 提供商由 .env 中的 AI_SUMMARY 環境變數控制：
-  AI_SUMMARY=BRAVE_GEMINI  (預設) — 使用 Brave Search 取新聞 + Gemini 生成摘要
-  AI_SUMMARY=TAVILY        — 使用 Tavily Search API（一次呼叫同時完成搜尋和摘要）
+  AI_SUMMARY=BRAVE_GEMINI    (預設) — 使用 Brave Search 取新聞 + Gemini 生成摘要
+  AI_SUMMARY=TAVILY          — 使用 Tavily Search API（一次呼叫同時完成搜尋和摘要）
+  AI_SUMMARY=SEARXNG_OLLAMA  — 使用自架 SearXNG 搜尋 + Ollama Direct API 生成摘要（v3）
 """
 import asyncio
 import logging
@@ -110,7 +111,14 @@ async def run_market_briefing_session() -> dict:
     failed_count = 0
 
     use_tavily = settings.ai_summary.upper() == "TAVILY"
-    provider_label = "Tavily" if use_tavily else "Brave+Gemini"
+    use_searxng_ollama = settings.ai_summary.upper() == "SEARXNG_OLLAMA"
+
+    if use_tavily:
+        provider_label = "Tavily"
+    elif use_searxng_ollama:
+        provider_label = "SearXNG+Ollama"
+    else:
+        provider_label = "Brave+Gemini"
     logger.info(f"[Briefing] 使用摘要提供商：{provider_label}")
 
     # 2. 逐個 symbol 處理
@@ -143,6 +151,18 @@ async def run_market_briefing_session() -> dict:
                     query=search_query,
                     session_hour=session_hour,
                 )
+            elif use_searxng_ollama:
+                # --- SearXNG + Ollama Direct 路徑（v3）---
+                from app.services.searxng_service import search_news as searxng_search_news
+                from app.services.ollama_service import generate_market_summary as ollama_generate
+                news_items = await searxng_search_news(query=search_query, count=3)
+                summary_text = await ollama_generate(
+                    symbol=symbol,
+                    symbol_name=symbol_name,
+                    news_items=news_items,
+                    session_hour=session_hour,
+                )
+                # Ollama 無 rate limit，不需 sleep(7)
             else:
                 # --- Brave + Gemini 路徑（原有邏輯）---
                 news_items = await search_news(
