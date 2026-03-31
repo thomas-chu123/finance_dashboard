@@ -24,6 +24,11 @@ const routes = [
         component: () => import('../views/BriefingView.vue'),
       },
       {
+        path: 'dividend-calendar',
+        name: 'DividendCalendar',
+        component: () => import('../views/DividendCalendarView.vue'),
+      },
+      {
         path: 'tracking',
         name: 'Tracking',
         component: () => import('../views/TrackingView.vue'),
