@@ -100,9 +100,9 @@ async def search_and_summarize(
         "api_key": api_key,
         "query": localized_query,
         "search_depth": "basic",     # 深度爬取頁面完整內文
-        "topic": "finance",
+        "topic": "general",
         "include_answer": "basic",    # 啟用詳盡 AI 合成摘要
-        "include_raw_content": True,     # 傳入完整頁面文字作為分析素材
+        "include_raw_content": False,     # 傳入完整頁面文字作為分析素材
         "time_range": "day",             # 搜尋過去 24 小時內的新聞
         "max_results": max_results,                # 更多來源 → 更豐富的分析依據
     }
