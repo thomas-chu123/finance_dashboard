@@ -43,6 +43,20 @@ from pathlib import Path
 BASE_URL = "http://localhost:8005"
 
 
+# 依 category 補強搜尋語意，降低抓到同名非金融內容的機率。
+CATEGORY_FINANCE_HINTS: dict[str, str] = {
+    "tw_etf": "台股 ETF 台灣 股票 基金",
+    "us_etf": "美股 ETF 美國 股票 基金",
+    "exchange": "外匯 匯率 美元 台幣",
+    "index": "指數 大盤 股市",
+    "vix": "VIX 波動率 恐慌指數",
+    "oil": "原油 油價 能源 期貨",
+    "crypto": "加密貨幣 比特幣 以太幣",
+    "rate": "利率 央行 殖利率",
+    "interest_rate": "利率 央行 殖利率",
+}
+
+
 # ---------------------------------------------------------------------------
 # HTTP helpers
 # ---------------------------------------------------------------------------
@@ -99,6 +113,23 @@ def _load_env_credentials() -> tuple[str | None, str | None]:
     return env.get("DEBUG_EMAIL"), env.get("DEBUG_PASSWORD")
 
 
+def _build_finance_hint(category: str) -> str:
+    """依類別回傳搜尋提示詞（含中英文金融詞）."""
+    key = (category or "").strip().lower()
+    hint = CATEGORY_FINANCE_HINTS.get(key)
+    if hint:
+        return f"{hint} finance market"
+    return "金融 市場 股票 ETF 指數 finance market"
+
+
+def _build_search_query(symbol: str, symbol_name: str, category: str) -> str:
+    """組合搜尋字串：name + symbol + category hint（避免重複）."""
+    finance_hint = _build_finance_hint(category)
+    if symbol_name == symbol:
+        return f"{symbol_name} {finance_hint}"
+    return f"{symbol_name} {symbol} {finance_hint}"
+
+
 # ---------------------------------------------------------------------------
 # Print helpers
 # ---------------------------------------------------------------------------
@@ -139,12 +170,16 @@ def show_config() -> None:
     brave_key = env.get("BRAVE_SEARCH_API_KEY", "")
     gemini_key = env.get("GEMINI_API_KEY", "")
     tavily_key = env.get("TAVILY_SEARCH_API_KEY", "")
+    searxng_url = env.get("SEARXNG_BASE_URL", "https://search.skynetapp.org")
+    ollama_url = env.get("OLLAMA_BASE_URL", "http://192.168.0.26:11434")
 
     def mask(key: str) -> str:
         return (key[:6] + "..." + key[-4:]) if len(key) > 12 else ("(未設定)" if not key else key)
 
     print("\n=== AI Briefing 設定 ===\n")
     print(f"  AI_SUMMARY            : {provider}")
+    print(f"  SEARXNG_BASE_URL      : {searxng_url}")
+    print(f"  OLLAMA_BASE_URL       : {ollama_url}")
     print(f"  BRAVE_SEARCH_API_KEY  : {mask(brave_key)}")
     print(f"  GEMINI_API_KEY        : {mask(gemini_key)}")
     print(f"  TAVILY_SEARCH_API_KEY : {mask(tavily_key)}")
@@ -171,7 +206,13 @@ def show_config() -> None:
 # Direct single-symbol test（不需登入，直接在 backend 環境執行）
 # ---------------------------------------------------------------------------
 
-async def _test_symbol_async(symbol: str, symbol_name: str, category: str, ai_summary: str | None) -> None:
+async def _test_symbol_async(
+    symbol: str,
+    symbol_name: str,
+    category: str,
+    ai_summary: str | None,
+    searxng_url: str | None,
+) -> None:
     """直接呼叫 service function 測試單一 symbol，不走 HTTP，不寫 DB."""
     # 動態設定 AI_SUMMARY 環境變數（若有指定 --ai-summary）
     env_map = _load_env()
@@ -181,6 +222,8 @@ async def _test_symbol_async(symbol: str, symbol_name: str, category: str, ai_su
     for k, v in env_map.items():
         os.environ.setdefault(k, v)
     os.environ["AI_SUMMARY"] = provider
+    if searxng_url:
+        os.environ["SEARXNG_BASE_URL"] = searxng_url
 
     # 必須在設定環境後才匯入（避免 lru_cache 提前讀到空值）
     import importlib, sys as _sys
@@ -195,16 +238,11 @@ async def _test_symbol_async(symbol: str, symbol_name: str, category: str, ai_su
     if backend_path not in _sys.path:
         _sys.path.insert(0, backend_path)
 
-    if category == "tw_etf":
-        finance_hint = "台灣ETF 股票"
-    elif category == "exchange":
-        finance_hint = "外匯 匯率走勢"
-    else:
-        finance_hint = "ETF stock fund"
-
-    query = f"{symbol_name} {symbol} {finance_hint}" if symbol_name != symbol else f"{symbol_name} {finance_hint}"
+    query = _build_search_query(symbol, symbol_name, category)
 
     print(f"\n=== 直接測試 symbol={symbol}  provider={provider} ===")
+    if provider == "SEARXNG_OLLAMA":
+        print(f"  searxng_url: {os.environ.get('SEARXNG_BASE_URL', '')}")
     print(f"  query: {query}\n")
 
     if provider == "TAVILY":
@@ -213,6 +251,20 @@ async def _test_symbol_async(symbol: str, symbol_name: str, category: str, ai_su
             symbol=symbol,
             symbol_name=symbol_name,
             query=query,
+            session_hour=8,
+        )
+    elif provider == "SEARXNG_OLLAMA":
+        from app.services.searxng_service import search_news as searxng_search_news
+        from app.services.ollama_service import generate_market_summary as ollama_generate
+        news_items = await searxng_search_news(query=query, count=3)
+        if not news_items:
+            from app.services.brave_search_service import search_news as brave_search_news
+            print("  [warn] SearXNG 無結果，改用 Brave fallback 搜尋")
+            news_items = await brave_search_news(query=query, count=3)
+        summary = await ollama_generate(
+            symbol=symbol,
+            symbol_name=symbol_name,
+            news_items=news_items,
             session_hour=8,
         )
     else:
@@ -244,8 +296,14 @@ async def _test_symbol_async(symbol: str, symbol_name: str, category: str, ai_su
     print()
 
 
-def test_symbol(symbol: str, symbol_name: str, category: str, ai_summary: str | None) -> None:
-    asyncio.run(_test_symbol_async(symbol, symbol_name, category, ai_summary))
+def test_symbol(
+    symbol: str,
+    symbol_name: str,
+    category: str,
+    ai_summary: str | None,
+    searxng_url: str | None,
+) -> None:
+    asyncio.run(_test_symbol_async(symbol, symbol_name, category, ai_summary, searxng_url))
 
 
 # ---------------------------------------------------------------------------
@@ -263,11 +321,13 @@ def main() -> None:
     parser.add_argument("--name",     default=None,
                         help="Symbol display name for --test-symbol (default: same as symbol)")
     parser.add_argument("--category", default="us_etf",
-                        choices=["us_etf", "tw_etf", "exchange", "stock"],
+                        choices=["us_etf", "tw_etf", "exchange", "index", "vix", "oil", "crypto", "rate", "interest_rate", "stock"],
                         help="Category for --test-symbol (default: us_etf)")
     parser.add_argument("--ai-summary", default=None,
-                        choices=["TAVILY", "BRAVE_GEMINI"],
+                        choices=["TAVILY", "BRAVE_GEMINI", "SEARXNG_OLLAMA"],
                         help="Override AI_SUMMARY provider for --test-symbol only")
+    parser.add_argument("--searxng-url", default=None,
+                        help="Override SEARXNG_BASE_URL for --test-symbol only")
     parser.add_argument("--wait", type=int, default=60,
                         help="Seconds to wait after trigger before showing result (default: 60)")
     parser.add_argument("--email",    default=None, help="Login email")
@@ -282,7 +342,7 @@ def main() -> None:
 
     if args.test_symbol:
         symbol_name = args.name or args.test_symbol
-        test_symbol(args.test_symbol, symbol_name, args.category, args.ai_summary)
+        test_symbol(args.test_symbol, symbol_name, args.category, args.ai_summary, args.searxng_url)
         if not (args.trigger or args.latest or args.sessions):
             return
 

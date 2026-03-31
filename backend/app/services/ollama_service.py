@@ -9,10 +9,12 @@ Ollama Direct API 摘要服務 — 取代 gemini_service.
 後端伺服器必須與 192.168.0.26 在同一網段才能存取。
 """
 import logging
+import re
 import httpx
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+OLLAMA_REQUEST_RETRIES = 2
 
 SESSION_LABEL_MAP = {
     8: "開盤前早報",
@@ -21,29 +23,167 @@ SESSION_LABEL_MAP = {
 }
 
 
+def _clean_text(value: str, limit: int) -> str:
+    """清理摘要輸入文字，移除多餘空白與常見搜尋噪訊。"""
+    text = (value or "").strip()
+    if not text:
+        return ""
+    text = text.replace("\u3000", " ")
+    text = re.sub(r"\s+", " ", text)
+    # 常見搜尋頁噪訊關鍵字
+    text = text.replace("快照", "")
+    text = text.replace("›", " ")
+    text = re.sub(r"\s+", " ", text).strip(" -|:")
+    return text[:limit]
+
+
+def _prepare_news_items(news_items: list[dict]) -> list[dict]:
+    """標準化 SearXNG 新聞資料，避免空描述或過長文本影響 LLM 輸出。"""
+    prepared: list[dict] = []
+    seen_urls: set[str] = set()
+
+    for item in news_items:
+        if not isinstance(item, dict):
+            continue
+        url = (item.get("url") or "").strip()
+        if not url or url in seen_urls:
+            continue
+
+        title = _clean_text(str(item.get("title") or ""), 160)
+        desc_raw = str(item.get("description") or "")
+        description = _clean_text(desc_raw, 280)
+        if not description:
+            description = title
+
+        if not title:
+            continue
+
+        seen_urls.add(url)
+        prepared.append(
+            {
+                "title": title,
+                "description": description,
+                "url": url,
+                "published_date": item.get("published_date") or "",
+            }
+        )
+    return prepared
+
+
+def _extract_summary_from_payload(payload: dict) -> str:
+    """從多種回應格式中提取摘要文字。"""
+    # OpenAI 相容格式
+    choices = payload.get("choices") or []
+    if choices:
+        first = choices[0] or {}
+        message = first.get("message") or {}
+        content = message.get("content")
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+        # 某些模型/代理可能回 content list
+        if isinstance(content, list):
+            merged = "".join(
+                part.get("text", "")
+                for part in content
+                if isinstance(part, dict)
+            ).strip()
+            if merged:
+                return merged
+        text = first.get("text")
+        if isinstance(text, str) and text.strip():
+            return text.strip()
+
+    # Ollama /api/generate 常見格式
+    response_text = payload.get("response")
+    if isinstance(response_text, str) and response_text.strip():
+        return response_text.strip()
+
+    return ""
+
+
+def _fallback_summary(symbol_name: str, news_items: list[dict]) -> str:
+    """當 LLM 回空或失敗時，以新聞標題組成簡短繁中摘要。"""
+    if not news_items:
+        return ""
+
+    titles = [
+        (item.get("title") or "").strip()
+        for item in news_items[:3]
+        if (item.get("title") or "").strip()
+    ]
+    if not titles:
+        return ""
+
+    joined_titles = "；".join(titles)
+    summary = (
+        f"{symbol_name} 近期市場焦點集中在：{joined_titles}。"
+        "整體訊息顯示短線波動仍高，建議關注事件後續發展與成交量變化，"
+        "並搭配風險控管與分批布局。"
+    )
+    # 控制長度，避免過長影響下游顯示
+    return summary[:220]
+
+
 def _build_prompt(
     symbol: str,
     symbol_name: str,
     news_items: list[dict],
     session_label: str,
 ) -> str:
-    """建立送給 Ollama 的繁體中文摘要 Prompt."""
+    """建立送給 Ollama 的摘要 Prompt（英文指令 + 繁中輸出要求）."""
     news_blocks = []
     for i, item in enumerate(news_items, start=1):
         title = item.get("title", "（無標題）")
         description = item.get("description", "（無描述）")
-        news_blocks.append(f"新聞 {i}：{title}\n摘要：{description}")
+        news_blocks.append(f"News {i}: {title}\nDetails: {description}")
 
     news_text = "\n\n".join(news_blocks)
-    count = len(news_items)
-
     return (
-        f"你是一位專業的金融市場分析師。"
-        f"以下是關於 {symbol_name}（{symbol}）在 {session_label} 的最新 {count} 則新聞：\n\n"
-        f"{news_text}\n\n"
-        "請根據上述新聞，以繁體中文（非簡體中文）撰寫一段 100-150 字的市場動態摘要。\n"
-        "格式：純文字，無需標題，包含：(1) 主要市場動態 (2) 潛在影響 (3) 投資者關注要點。"
+        f"You are a financial analyst. Create a Traditional Chinese summary for "
+        f"{symbol_name} ({symbol}) for the {session_label}.\n\n"
+        f"Source news:\n{news_text}\n\n"
+        "Return 120-180 Chinese characters and cover: main development, possible impact, what investors should watch. "
+        "Output plain text only in Traditional Chinese."
     )
+
+
+def _build_retry_prompt(symbol: str, symbol_name: str, news_items: list[dict], session_label: str) -> str:
+    """第二次重試用的精簡 Prompt（與已驗證樣式一致）."""
+    bullets = []
+    for i, item in enumerate(news_items[:3], start=1):
+        bullets.append(
+            f"News {i}: {item.get('title', '（無標題）')}\n"
+            f"Details: {item.get('description', '（無描述）')}"
+        )
+    lines = "\n\n".join(bullets)
+    return (
+        f"You are a financial analyst. Write a Traditional Chinese summary for {symbol_name} ({symbol}) "
+        f"for the {session_label}.\n\n"
+        f"Source news:\n{lines}\n\n"
+        "Return 120-180 Chinese characters. Include market move, likely impact, and watch points. "
+        "Output plain text only."
+    )
+
+
+async def _post_chat_completion(base_url: str, payload: dict) -> httpx.Response:
+    """送出 Ollama chat request，針對瞬斷做少量重試。"""
+    last_err: Exception | None = None
+    for attempt in range(1, OLLAMA_REQUEST_RETRIES + 1):
+        try:
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                return await client.post(
+                    f"{base_url}/v1/chat/completions",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                )
+        except Exception as exc:
+            last_err = exc
+            logger.warning(f"[Ollama] request attempt={attempt} failed: {exc}")
+            if attempt >= OLLAMA_REQUEST_RETRIES:
+                break
+    if last_err:
+        raise last_err
+    raise RuntimeError("Unexpected Ollama request state")
 
 
 async def generate_market_summary(
@@ -71,16 +211,21 @@ async def generate_market_summary(
     settings = get_settings()
     base_url = settings.ollama_base_url
     model = settings.ollama_model
+    simple_prompt_first = settings.ollama_simple_prompt_first
 
     if not base_url:
         logger.warning("[Ollama] ollama_base_url 未設定，跳過摘要生成")
         return ""
-    if not news_items:
+    prepared_news_items = _prepare_news_items(news_items)
+    if not prepared_news_items:
         logger.info(f"[Ollama] {symbol} 無新聞，跳過摘要生成")
         return ""
 
     session_label = SESSION_LABEL_MAP.get(session_hour, "市場快報")
-    prompt = _build_prompt(symbol, symbol_name, news_items, session_label)
+    if simple_prompt_first:
+        prompt = _build_retry_prompt(symbol, symbol_name, prepared_news_items, session_label)
+    else:
+        prompt = _build_prompt(symbol, symbol_name, prepared_news_items, session_label)
 
     # 使用 OpenAI 相容 /v1/chat/completions（Ollama ≥ 0.1.14 原生支援）
     # 不傳 Authorization header：Ollama Direct 無需認證
@@ -94,26 +239,54 @@ async def generate_market_summary(
 
     try:
         # timeout=120s：20B 模型首次推理（冷啟動）可能需要 60-90s
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(
-                f"{base_url}/v1/chat/completions",
-                json=payload,
-                headers={"Content-Type": "application/json"},
-            )
+        resp = await _post_chat_completion(base_url=base_url, payload=payload)
 
         if resp.status_code != 200:
             logger.error(f"[Ollama] HTTP {resp.status_code} for {symbol}: {resp.text[:200]}")
-            return ""
+            fallback = _fallback_summary(symbol_name, news_items)
+            if fallback:
+                logger.warning(f"[Ollama] {symbol} 改用 fallback 摘要（HTTP 非 200）")
+            return fallback
 
-        choices = resp.json().get("choices", [])
-        if not choices:
-            logger.error(f"[Ollama] 回應無 choices，symbol={symbol}")
-            return ""
+        payload_json = resp.json()
+        summary = _extract_summary_from_payload(payload_json)
+        if not summary:
+            logger.warning(
+                f"[Ollama] {symbol} 首次回應無可用文字，payload_head={str(payload_json)[:600]}"
+            )
+            # 精簡 Prompt 再試一次，避免模型因輸入噪訊回空內容
+            retry_prompt = (
+                _build_prompt(symbol, symbol_name, prepared_news_items, session_label)
+                if simple_prompt_first
+                else _build_retry_prompt(symbol, symbol_name, prepared_news_items, session_label)
+            )
+            retry_payload = {
+                "model": model,
+                "messages": [{"role": "user", "content": retry_prompt}],
+                "temperature": 0.2,
+                "max_tokens": 320,
+                "stream": False,
+            }
+            retry_resp = await _post_chat_completion(base_url=base_url, payload=retry_payload)
+            if retry_resp.status_code == 200:
+                retry_json = retry_resp.json()
+                retry_summary = _extract_summary_from_payload(retry_json)
+                if retry_summary:
+                    logger.info(f"[Ollama] {symbol} 重試後摘要生成成功（{len(retry_summary)} 字）")
+                    return retry_summary
+                logger.warning(
+                    f"[Ollama] {symbol} 重試仍無可用文字，payload_head={str(retry_json)[:600]}"
+                )
 
-        summary = choices[0].get("message", {}).get("content", "").strip()
+            logger.warning(f"[Ollama] {symbol} 回應無可用文字，改用 fallback 摘要")
+            return _fallback_summary(symbol_name, prepared_news_items)
+
         logger.info(f"[Ollama] {symbol} 摘要生成成功（{len(summary)} 字）")
         return summary
 
     except Exception as e:
         logger.error(f"[Ollama] 摘要生成失敗 symbol={symbol}: {e}")
-        return ""
+        fallback = _fallback_summary(symbol_name, prepared_news_items)
+        if fallback:
+            logger.warning(f"[Ollama] {symbol} 例外後改用 fallback 摘要")
+        return fallback

@@ -26,6 +26,37 @@ MAX_SYMBOLS_PER_SESSION = 20
 VALID_SESSION_HOURS = (8, 13, 18)
 
 
+# 依 category 補強搜尋語意，降低抓到同名非金融內容的機率。
+CATEGORY_FINANCE_HINTS: dict[str, str] = {
+    "tw_etf": "台股 ETF 台灣 股票 基金",
+    "us_etf": "美股 ETF 美國 股票 基金",
+    "exchange": "外匯 匯率 美元 台幣",
+    "index": "指數 大盤 股市",
+    "vix": "VIX 波動率 恐慌指數",
+    "oil": "原油 油價 能源 期貨",
+    "crypto": "加密貨幣 比特幣 以太幣",
+    "rate": "利率 央行 殖利率",
+    "interest_rate": "利率 央行 殖利率",
+}
+
+
+def _build_finance_hint(category: str) -> str:
+    """依類別回傳搜尋提示詞（含中英文金融詞）."""
+    key = (category or "").strip().lower()
+    hint = CATEGORY_FINANCE_HINTS.get(key)
+    if hint:
+        return f"{hint} finance market"
+    return "金融 市場 股票 ETF 指數 finance market"
+
+
+def _build_search_query(symbol: str, symbol_name: str, category: str) -> str:
+    """組合搜尋字串：name + symbol + category hint（避免重複）."""
+    finance_hint = _build_finance_hint(category)
+    if symbol_name == symbol:
+        return f"{symbol_name} {finance_hint}"
+    return f"{symbol_name} {symbol} {finance_hint}"
+
+
 def _get_nearest_session_time() -> datetime:
     """
     計算最近一次有效排程時間（08:00、13:00 或 18:00 Asia/Taipei）.
@@ -127,21 +158,7 @@ async def run_market_briefing_session() -> dict:
         symbol_name = item["name"]
         category = item.get("category", "us_etf")
         try:
-            # 根據 category 附加金融關鍵字，避免搜到非金融內容（如 VT → Vermont）
-            if category == "tw_etf":
-                finance_hint = "台灣ETF 股票"
-            elif category == "us_etf":
-                finance_hint = "ETF stock fund"
-            elif category == "exchange":
-                finance_hint = "外匯 匯率走勢"
-            else:
-                finance_hint = "stock market finance"
-
-            # 搜尋新聞：name 與 symbol 相同時不重複，再加金融 hint
-            if symbol_name == symbol:
-                search_query = f"{symbol_name} {finance_hint}"
-            else:
-                search_query = f"{symbol_name} {symbol} {finance_hint}"
+            search_query = _build_search_query(symbol, symbol_name, category)
 
             if use_tavily:
                 # --- Tavily 路徑：搜尋 + 摘要一次完成 ---
@@ -156,6 +173,12 @@ async def run_market_briefing_session() -> dict:
                 from app.services.searxng_service import search_news as searxng_search_news
                 from app.services.ollama_service import generate_market_summary as ollama_generate
                 news_items = await searxng_search_news(query=search_query, count=3)
+                if not news_items:
+                    # 保底：SearXNG 被 403 或無結果時，改由 Brave 補新聞來源。
+                    logger.warning(
+                        f"[Briefing] SearXNG 無結果，改用 Brave fallback symbol={symbol}"
+                    )
+                    news_items = await search_news(query=search_query, count=3)
                 summary_text = await ollama_generate(
                     symbol=symbol,
                     symbol_name=symbol_name,

@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     searxng_base_url: str = "https://search.skynetapp.org"
     ollama_base_url: str = "http://192.168.0.26:11434"
     ollama_model: str = "gpt-oss:20b"
+    ollama_simple_prompt_first: bool = True
 
     # App
     app_base_url: str = "http://localhost:5173"
