@@ -30,7 +30,7 @@ VALID_SESSION_HOURS = (8, 13, 18)
 CATEGORY_FINANCE_HINTS: dict[str, str] = {
     "tw_etf": "台股 ETF 台灣 股票 基金",
     "us_etf": "美股 ETF 美國 股票 基金",
-    "exchange": "外匯 匯率 美元 台幣",
+    "exchange": "外匯 匯率 金融 貨幣",  # 預設外匯提示（會被動態覆蓋）
     "index": "指數 大盤 股市",
     "vix": "VIX 波動率 恐慌指數",
     "oil": "原油 油價 能源 期貨",
@@ -39,10 +39,65 @@ CATEGORY_FINANCE_HINTS: dict[str, str] = {
     "interest_rate": "利率 央行 殖利率",
 }
 
+# 外匯 ticker 到中文貨幣名稱的映射（用於改進搜尋提示）
+CURRENCY_NAMES: dict[str, str] = {
+    "USD": "美元",
+    "TWD": "台幣",
+    "JPY": "日圓",
+    "EUR": "歐元",
+    "GBP": "英鎊",
+    "CNY": "人民幣",
+    "HKD": "港幣",
+    "SGD": "新加坡幣",
+    "AUD": "澳幣",
+    "CAD": "加幣",
+    "CHF": "瑞士法郎",
+    "NZD": "紐西蘭幣",
+    "INR": "印度盧比",
+    "RMB": "人民幣",
+    "KRW": "韓圓",
+    "SEK": "瑞典克朗",
+    "NOK": "挪威克朗",
+    "MXN": "墨西哥披索",
+    "ZAR": "南非蘭特",
+    "BRL": "巴西雷亞爾",
+    "RUB": "俄羅斯盧布",
+    "TRY": "土耳其里拉",
+}
 
-def _build_finance_hint(category: str) -> str:
+
+def _parse_exchange_pair(symbol: str) -> tuple[str, str] | None:
+    """
+    解析外匯 ticker (如 TWDJPY=X) 為 (base_curr, quote_curr)。
+    
+    常見格式：XXX[YYY] 其中 XXX 和 YYY 各為 3 字母貨幣代碼，加上 =X 後綴。
+    
+    Returns:
+        (base_code, quote_code) 如 ("TWD", "JPY")，或 None 若無法解析
+    """
+    base_symbol = symbol.replace("=X", "").upper()
+    if len(base_symbol) != 6:
+        return None
+    base_curr = base_symbol[:3]
+    quote_curr = base_symbol[3:6]
+    return (base_curr, quote_curr)
+
+
+def _build_finance_hint(category: str, symbol: str = "") -> str:
     """依類別回傳搜尋提示詞（含中英文金融詞）."""
     key = (category or "").strip().lower()
+    
+    # 若為外匯類別且 symbol 可解析，動態生成貨幣對提示
+    if key == "exchange" and symbol:
+        pair = _parse_exchange_pair(symbol)
+        if pair:
+            base_code, quote_code = pair
+            base_name = CURRENCY_NAMES.get(base_code, base_code)
+            quote_name = CURRENCY_NAMES.get(quote_code, quote_code)
+            # 避免出現「美元 美元」這類重複
+            if base_name != quote_name:
+                return f"外匯 匯率 {base_name} {quote_name} finance market"
+    
     hint = CATEGORY_FINANCE_HINTS.get(key)
     if hint:
         return f"{hint} finance market"
@@ -51,7 +106,7 @@ def _build_finance_hint(category: str) -> str:
 
 def _build_search_query(symbol: str, symbol_name: str, category: str) -> str:
     """組合搜尋字串：name + symbol + category hint（避免重複）."""
-    finance_hint = _build_finance_hint(category)
+    finance_hint = _build_finance_hint(category, symbol=symbol)
     if symbol_name == symbol:
         return f"{symbol_name} {finance_hint}"
     return f"{symbol_name} {symbol} {finance_hint}"
