@@ -1,7 +1,7 @@
 """
 Ollama Direct API 摘要服務 — 取代 gemini_service.
 
-端點：http://192.168.0.26:11434/v1/chat/completions（OpenAI 相容格式）
+端點：http://192.168.0.26:11434/api/chat
 認證：無（Ollama Direct 不需要認證）
 模型：gpt-oss:20b（由 OLLAMA_MODEL 環境變數控制）
 
@@ -72,7 +72,20 @@ def _prepare_news_items(news_items: list[dict]) -> list[dict]:
 
 def _extract_summary_from_payload(payload: dict) -> str:
     """從多種回應格式中提取摘要文字。"""
-    # OpenAI 相容格式
+
+    def _is_usable_summary(text: str) -> bool:
+        normalized = re.sub(r"\s+", "", text or "")
+        if len(normalized) < 80 or len(normalized) > 260:
+            return False
+        # 排除常見推理/提示詞雜訊
+        lowered = (text or "").lower()
+        noise_keywords = ["thinking process", "source news", "return 120-180", "news 1", "**"]
+        if any(k in lowered for k in noise_keywords):
+            return False
+        cjk_count = len(re.findall(r"[\u4e00-\u9fff]", normalized))
+        ratio = cjk_count / max(len(normalized), 1)
+        return cjk_count >= 40 and ratio >= 0.45
+    # 舊版 chat/completions 類型格式（相容解析）
     choices = payload.get("choices") or []
     if choices:
         first = choices[0] or {}
@@ -80,6 +93,28 @@ def _extract_summary_from_payload(payload: dict) -> str:
         content = message.get("content")
         if isinstance(content, str) and content.strip():
             return content.strip()
+        # qwen3.* 可能把推理內容放在 reasoning，最終答案仍可能出現在其中
+        reasoning = message.get("reasoning")
+        if isinstance(reasoning, str) and reasoning.strip():
+            # 優先抓取推理中已組好的繁中摘要（常見於 gpt-oss/qwen 只回 reasoning）
+            quoted_candidates = re.findall(r"[「\"]([^「」\"]{80,240})[」\"]", reasoning)
+            for candidate in reversed(quoted_candidates):
+                text = candidate.strip()
+                if _is_usable_summary(text):
+                    return text
+
+            sentence_candidates = re.findall(r"([\u4e00-\u9fff0-9A-Za-z，。；：、（）\(\)\-]{90,260}[。！？])", reasoning)
+            for candidate in reversed(sentence_candidates):
+                text = candidate.strip()
+                if _is_usable_summary(text):
+                    return text
+
+            for marker in ("Final Answer:", "Final answer:", "最終答案：", "最終答案:"):
+                idx = reasoning.rfind(marker)
+                if idx != -1:
+                    candidate = reasoning[idx + len(marker):].strip()
+                    if candidate:
+                        return candidate
         # 某些模型/代理可能回 content list
         if isinstance(content, list):
             merged = "".join(
@@ -97,6 +132,16 @@ def _extract_summary_from_payload(payload: dict) -> str:
     response_text = payload.get("response")
     if isinstance(response_text, str) and response_text.strip():
         return response_text.strip()
+
+    # Ollama /api/chat 格式
+    message = payload.get("message")
+    if isinstance(message, dict):
+        content = message.get("content")
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+        reasoning = message.get("reasoning")
+        if isinstance(reasoning, str) and reasoning.strip():
+            return reasoning.strip()
 
     return ""
 
@@ -165,14 +210,22 @@ def _build_retry_prompt(symbol: str, symbol_name: str, news_items: list[dict], s
     )
 
 
-async def _post_chat_completion(base_url: str, payload: dict) -> httpx.Response:
+def _with_no_think_directive(prompt: str) -> str:
+    """在提示詞前加上 qwen 系列可識別的 no_think 指令。"""
+    stripped = prompt.lstrip()
+    if stripped.startswith("/no_think"):
+        return prompt
+    return f"/no_think\n{prompt}"
+
+
+async def _post_chat(base_url: str, payload: dict) -> httpx.Response:
     """送出 Ollama chat request，針對瞬斷做少量重試。"""
     last_err: Exception | None = None
     for attempt in range(1, OLLAMA_REQUEST_RETRIES + 1):
         try:
             async with httpx.AsyncClient(timeout=120.0) as client:
                 return await client.post(
-                    f"{base_url}/v1/chat/completions",
+                    f"{base_url}/api/chat",
                     json=payload,
                     headers={"Content-Type": "application/json"},
                 )
@@ -226,20 +279,25 @@ async def generate_market_summary(
         prompt = _build_retry_prompt(symbol, symbol_name, prepared_news_items, session_label)
     else:
         prompt = _build_prompt(symbol, symbol_name, prepared_news_items, session_label)
+    is_qwen_family = "qwen" in (model or "").lower()
+    if is_qwen_family:
+        prompt = _with_no_think_directive(prompt)
 
-    # 使用 OpenAI 相容 /v1/chat/completions（Ollama ≥ 0.1.14 原生支援）
-    # 不傳 Authorization header：Ollama Direct 無需認證
+    # 使用 Ollama /api/chat；固定關閉 think 與 stream
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.3,
-        "max_tokens": 400,
         "stream": False,
+        "think": False,
+        "options": {
+            "temperature": 0.3,
+            "num_predict": 400,
+        },
     }
 
     try:
         # timeout=120s：20B 模型首次推理（冷啟動）可能需要 60-90s
-        resp = await _post_chat_completion(base_url=base_url, payload=payload)
+        resp = await _post_chat(base_url=base_url, payload=payload)
 
         if resp.status_code != 200:
             logger.error(f"[Ollama] HTTP {resp.status_code} for {symbol}: {resp.text[:200]}")
@@ -260,14 +318,28 @@ async def generate_market_summary(
                 if simple_prompt_first
                 else _build_retry_prompt(symbol, symbol_name, prepared_news_items, session_label)
             )
+            choices = payload_json.get("choices") or []
+            finish_reason = ""
+            if choices and isinstance(choices[0], dict):
+                finish_reason = str(choices[0].get("finish_reason") or "").lower()
+            if not finish_reason:
+                finish_reason = str(payload_json.get("done_reason") or "").lower()
+
+            # qwen 系列常見：content 空 + reasoning 長文 + finish_reason=length
+            # 改用 no_think 指令再試一次，避免 token 全耗在推理。
+            if is_qwen_family and finish_reason == "length":
+                retry_prompt = _with_no_think_directive(retry_prompt)
             retry_payload = {
                 "model": model,
                 "messages": [{"role": "user", "content": retry_prompt}],
-                "temperature": 0.2,
-                "max_tokens": 320,
                 "stream": False,
+                "think": False,
+                "options": {
+                    "temperature": 0.2,
+                    "num_predict": 320,
+                },
             }
-            retry_resp = await _post_chat_completion(base_url=base_url, payload=retry_payload)
+            retry_resp = await _post_chat(base_url=base_url, payload=retry_payload)
             if retry_resp.status_code == 200:
                 retry_json = retry_resp.json()
                 retry_summary = _extract_summary_from_payload(retry_json)

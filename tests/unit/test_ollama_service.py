@@ -15,7 +15,7 @@ def _mock_settings(base_url: str = "http://192.168.0.26:11434", model: str = "gp
 
 
 def _ollama_response(content: str = "美股市場今日開盤前整體走勢強勁，VTI ETF 隨大盤上漲。") -> MagicMock:
-    """建立 mock httpx Response（OpenAI 相容格式）."""
+    """建立 mock httpx Response（舊版 chat/completions 相容格式）."""
     resp = MagicMock()
     resp.status_code = 200
     resp.json.return_value = {

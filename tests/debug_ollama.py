@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 import urllib.error
@@ -61,7 +62,18 @@ def request_json(method: str, url: str, timeout: float, body: dict[str, Any] | N
 
 
 def extract_summary(payload: Any) -> str:
-    """Extract model text from common OpenAI/Ollama response shapes."""
+    """Extract model text from common Ollama response shapes."""
+    def is_usable_summary(text: str) -> bool:
+        normalized = re.sub(r"\s+", "", text or "")
+        if len(normalized) < 80 or len(normalized) > 260:
+            return False
+        lowered = (text or "").lower()
+        if any(k in lowered for k in ["thinking process", "source news", "return 120-180", "news 1", "**"]):
+            return False
+        cjk_count = len(re.findall(r"[\u4e00-\u9fff]", normalized))
+        ratio = cjk_count / max(len(normalized), 1)
+        return cjk_count >= 40 and ratio >= 0.45
+
     if not isinstance(payload, dict):
         return ""
 
@@ -72,6 +84,18 @@ def extract_summary(payload: Any) -> str:
         content = message.get("content")
         if isinstance(content, str) and content.strip():
             return content.strip()
+        reasoning = message.get("reasoning")
+        if isinstance(reasoning, str) and reasoning.strip():
+            quoted_candidates = re.findall(r"[「\"]([^「」\"]{80,240})[」\"]", reasoning)
+            for candidate in reversed(quoted_candidates):
+                text = candidate.strip()
+                if is_usable_summary(text):
+                    return text
+            sentence_candidates = re.findall(r"([\u4e00-\u9fff0-9A-Za-z，。；：、（）\(\)\-]{90,260}[。！？])", reasoning)
+            for candidate in reversed(sentence_candidates):
+                text = candidate.strip()
+                if is_usable_summary(text):
+                    return text
         if isinstance(content, list):
             merged = "".join(
                 part.get("text", "")
@@ -87,6 +111,15 @@ def extract_summary(payload: Any) -> str:
     response_text = payload.get("response")
     if isinstance(response_text, str) and response_text.strip():
         return response_text.strip()
+
+    message = payload.get("message")
+    if isinstance(message, dict):
+        content = message.get("content")
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+        reasoning = message.get("reasoning")
+        if isinstance(reasoning, str) and reasoning.strip():
+            return reasoning.strip()
 
     return ""
 
@@ -184,22 +217,32 @@ def run_chat(
     prompt: str,
     temperature: float,
     max_tokens: int,
+    think: bool | None,
     raw: bool,
 ) -> int:
-    """Call /v1/chat/completions once and print parsed output."""
+    """Call /api/chat once and print parsed output."""
+    if think is False and "qwen" in model.lower() and not prompt.lstrip().startswith("/no_think"):
+        prompt = f"/no_think\n{prompt}"
+
+    if think is None:
+        think = False
+
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": temperature,
-        "max_tokens": max_tokens,
         "stream": False,
+        "think": think,
+        "options": {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+        },
     }
 
     started = time.perf_counter()
-    status, response_payload = request_json("POST", f"{base_url}/v1/chat/completions", timeout, body=payload)
+    status, response_payload = request_json("POST", f"{base_url}/api/chat", timeout, body=payload)
     elapsed = time.perf_counter() - started
 
-    print(f"\n[chat] POST /v1/chat/completions -> {status} ({elapsed:.2f}s)")
+    print(f"\n[chat] POST /api/chat -> {status} ({elapsed:.2f}s)")
     if status >= 400:
         print("[error] request failed")
         if isinstance(response_payload, (dict, list)):
@@ -209,7 +252,16 @@ def run_chat(
         return 1
 
     summary = extract_summary(response_payload)
+    finish_reason = ""
+    if isinstance(response_payload, dict):
+        choices = response_payload.get("choices") or []
+        if choices and isinstance(choices[0], dict):
+            finish_reason = str(choices[0].get("finish_reason") or "")
+        if not finish_reason:
+            finish_reason = str(response_payload.get("done_reason") or "")
     print(f"[chat] extracted chars: {len(summary)}")
+    if finish_reason:
+        print(f"[chat] finish_reason: {finish_reason}")
     if summary:
         print("\n=== Extracted Output ===\n")
         print(summary)
@@ -242,6 +294,7 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.3, help="Sampling temperature")
     parser.add_argument("--max-tokens", type=int, default=400, help="Max output tokens")
     parser.add_argument("--timeout", type=float, default=120.0, help="HTTP timeout seconds")
+    parser.add_argument("--think", choices=["auto", "on", "off"], default="off", help="Set Ollama think mode")
     parser.add_argument("--raw", action="store_true", help="Print raw JSON response")
     args = parser.parse_args()
 
@@ -266,6 +319,11 @@ def main() -> None:
     if prompt is not None:
         print("\n=== Prompt Preview (first 400 chars) ===\n")
         print(prompt[:400])
+        think_value = None
+        if args.think == "on":
+            think_value = True
+        elif args.think == "off":
+            think_value = False
         exit_code = max(
             exit_code,
             run_chat(
@@ -275,6 +333,7 @@ def main() -> None:
                 prompt=prompt,
                 temperature=args.temperature,
                 max_tokens=args.max_tokens,
+                think=think_value,
                 raw=args.raw,
             ),
         )
