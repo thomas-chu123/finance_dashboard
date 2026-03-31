@@ -3,7 +3,9 @@ AI 每日市場早報 API 路由.
 提供：GET /latest、GET /sessions、POST /trigger
 """
 import logging
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Header, BackgroundTasks
+from app.config import get_settings
 from app.database import get_supabase
 from app.routers.users import get_user_id
 from app.services.news_briefing_service import run_market_briefing_session
@@ -11,6 +13,17 @@ from app.services.news_briefing_service import run_market_briefing_session
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/briefing", tags=["briefing"])
+
+_PROVIDER_LABELS = {
+    "TAVILY": "Tavily",
+    "SEARXNG_OLLAMA": "SearXNG + Ollama",
+}
+
+
+def _get_provider_label() -> str:
+    """依 AI_SUMMARY 設定回傳對外顯示的提供商名稱."""
+    settings = get_settings()
+    return _PROVIDER_LABELS.get(settings.ai_summary.upper(), "Brave Search + Gemini")
 
 
 @router.get("/latest")
@@ -39,7 +52,7 @@ async def get_latest_briefing(authorization: str = Header(default="")):
 
     user_symbols = {row["symbol"] for row in (tracking_res.data or [])}
     if not user_symbols:
-        return {"session_time": None, "items": []}
+        return {"session_time": None, "provider": _get_provider_label(), "items": []}
 
     # 2. 一次查詢取最近 50 筆 briefing（含 session_time），再從最新 session 過濾並只保留使用者追蹤的 symbols
     try:
@@ -56,7 +69,7 @@ async def get_latest_briefing(authorization: str = Header(default="")):
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
 
     if not items_res.data:
-        return {"session_time": None, "items": []}
+        return {"session_time": None, "provider": _get_provider_label(), "items": []}
 
     session_time = items_res.data[0]["session_time"]
     items = [
@@ -66,6 +79,7 @@ async def get_latest_briefing(authorization: str = Header(default="")):
 
     return {
         "session_time": session_time,
+        "provider": _get_provider_label(),
         "items": items,
     }
 
@@ -122,9 +136,12 @@ async def trigger_briefing(
         {"status": "triggered", "message": str}
     """
     get_user_id(authorization)
-    background_tasks.add_task(run_market_briefing_session)
-    logger.info("[Briefing API] 手動觸發排程")
+    # 手動觸發使用當下 UTC 時間作為 session_time，與排程整點時間區分，方便前端 polling 追蹤
+    manual_session_time = datetime.now(timezone.utc)
+    background_tasks.add_task(run_market_briefing_session, manual_session_time)
+    logger.info(f"[Briefing API] 手動觸發排程，session_time={manual_session_time.isoformat()}")
     return {
         "status": "triggered",
+        "session_time": manual_session_time.isoformat(),
         "message": "市場早報排程已在背景啟動，請稍後透過 GET /api/briefing/latest 查看結果",
     }

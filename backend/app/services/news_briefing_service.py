@@ -87,20 +87,23 @@ def _get_nearest_session_time() -> datetime:
     return nearest_taipei - taipei_offset
 
 
-async def run_market_briefing_session() -> dict:
+async def run_market_briefing_session(override_session_time: datetime | None = None) -> dict:
     """
     執行一次市場早報排程：
       1. 查詢 tracked_indices 中所有 is_active=True 的唯一 symbol
-      2. 計算本次 session_time
-      3. 對每個 symbol 呼叫 Brave Search + Gemini
+      2. 計算本次 session_time（若 override_session_time 提供則使用之，否則計算最近排程時間）
+      3. 對每個 symbol 呼叫設定的搜尋 + AI 摘要提供商
       4. Upsert 結果至 market_briefings 表
       5. 回傳統計 {"total": n, "success": n, "failed": n}
+
+    Args:
+        override_session_time: 若提供，強制使用此時間戳記（用於手動觸發，方便前端 polling 追蹤）
 
     Returns:
         {"total": int, "success": int, "failed": int}
     """
     sb = get_supabase()
-    session_time = _get_nearest_session_time()
+    session_time = override_session_time if override_session_time is not None else _get_nearest_session_time()
     session_hour = (session_time + timedelta(hours=8)).hour  # 轉回 Taipei hour 供 prompt 使用
 
     logger.info(f"[Briefing] 排程開始，session_time={session_time.isoformat()}")
