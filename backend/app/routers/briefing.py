@@ -54,28 +54,39 @@ async def get_latest_briefing(authorization: str = Header(default="")):
     if not user_symbols:
         return {"session_time": None, "provider": _get_provider_label(), "items": []}
 
-    # 2. 一次查詢取最近 50 筆 briefing（含 session_time），再從最新 session 過濾並只保留使用者追蹤的 symbols
+    # 2. 先取最新 session_time，再針對該 session 查詢使用者追蹤的 symbols
+    #    避免 limit(50) 全域截斷導致部分 symbols 被漏掉
+    try:
+        latest_session_res = (
+            sb.table("market_briefings")
+            .select("session_time")
+            .order("session_time", desc=True)
+            .limit(1)
+            .execute()
+        )
+    except Exception as e:
+        logger.error(f"[Briefing API] 查詢最新 session_time 失敗: {e}")
+        raise HTTPException(status_code=500, detail="資料庫查詢失敗")
+
+    if not latest_session_res.data:
+        return {"session_time": None, "provider": _get_provider_label(), "items": []}
+
+    session_time = latest_session_res.data[0]["session_time"]
+
     try:
         items_res = (
             sb.table("market_briefings")
             .select("session_time, symbol, symbol_name, summary_text, news_json, status, error_message")
-            .order("session_time", desc=True)
+            .eq("session_time", session_time)
+            .in_("symbol", list(user_symbols))
             .order("symbol")
-            .limit(50)
             .execute()
         )
     except Exception as e:
         logger.error(f"[Briefing API] 查詢 market_briefings 失敗: {e}")
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
 
-    if not items_res.data:
-        return {"session_time": None, "provider": _get_provider_label(), "items": []}
-
-    session_time = items_res.data[0]["session_time"]
-    items = [
-        r for r in items_res.data
-        if r["session_time"] == session_time and r["symbol"] in user_symbols
-    ]
+    items = items_res.data or []
 
     return {
         "session_time": session_time,

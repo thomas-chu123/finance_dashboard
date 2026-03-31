@@ -93,7 +93,7 @@
                   <div class="col-span-1 hidden sm:block">RSI 指標</div>
                   <div class="col-span-1 hidden sm:block">狀態</div>
                 </div>
-                <div v-for="item in trackingStore.items.slice(0, 6)" :key="item.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                <div v-for="item in trackingStore.items" :key="item.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                   <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
                   <div class="col-span-2 flex flex-col">
                     <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
