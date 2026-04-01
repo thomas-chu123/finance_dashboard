@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.scheduler import start_scheduler, scheduler
-from app.routers import auth, users, tracking, backtest, optimize, fundamentals, notifications, line, briefing as briefing_router
+from app.routers import auth, users, tracking, backtest, optimize, fundamentals, notifications, line, briefing as briefing_router, dividend as dividend_router
 from app.routers.market import router as market_router, test_router as alert_test_router
 from app.routers.optimize import router as optimize_router
 from fastapi_cache import FastAPICache
@@ -13,12 +13,17 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.backends.inmemory import InMemoryBackend
 from redis import asyncio as aioredis
 import os
+import socket
 import logging
 from logging.handlers import RotatingFileHandler
 from pydantic import BaseModel
 from typing import Optional, Any
 
 settings = get_settings()
+
+# syslog 格式：hostname process[pid]: message（時間由 PM2 提供）
+_HOSTNAME = socket.gethostname()
+_SYSLOG_FORMAT = f"{_HOSTNAME} %(name)s[%(process)d]: %(message)s"
 
 # Setup backend logger
 logging.basicConfig(
@@ -27,15 +32,21 @@ logging.basicConfig(
         logging.StreamHandler()
     ],
     level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+    format=_SYSLOG_FORMAT,
 )
 
 # Setup frontend logger
 frontend_logger = logging.getLogger("frontend")
 frontend_logger.setLevel(logging.INFO)
-fh = RotatingFileHandler("frontend.log", maxBytes=10485760, backupCount=5)
-fh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s [FRONTEND] %(message)s"))
-frontend_logger.addHandler(fh)
+_frontend_formatter = logging.Formatter(
+    f"{_HOSTNAME} FRONTEND[%(process)d]: %(message)s",
+)
+_fh = RotatingFileHandler("frontend.log", maxBytes=10485760, backupCount=5)
+_fh.setFormatter(_frontend_formatter)
+frontend_logger.addHandler(_fh)
+_sh = logging.StreamHandler()
+_sh.setFormatter(_frontend_formatter)
+frontend_logger.addHandler(_sh)
 frontend_logger.propagate = False
 
 class LogMessage(BaseModel):
@@ -47,6 +58,14 @@ class LogMessage(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 覆寫 uvicorn loggers 的 formatter，統一輸出格式
+    _uv_formatter = logging.Formatter(
+        f"{_HOSTNAME} %(name)s[%(process)d]: %(message)s",
+    )
+    for _uv_name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        for _handler in logging.getLogger(_uv_name).handlers:
+            _handler.setFormatter(_uv_formatter)
+
     # Log current configuration
     logger = logging.getLogger("app.main")
     logger.info(f"Allowed CORS origins: {['http://localhost:5173', 'http://localhost:3100', settings.app_base_url]}")
@@ -111,6 +130,7 @@ app.include_router(optimize_router)
 app.include_router(notifications.router)
 app.include_router(line.router)
 app.include_router(briefing_router.router)
+app.include_router(dividend_router.router)
 
 
 
@@ -123,8 +143,6 @@ async def receive_frontend_logs(log: LogMessage):
     log_text = f"{log.url} - {log.message}"
     if log.details:
         log_text += f" - {log.details}"
-    
-    print(f"[FRONTEND_LOG] {log_text}", flush=True)
     
     if log.level.lower() == "error":
         frontend_logger.error(log_text)

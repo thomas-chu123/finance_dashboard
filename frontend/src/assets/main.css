@@ -112,6 +112,16 @@ html {
 
 
 
+/* 修正 iOS Safari input[type="date"] 溢出框線問題
+   iOS Safari 對日期輸入框有原生最小寬度，會忽略 w-full 的約束 */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+}
+
 .glass-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
