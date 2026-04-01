@@ -7,18 +7,18 @@
         v-model="searchQuery" 
         type="text"
         placeholder="搜尋..."
-        class="flex-1 px-3 py-2 rounded border border-gray-600 bg-gray-900 text-white placeholder-gray-500 text-sm"
+        class="flex-1 px-3 py-2 rounded border border-gray-300 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
       <select 
         v-if="showLevelFilter"
         v-model="selectedLevel"
-        class="px-3 py-2 rounded border border-gray-600 bg-gray-900 text-white text-sm"
+        class="px-3 py-2 rounded border border-gray-300 bg-white text-gray-900 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
       >
-        <option value="" class="bg-gray-800">所有級別</option>
-        <option value="DEBUG" class="bg-gray-800">DEBUG</option>
-        <option value="INFO" class="bg-gray-800">INFO</option>
-        <option value="WARNING" class="bg-gray-800">WARNING</option>
-        <option value="ERROR" class="bg-gray-800">ERROR</option>
+        <option value="" class="bg-white">所有級別</option>
+        <option value="DEBUG" class="bg-white">DEBUG</option>
+        <option value="INFO" class="bg-white">INFO</option>
+        <option value="WARNING" class="bg-white">WARNING</option>
+        <option value="ERROR" class="bg-white">ERROR</option>
       </select>
       <button
         @click="refresh"
@@ -31,19 +31,19 @@
     <!-- Log Viewer -->
     <div class="rounded-lg border border-[var(--border-color)] overflow-hidden">
       <!-- Header -->
-      <div class="bg-gray-900 border-b border-gray-700 p-2 flex justify-between items-center">
-        <span class="text-xs text-gray-400">{{ filteredLogs.length }} 筆記錄</span>
+      <div class="bg-gray-50 border-b border-gray-200 p-2 flex justify-between items-center">
+        <span class="text-xs text-gray-500">{{ filteredLogs.length }} 筆記錄</span>
         <div class="flex gap-1">
           <button
             @click="scrollToTop"
-            class="px-2 py-1 rounded text-xs bg-gray-800 hover:bg-gray-700 transition-colors text-gray-300"
+            class="px-2 py-1 rounded text-xs bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700"
             title="回到頂部"
           >
             ↑
           </button>
           <button
             @click="scrollToBottom"
-            class="px-2 py-1 rounded text-xs bg-gray-800 hover:bg-gray-700 transition-colors text-gray-300"
+            class="px-2 py-1 rounded text-xs bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700"
             title="跳到底部"
           >
             ↓
@@ -52,14 +52,14 @@
       </div>
 
       <!-- Logs -->
-      <div ref="logContainer" class="max-h-96 overflow-y-auto bg-black text-white">
+      <div ref="logContainer" class="max-h-96 overflow-y-auto bg-white text-gray-900">
         <div v-if="loading" class="p-4 text-center text-gray-400 text-sm">
           加載中...
         </div>
         <div v-else-if="filteredLogs.length === 0" class="p-4 text-center text-gray-400 text-sm">
           沒有日誌
         </div>
-        <div v-for="(log, idx) in filteredLogs" :key="idx" class="border-b border-gray-700 text-xs hover:bg-gray-900 transition-colors">
+        <div v-for="(log, idx) in filteredLogs" :key="idx" class="border-b border-gray-200 text-xs hover:bg-gray-50 transition-colors">
           <!-- If log is object with level property -->
           <div v-if="typeof log === 'object' && log.level" class="p-3 space-y-1">
             <div class="flex items-center gap-2">
@@ -73,13 +73,13 @@
               >
                 {{ log.level }}
               </span>
-              <span class="text-gray-400 text-xs">{{ log.component }}</span>
-              <span class="text-gray-400 text-xs ml-auto">{{ formatDate(log.created_at) }}</span>
+              <span class="text-gray-500 text-xs">{{ log.component }}</span>
+              <span class="text-gray-500 text-xs ml-auto">{{ formatDate(log.created_at) }}</span>
             </div>
-            <p class="text-white text-xs">{{ log.message }}</p>
+            <p class="text-gray-900 text-xs">{{ log.message }}</p>
           </div>
           <!-- If log is simple string -->
-          <div v-else class="p-3 text-white font-mono text-xs whitespace-pre-wrap break-words" v-html="convertAnsiToHtml(log)">
+          <div v-else class="p-3 text-gray-900 font-mono text-xs whitespace-pre-wrap break-words" v-html="convertAnsiToHtml(log)">
           </div>
         </div>
       </div>
@@ -116,29 +116,29 @@ const logContainer = ref(null)
 const searchQuery = ref('')
 const selectedLevel = ref('')
 
-// 初始化 ANSI 轉 HTML 轉換器（黑色背景，高對比顏色）
+// 初始化 ANSI 轉 HTML 轉換器（白色背景，適合淺色主題的顏色）
 const ansiConverter = new AnsiToHtml({
-  fg: '#ffffff',  // 前景色：白
-  bg: '#000000',  // 背景色：黑
+  fg: '#111827',  // 前景色：深灰/黑 (gray-900)
+  bg: '#ffffff',  // 背景色：白
   newline: true,
   escapeXml: true,
   colors: {
-    0: '#808080',   // 黑 → 深灰
-    1: '#ff4444',   // 紅
-    2: '#44ff44',   // 綠
-    3: '#ffff00',   // 黃
-    4: '#4444ff',   // 藍
-    5: '#ff44ff',   // 洋紅
-    6: '#44ffff',   // 青
-    7: '#ffffff',   // 白
-    8: '#aaaaaa',   // 亮黑
-    9: '#ff6666',   // 亮紅
-    10: '#66ff66',  // 亮綠
-    11: '#ffff66',  // 亮黃
-    12: '#6666ff',  // 亮藍
-    13: '#ff66ff',  // 亮洋紅
-    14: '#66ffff',  // 亮青
-    15: '#ffffff',  // 亮白
+    0: '#000000',   // 黑
+    1: '#cc0000',   // 紅
+    2: '#008800',   // 綠
+    3: '#aa7700',   // 黃
+    4: '#0000cc',   // 藍
+    5: '#cc00cc',   // 洋紅
+    6: '#008888',   // 青
+    7: '#777777',   // 白 (變灰)
+    8: '#888888',   // 亮黑
+    9: '#ee0000',   // 亮紅
+    10: '#00bb00',  // 亮綠
+    11: '#cc9900',  // 亮黃
+    12: '#0000ff',  // 亮藍
+    13: '#ff00ff',  // 亮洋紅
+    14: '#00aaaa',  // 亮青
+    15: '#222222',  // 亮白 (變深黑/灰)
   }
 })
 
