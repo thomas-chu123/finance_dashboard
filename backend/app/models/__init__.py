@@ -98,6 +98,98 @@ class TrackingUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+# ──────────────────────────────────────────────
+# Admin - User Management
+# ──────────────────────────────────────────────
+class AdminUserResponse(BaseModel):
+    """管理員查看的用戶信息"""
+    id: str
+    email: str
+    display_name: Optional[str]
+    is_admin: bool
+    created_at: str
+    last_login: Optional[str] = None
+
+
+class AdminUserUpdate(BaseModel):
+    """管理員編輯用戶的模型"""
+    display_name: Optional[str] = None
+    is_admin: Optional[bool] = None
+
+
+class AdminPasswordReset(BaseModel):
+    """管理員重設密碼"""
+    new_password: str
+
+
+# ──────────────────────────────────────────────
+# Admin - Scheduler Management
+# ──────────────────────────────────────────────
+class SchedulerJobResponse(BaseModel):
+    """Scheduler 任務信息"""
+    id: str
+    job_id: str
+    job_name: str
+    description: Optional[str]
+    schedule_cron: Optional[str]
+    is_enabled: bool
+    last_run_at: Optional[str]
+    next_run_at: Optional[str]
+    status: str
+    error_message: Optional[str]
+    created_at: str
+
+
+class SchedulerJobRunResponse(BaseModel):
+    """Scheduler 任務執行歷史"""
+    id: str
+    job_id: str
+    started_at: Optional[str]
+    completed_at: Optional[str]
+    status: str
+    duration_ms: Optional[int]
+    error_message: Optional[str]
+    created_at: str
+
+
+# ──────────────────────────────────────────────
+# Admin - Audit Logs
+# ──────────────────────────────────────────────
+class AuditLogResponse(BaseModel):
+    """審計日誌信息"""
+    id: str
+    user_id: str
+    action: str
+    target_user_id: Optional[str]
+    changes: Optional[dict]
+    ip_address: Optional[str]
+    created_at: str
+
+
+# ──────────────────────────────────────────────
+# Admin - System Stats
+# ──────────────────────────────────────────────
+class SystemStatsOverviewResponse(BaseModel):
+    """系統概覽信息"""
+    total_users_count: int
+    active_users_count: int
+    tracked_indices_count: int
+    alerts_sent_count: int
+
+
+class UserStatsResponse(BaseModel):
+    """用戶統計信息"""
+    today: int
+    week: int
+    month: int
+
+
+class AlertStatsResponse(BaseModel):
+    """警報統計信息"""
+    sent_count: int
+    failed_count: int
+
+
 class TrackingResponse(BaseModel):
     id: str
     user_id: str

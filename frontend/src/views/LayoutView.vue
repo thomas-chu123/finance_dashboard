@@ -102,6 +102,16 @@
             <FileQuestion :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/guide' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用說明</span>
           </router-link>
+
+          <!-- 管理者功能菜單 - 僅對管理員顯示 -->
+          <template v-if="isAdmin">
+            <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">管理者</div>
+            
+            <router-link to="/admin" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path.startsWith('/admin') ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="管理者面板" @click="handleMenuItemClick('/admin')">
+              <Shield :size="20" :class="['flex-shrink-0 transition-colors', $route.path.startsWith('/admin') ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">管理者面板</span>
+            </router-link>
+          </template>
         </nav>
 
         <div class="mt-auto pt-6 border-t border-[var(--border-color)]">
@@ -248,7 +258,11 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  FileQuestion
+  FileQuestion,
+  Shield,
+  Clock,
+  FileText,
+  BarChart3
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -262,6 +276,7 @@ const isSearchModalOpen = ref(false)
 
 const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
+const isAdmin = computed(() => auth.isAdmin)
 
 const mobileNavItems = [
   { path: '/', label: '總覽', icon: LayoutDashboard },

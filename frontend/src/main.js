@@ -4,6 +4,7 @@ import App from './App.vue'
 import router from './router'
 import axios from 'axios'
 import { useAuthStore } from './stores/auth'
+import * as adminApi from './api/admin-api.js'
 import ECharts from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -96,6 +97,12 @@ app.use(router)
 
 // Global Axios Interceptor for 401
 const authStore = useAuthStore(pinia)
+
+// Initialize Admin API with token if exists
+if (authStore.token) {
+  adminApi.setAuthToken(authStore.token)
+}
+
 axios.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isLoggedIn: (state) => !!state.token,
+    isAdmin: (state) => state.profile?.is_admin ?? false,
     headers: (state) => ({ Authorization: `Bearer ${state.token}` }),
   },
 
@@ -28,6 +29,15 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('fd_token', this.token)
         localStorage.setItem('fd_user_id', this.userId)
         localStorage.setItem('fd_email', this.email)
+        
+        // Initialize Admin API with token
+        try {
+          const { setAuthToken } = await import('../api/admin-api.js')
+          setAuthToken(this.token)
+        } catch (e) {
+          console.warn('[auth.login] Failed to initialize admin API:', e.message)
+        }
+        
         await this.fetchProfile()
       } catch (error) {
         console.error('Login failed:', error.message)

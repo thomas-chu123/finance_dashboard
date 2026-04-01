@@ -63,6 +63,38 @@ const routes = [
         name: 'Guide',
         component: () => import('../views/GuideView.vue'),
       },
+      {
+        path: 'admin',
+        name: 'AdminPanel',
+        component: () => import('../views/AdminPanelView.vue'),
+        meta: { requiresAdmin: true },
+        children: [
+          {
+            path: 'users',
+            name: 'AdminUsers',
+            component: () => import('../views/AdminUsersView.vue'),
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: 'scheduler',
+            name: 'AdminScheduler',
+            component: () => import('../views/AdminSchedulerView.vue'),
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: 'logs',
+            name: 'AdminLogs',
+            component: () => import('../views/AdminLogsView.vue'),
+            meta: { requiresAdmin: true },
+          },
+          {
+            path: 'stats',
+            name: 'AdminStats',
+            component: () => import('../views/AdminStatsView.vue'),
+            meta: { requiresAdmin: true },
+          },
+        ],
+      },
     ],
   },
 ]
@@ -77,6 +109,9 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !auth.token) {
     next('/login')
   } else if (to.meta.requiresGuest && auth.token) {
+    next('/')
+  } else if (to.meta.requiresAdmin && !auth.isAdmin) {
+    // 重定向到主頁面（無管理員權限）
     next('/')
   } else {
     next()

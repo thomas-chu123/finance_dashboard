@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     # App
     app_base_url: str = "http://localhost:5173"
     backend_base_url: str = "http://localhost:8005"
+    environment: str = "development"  # 'development' | 'staging' | 'production'
     debug: bool = False
     secret_key: str = "your-secret-key-change-in-production"
 
