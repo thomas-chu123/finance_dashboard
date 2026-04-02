@@ -26,7 +26,8 @@
             showSaved
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
-          @click="showSaved = true; activeTab = 'single'">
+          @click="showSaved = true; activeTab = 'single'; loadingSaved = true; loadSavedPortfolios()"
+          :disabled="loadingSaved">
           <BarChart3 v-if="showSaved" class="w-4 h-4 mr-2" />
           <FolderOpen v-else class="w-4 h-4 mr-2" />
           已儲存
@@ -45,7 +46,22 @@
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
-      <div v-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
+      <!-- Back button -->
+      <div class="mb-4">
+        <button
+          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg transition-colors"
+          @click="showSaved = false">
+          <ArrowLeft class="w-4 h-4" />
+          返回設定
+        </button>
+      </div>
+      <div v-if="loadingSaved" style="padding:48px;text-align:center;color:var(--text-muted);">
+        <div class="inline-flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-brand-500/10 animate-pulse">
+          <FolderOpen class="w-6 h-6 text-brand-500" />
+        </div>
+        加載組合中...
+      </div>
+      <div v-else-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
         <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
         尚無已儲存的回測
       </div>
@@ -424,7 +440,7 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { useBreakpoint } from '../composables/useBreakpoint'
-import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2 } from 'lucide-vue-next'
+import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 
 const auth = useAuthStore()
@@ -435,6 +451,7 @@ const { isMobile, isTablet, isDesktop } = useBreakpoint()
 const activeTab = ref('single')  // 'single' | 'compare'
 const showSaved = ref(false)
 const savedPortfolios = ref([])
+const loadingSaved = ref(false)
 const symbolSearch = ref('')
 const symbolType = ref('us_etf')
 const availableSymbols = ref([])
@@ -788,6 +805,9 @@ async function loadSavedPortfolios() {
     const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
     savedPortfolios.value = res.data
   } catch (e) { console.error('Load saved failed', e) }
+  finally {
+    loadingSaved.value = false
+  }
 }
 
 async function deleteSaved(id) {
