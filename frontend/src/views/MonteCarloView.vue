@@ -29,6 +29,15 @@
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
+      <!-- Back button -->
+      <div class="mb-4">
+        <button
+          class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg transition-colors"
+          @click="showSaved = false">
+          <ArrowLeft class="w-4 h-4" />
+          返回設定
+        </button>
+      </div>
       <div v-if="loadingSaved" style="padding:48px;text-align:center;color:var(--text-muted);">
         <div class="inline-flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-brand-500/10 animate-pulse">
           <FolderOpen class="w-6 h-6 text-brand-500" />
@@ -343,7 +352,7 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { 
   Target, Search, Plus, Check, X, Dice5, Play, 
-  Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2
+  Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -577,13 +586,10 @@ function loadSaved(p) {
   config.initial_amount = p.initial_amount || 100000
   config.years = p.years || 30
   config.simulations = p.simulations || 10000
-  // Note: annual_contribution, annual_withdrawal, inflation settings are not stored in backtest
-  // Users can adjust these manually after loading
-  if (p.results_json) results.value = p.results_json
-  // 延遲切換到配置面板，確保 DOM 已更新
-  setTimeout(() => {
-    showSaved.value = false
-  }, 100)
+  // Only restore results if valid monte carlo results_json exists
+  results.value = (p.results_json && p.results_json.summary) ? p.results_json : null
+  // Switch to config panel immediately
+  showSaved.value = false
 }
 
 onMounted(() => {
