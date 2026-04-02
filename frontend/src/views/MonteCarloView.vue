@@ -1,4 +1,4 @@
-w<template>
+<template>
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div>
