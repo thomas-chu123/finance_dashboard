@@ -119,11 +119,10 @@ async def run_monte_carlo_simulation(
         paths[:, t] = new_balances
 
     # 3. Calculate Metrics
-    # Success Rate: % of paths that stayed above zero
-    # Actually, technically "Success" usually means ending > 0
-    # But some models count it as success if it never hits zero.
-    # We'll use "Ending Balance > 0"
-    success_mask = paths[:, -1] > 0
+    # Success Rate: % of paths that achieved the capital preservation goal
+    # Success is defined as: Ending Balance >= Initial Amount
+    # This represents achieving the fundamental investment objective (保本)
+    success_mask = paths[:, -1] >= initial_amount
     success_rate = np.mean(success_mask)
     
     # Percentiles

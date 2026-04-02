@@ -288,7 +288,7 @@
               <div class="text-5xl font-black text-brand-500 tracking-tighter">
                 {{ (results.summary.success_rate * 100).toFixed(1) }}<span class="text-2xl">%</span>
               </div>
-              <p class="text-[10px] text-brand-600 font-medium mt-2">模擬結束時餘額大於 0 的比例</p>
+              <p class="text-[10px] text-brand-600 font-medium mt-2">模擬達成保本目標 (終值 ≥ 初始投入) 的比例</p>
             </div>
           </div>
           
