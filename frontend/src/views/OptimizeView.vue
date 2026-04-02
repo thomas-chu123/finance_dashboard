@@ -1,11 +1,93 @@
 <template>
   <div>
-    <div class="mb-6">
-      <h2 class="text-xl font-bold text-[var(--text-primary)]">投資組合最佳化</h2>
-      <div class="text-xs sm:text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-xl font-bold text-[var(--text-primary)]">投資組合最佳化</h2>
+        <div class="text-xs sm:text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+      </div>
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            !showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="showSaved = false">
+          <Dna class="w-4 h-4 mr-2" />開始最佳化
+        </button>
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="showSaved = true; loadSavedPortfolios()">
+          <FolderOpen class="w-4 h-4 mr-2" />
+          已儲存
+        </button>
+      </div>
+    </div>
+
+    <!-- Saved portfolios list -->
+    <div v-if="showSaved">
+      <div v-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
+        <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
+        尚無已儲存的優化組合
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div v-for="p in savedPortfolios" :key="p.id" class="glass-card">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
+            <div>
+              <div class="font-semibold text-[var(--text-primary)]">{{ p.name }}</div>
+              <div class="text-sm text-muted">{{ p.start_date }} → {{ p.end_date }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" @click="loadSaved(p)">載入</button>
+              <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
+            </div>
+          </div>
+          <div class="p-3 sm:p-4">
+            <div v-if="p.results_json?.max_sharpe" class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+              <div>
+                <div class="text-xs text-muted">Sharpe</div>
+                <div class="fw-600 text-accent">{{ p.results_json.max_sharpe.sharpe.toFixed(4) }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Return</div>
+                <div class="fw-600 text-rose-600">{{ (p.results_json.max_sharpe.return * 100).toFixed(2) }}%</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Volatility</div>
+                <div class="fw-600 text-brand-600">{{ (p.results_json.max_sharpe.volatility * 100).toFixed(2) }}%</div>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+              <div>
+                <div class="text-xs text-muted">Sharpe</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Return</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">Volatility</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div class="text-xs text-muted mb-2">組合資產</div>
+              <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500 text-white">
+                  {{ item.symbol }} {{ item.weight }}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Optimization Config -->
+    <div v-if="!showSaved">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
       <!-- Left: config -->
       <div>
@@ -94,10 +176,10 @@
         </div>
         <div v-if="optError" class="p-3 mb-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
       </div>
-    </div>
+    </div><!-- end !showSaved -->
 
     <!-- Results Section -->
-    <div v-if="results" class="mt-16">
+    <div v-if="results && !showSaved" class="mt-16">
       <h3 class="mb-2">最佳化分析結果</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -178,7 +260,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, Shield, Dna, X, Check, Loader2 } from 'lucide-vue-next'
+import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2 } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -195,6 +277,8 @@ const selectedItems = ref([])
 const results = ref(null)
 const runLoading = ref(false)
 const optError = ref('')
+const showSaved = ref(false)
+const savedPortfolios = ref([])
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -464,6 +548,29 @@ function exportToBacktest(portfolioData) {
   
   sessionStorage.setItem('backtest_preset', JSON.stringify(preset))
   router.push('/backtest')
+}
+
+async function loadSavedPortfolios() {
+  try {
+    const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
+    savedPortfolios.value = res.data
+  } catch (e) { console.error('Load saved failed', e) }
+}
+
+async function deleteSaved(id) {
+  if (!confirm('確定刪除此優化組合？')) return
+  try {
+    await axios.delete(`${API_BASE}/api/backtest/${id}`, { headers: auth.headers })
+    await loadSavedPortfolios()
+  } catch (e) { console.error('Delete failed', e) }
+}
+
+function loadSaved(p) {
+  showSaved.value = false
+  selectedItems.value = p.items.map(i => ({ ...i }))
+  optConfig.start_date = p.start_date
+  optConfig.end_date = p.end_date
+  if (p.results_json) results.value = p.results_json
 }
 
 onMounted(async () => {

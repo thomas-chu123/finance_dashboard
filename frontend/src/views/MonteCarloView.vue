@@ -1,12 +1,93 @@
-<template>
+w<template>
   <div class="space-y-6">
-    <div class="mb-6">
-      <h2 class="text-xl font-bold text-[var(--text-primary)]">蒙地卡羅模擬 (Monte Carlo Simulation)</h2>
-      <div class="text-xs sm:text-sm text-[var(--text-secondary)]">基於歷史數據進行 10,000 次隨機路徑模擬，預測長期投資組合的成功率與分佈。</div>
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-xl font-bold text-[var(--text-primary)]">蒙地卡羅模擬 (Monte Carlo Simulation)</h2>
+        <div class="text-xs sm:text-sm text-[var(--text-secondary)]">基於歷史數據進行 10,000 次隨機路徑模擬，預測長期投資組合的成功率與分佈。</div>
+      </div>
+      <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            !showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="showSaved = false">
+          <Dice5 class="w-4 h-4 mr-2" />開始模擬
+        </button>
+        <button
+          :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
+            showSaved
+              ? 'bg-brand-500 border-brand-500 text-white'
+              : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
+          @click="showSaved = true; loadSavedPortfolios()">
+          <FolderOpen class="w-4 h-4 mr-2" />
+          已儲存
+        </button>
+      </div>
+    </div>
+
+    <!-- Saved portfolios list -->
+    <div v-if="showSaved">
+      <div v-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
+        <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
+        尚無已儲存的模擬組合
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div v-for="p in savedPortfolios" :key="p.id" class="glass-card">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
+            <div>
+              <div class="font-semibold text-[var(--text-primary)]">{{ p.name }}</div>
+              <div class="text-sm text-muted">{{ p.start_date }} → {{ p.end_date }}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" @click="loadSaved(p)">載入</button>
+              <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
+            </div>
+          </div>
+          <div class="p-3 sm:p-4">
+            <div v-if="p.items" class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+              <div>
+                <div class="text-xs text-muted">初始金額</div>
+                <div class="fw-600 text-rose-600">${{ (p.initial_amount || 0).toLocaleString() }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">年數</div>
+                <div class="fw-600 text-brand-600">{{ p.years || '--' }}</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">模擬次數</div>
+                <div class="fw-600 text-accent">{{ (p.simulations || 0).toLocaleString() }}</div>
+              </div>
+            </div>
+            <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+              <div>
+                <div class="text-xs text-muted">初始金額</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">年數</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+              <div>
+                <div class="text-xs text-muted">模擬次數</div>
+                <div class="fw-600 text-muted">--</div>
+              </div>
+            </div>
+            <div class="mt-3">
+              <div class="text-xs text-muted mb-2">組合資產</div>
+              <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                <span v-for="item in p.items" :key="item.symbol" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500 text-white">
+                  {{ item.symbol }} {{ item.weight }}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Configuration Panel -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+    <div v-if="!showSaved" class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
       <!-- Asset Selection -->
       <div class="lg:col-span-1 space-y-4">
         <div class="glass-card h-full flex flex-col">
@@ -161,9 +242,10 @@
           </div>
         </div>
       </div>
+    </div><!-- end !showSaved -->
 
       <!-- Quick Summary Stats (Visible after run) -->
-      <div class="lg:col-span-1">
+      <div v-if="!showSaved" class="lg:col-span-1">
         <div v-if="results" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
           <div class="glass-card bg-brand-500/10 border-brand-500/20">
             <div class="p-6 text-center">
@@ -255,7 +337,7 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { 
   Target, Search, Plus, Check, X, Dice5, Play, 
-  Loader2, BarChart3, AlertTriangle, History
+  Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -264,6 +346,8 @@ const auth = useAuthStore()
 const loading = ref(false)
 const error = ref('')
 const results = ref(null)
+const showSaved = ref(false)
+const savedPortfolios = ref([])
 
 const config = reactive({
   initial_amount: 100000,
@@ -461,6 +545,32 @@ function formatNumber(num) {
   if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M'
   if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
   return num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+}
+
+async function loadSavedPortfolios() {
+  try {
+    const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
+    savedPortfolios.value = res.data
+  } catch (e) { console.error('Load saved failed', e) }
+}
+
+async function deleteSaved(id) {
+  if (!confirm('確定刪除此模擬組合？')) return
+  try {
+    await axios.delete(`${API_BASE}/api/backtest/${id}`, { headers: auth.headers })
+    await loadSavedPortfolios()
+  } catch (e) { console.error('Delete failed', e) }
+}
+
+function loadSaved(p) {
+  showSaved.value = false
+  selectedItems.value = p.items.map(i => ({ ...i }))
+  config.initial_amount = p.initial_amount || 100000
+  config.years = p.years || 30
+  config.simulations = p.simulations || 10000
+  // Note: annual_contribution, annual_withdrawal, inflation settings are not stored in backtest
+  // Users can adjust these manually after loading
+  if (p.results_json) results.value = p.results_json
 }
 
 onMounted(() => {
