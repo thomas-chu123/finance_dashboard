@@ -87,8 +87,7 @@
     </div>
 
     <!-- Optimization Config -->
-    <div v-if="!showSaved">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
+    <div v-if="!showSaved" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
       <!-- Left: config -->
       <div>
         <div class="glass-card mb-2">

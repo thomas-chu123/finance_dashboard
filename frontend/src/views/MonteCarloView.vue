@@ -242,10 +242,9 @@ w<template>
           </div>
         </div>
       </div>
-    </div><!-- end !showSaved -->
 
       <!-- Quick Summary Stats (Visible after run) -->
-      <div v-if="!showSaved" class="lg:col-span-1">
+      <div class="lg:col-span-1">
         <div v-if="results" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
           <div class="glass-card bg-brand-500/10 border-brand-500/20">
             <div class="p-6 text-center">
@@ -303,7 +302,7 @@ w<template>
     </div>
 
     <!-- Charts Section -->
-    <div v-if="results" class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+    <div v-if="results && !showSaved" class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
       <div class="glass-card overflow-hidden">
         <div class="p-4 border-b border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <h3 class="font-semibold text-[var(--text-primary)] text-sm">資產增長隨機路徑百分位 (Percentile Paths)</h3>
@@ -324,7 +323,7 @@ w<template>
       </div>
     </div>
     
-    <div v-if="error" class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-sm flex items-center gap-3">
+    <div v-if="error && !showSaved" class="p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-sm flex items-center gap-3">
       <AlertTriangle class="w-5 h-5 flex-shrink-0" />
       {{ error }}
     </div>
