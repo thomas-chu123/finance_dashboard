@@ -64,7 +64,7 @@
           <thead class="text-xs text-[var(--text-muted)] uppercase bg-[var(--input-bg)] border-b border-[var(--border-color)]">
             <tr><th class="px-6 py-4 font-medium">Email</th><th class="px-6 py-4 font-medium">姓名</th><th class="px-6 py-4 font-medium">LINE</th><th class="px-6 py-4 font-medium">Email通知</th><th class="px-6 py-4 font-medium">LINE通知</th><th class="px-6 py-4 font-medium">角色</th><th class="px-6 py-4 font-medium">操作</th></tr>
           </thead>
-          <tbody class="divide-y border-[var(--border-color)]">
+          <tbody class="divide-y divide-[var(--border-color)]">
             <tr v-for="u in users" :key="u.id" class="text-[var(--text-primary)] hover:bg-[var(--input-bg)]">
               <td class="px-6 py-4">{{ u.email }}</td>
               <td class="px-6 py-4">{{ u.display_name || '—' }}</td>
