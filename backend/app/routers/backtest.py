@@ -40,23 +40,26 @@ async def run_backtest_endpoint(body: BacktestRunRequest, authorization: str = H
 async def list_portfolios(authorization: str = Header(default="")):
     user_id = get_user_id(authorization)
     sb = get_supabase()
+    
+    # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
     portfolios = (
         sb.table("backtest_portfolios")
-        .select("*")
+        .select("*, backtest_portfolio_items(*)")  # 在一個查詢中獲取 items
         .eq("user_id", user_id)
         .order("created_at", desc=True)
         .execute()
     )
+    
+    # 將嵌套的關聯數據重新映射為 items 欄位
     result = []
     for p in (portfolios.data or []):
-        items_res = (
-            sb.table("backtest_portfolio_items")
-            .select("*")
-            .eq("portfolio_id", p["id"])
-            .execute()
-        )
-        p["items"] = items_res.data or []
+        # Supabase 回傳的結構中包含 backtest_portfolio_items 作為嵌套陣列
+        if isinstance(p.get("backtest_portfolio_items"), list):
+            p["items"] = p.pop("backtest_portfolio_items")
+        else:
+            p["items"] = []
         result.append(p)
+    
     return result
 
 

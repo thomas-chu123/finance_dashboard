@@ -48,8 +48,9 @@
         <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
         尚無已儲存的優化組合
       </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div v-for="p in savedPortfolios" :key="p.id" class="glass-card">
+      <div v-else class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div v-for="p in paginatedSavedPortfolios" :key="p.id" class="glass-card">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <div>
               <div class="font-semibold text-[var(--text-primary)]">{{ p.name }}</div>
@@ -98,6 +99,25 @@
               </div>
             </div>
           </div>
+          </div>
+        </div>
+        <!-- ✅ 分頁控件 -->
+        <div v-if="totalPages > 1" class="flex items-center justify-center gap-2 pt-4 border-t border-[var(--border-color)]">
+          <button
+            @click="currentPage = Math.max(1, currentPage - 1)"
+            :disabled="currentPage === 1"
+            class="px-3 py-1.5 text-sm font-medium rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-sidebar)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            ← 上一頁
+          </button>
+          <span class="text-sm text-[var(--text-muted)]">
+            {{ currentPage }} / {{ totalPages }}
+          </span>
+          <button
+            @click="currentPage = Math.min(totalPages, currentPage + 1)"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1.5 text-sm font-medium rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-sidebar)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            下一頁 →
+          </button>
         </div>
       </div>
     </div>
@@ -295,6 +315,8 @@ const optError = ref('')
 const showSaved = ref(false)
 const savedPortfolios = ref([])
 const loadingSaved = ref(false)
+const currentPage = ref(1)  // 分頁: 當前頁
+const pageSize = ref(6)     // 分頁: 每頁項目數
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -313,6 +335,15 @@ const filteredSymbols = computed(() => {
     !q || s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)
   )
 })
+
+// ✅ 分頁計算：只渲染當前頁的項目
+const paginatedSavedPortfolios = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = currentPage.value * pageSize.value
+  return savedPortfolios.value.slice(start, end)
+})
+
+const totalPages = computed(() => Math.ceil(savedPortfolios.value.length / pageSize.value))
 
 function isSelected(sym) { return selectedItems.value.some(i => i.symbol === sym) }
 
@@ -570,6 +601,7 @@ async function loadSavedPortfolios() {
   try {
     const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
     savedPortfolios.value = res.data
+    currentPage.value = 1  // ✅ 重置分頁到第一頁
   } catch (e) { console.error('Load saved failed', e) }
   finally {
     loadingSaved.value = false
