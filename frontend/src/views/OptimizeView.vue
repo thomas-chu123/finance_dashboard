@@ -19,16 +19,23 @@
             showSaved
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
-          @click="showSaved = true; loadSavedPortfolios()">
+          @click="showSaved = true; loadingSaved = true; loadSavedPortfolios()"
+          :disabled="loadingSaved">
           <FolderOpen class="w-4 h-4 mr-2" />
-          已儲存
+          已儲存 {{ loadingSaved ? '(加載中...)' : '' }}
         </button>
       </div>
     </div>
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
-      <div v-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
+      <div v-if="loadingSaved" style="padding:48px;text-align:center;color:var(--text-muted);">
+        <div class="inline-flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-brand-500/10 animate-pulse">
+          <FolderOpen class="w-6 h-6 text-brand-500" />
+        </div>
+        加載組合中...
+      </div>
+      <div v-else-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
         <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
         尚無已儲存的優化組合
       </div>
@@ -278,6 +285,7 @@ const runLoading = ref(false)
 const optError = ref('')
 const showSaved = ref(false)
 const savedPortfolios = ref([])
+const loadingSaved = ref(false)
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -554,6 +562,9 @@ async function loadSavedPortfolios() {
     const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
     savedPortfolios.value = res.data
   } catch (e) { console.error('Load saved failed', e) }
+  finally {
+    loadingSaved.value = false
+  }
 }
 
 async function deleteSaved(id) {
@@ -565,11 +576,14 @@ async function deleteSaved(id) {
 }
 
 function loadSaved(p) {
-  showSaved.value = false
   selectedItems.value = p.items.map(i => ({ ...i }))
   optConfig.start_date = p.start_date
   optConfig.end_date = p.end_date
   if (p.results_json) results.value = p.results_json
+  // 延遲切換到配置面板，確保 DOM 已更新
+  setTimeout(() => {
+    showSaved.value = false
+  }, 100)
 }
 
 onMounted(async () => {

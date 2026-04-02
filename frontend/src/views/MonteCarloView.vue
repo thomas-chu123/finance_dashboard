@@ -19,16 +19,23 @@ w<template>
             showSaved
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
-          @click="showSaved = true; loadSavedPortfolios()">
+          @click="showSaved = true; loadingSaved = true; loadSavedPortfolios()"
+          :disabled="loadingSaved">
           <FolderOpen class="w-4 h-4 mr-2" />
-          已儲存
+          已儲存 {{ loadingSaved ? '(加載中...)' : '' }}
         </button>
       </div>
     </div>
 
     <!-- Saved portfolios list -->
     <div v-if="showSaved">
-      <div v-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
+      <div v-if="loadingSaved" style="padding:48px;text-align:center;color:var(--text-muted);">
+        <div class="inline-flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-brand-500/10 animate-pulse">
+          <FolderOpen class="w-6 h-6 text-brand-500" />
+        </div>
+        加載組合中...
+      </div>
+      <div v-else-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
         <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
         尚無已儲存的模擬組合
       </div>
@@ -347,6 +354,7 @@ const error = ref('')
 const results = ref(null)
 const showSaved = ref(false)
 const savedPortfolios = ref([])
+const loadingSaved = ref(false)
 
 const config = reactive({
   initial_amount: 100000,
@@ -551,6 +559,9 @@ async function loadSavedPortfolios() {
     const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
     savedPortfolios.value = res.data
   } catch (e) { console.error('Load saved failed', e) }
+  finally {
+    loadingSaved.value = false
+  }
 }
 
 async function deleteSaved(id) {
@@ -562,7 +573,6 @@ async function deleteSaved(id) {
 }
 
 function loadSaved(p) {
-  showSaved.value = false
   selectedItems.value = p.items.map(i => ({ ...i }))
   config.initial_amount = p.initial_amount || 100000
   config.years = p.years || 30
@@ -570,6 +580,10 @@ function loadSaved(p) {
   // Note: annual_contribution, annual_withdrawal, inflation settings are not stored in backtest
   // Users can adjust these manually after loading
   if (p.results_json) results.value = p.results_json
+  // 延遲切換到配置面板，確保 DOM 已更新
+  setTimeout(() => {
+    showSaved.value = false
+  }, 100)
 }
 
 onMounted(() => {
