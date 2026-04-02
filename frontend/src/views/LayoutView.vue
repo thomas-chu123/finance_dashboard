@@ -48,7 +48,7 @@
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 space-y-1">
+        <nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2">主選單</div>
           
           <router-link to="/" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="總覽" @click="handleMenuItemClick('/')">
@@ -79,6 +79,11 @@
           <router-link to="/optimize" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/optimize' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="投資組合最佳化" @click="handleMenuItemClick('/optimize')">
             <Target :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/optimize' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">投資組合最佳化</span>
+          </router-link>
+
+          <router-link to="/monte-carlo" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/monte-carlo' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="蒙地卡羅模擬" @click="handleMenuItemClick('/monte-carlo')">
+            <Dice5 :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/monte-carlo' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">蒙地卡羅模擬</span>
           </router-link>
 
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">系統</div>
@@ -262,7 +267,8 @@ import {
   Shield,
   Clock,
   FileText,
-  BarChart3
+  BarChart3,
+  Dice5
 } from 'lucide-vue-next'
 
 const router = useRouter()

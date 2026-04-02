@@ -44,6 +44,11 @@ const routes = [
         component: () => import('../views/OptimizeView.vue'),
       },
       {
+        path: 'monte-carlo',
+        name: 'MonteCarlo',
+        component: () => import('../views/MonteCarloView.vue'),
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('../views/UsersView.vue'),

@@ -266,3 +266,29 @@ class BacktestCompareRequest(BaseModel):
     start_date: str
     end_date: str
     initial_amount: float = 10000
+
+# ──────────────────────────────────────────────
+# Monte Carlo Simulation
+# ──────────────────────────────────────────────
+class MonteCarloAsset(BaseModel):
+    symbol: str
+    weight: float  # 0.0 - 1.0
+
+
+class MonteCarloRequest(BaseModel):
+    assets: List[MonteCarloAsset]
+    initial_amount: float = 100000
+    years: int = 30
+    simulations: int = 10000
+    annual_contribution: float = 0
+    annual_withdrawal: float = 0
+    inflation_mean: float = 0.03
+    inflation_std: float = 0.01
+    adjust_for_inflation: bool = True
+
+
+class MonteCarloResponse(BaseModel):
+    summary: dict
+    percentile_paths: dict
+    history_years: int
+    assets_used: List[str]
