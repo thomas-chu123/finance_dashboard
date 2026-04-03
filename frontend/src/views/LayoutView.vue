@@ -289,6 +289,7 @@ const mobileNavItems = [
   { path: '/tracking', label: '追蹤', icon: TrendingUp },
   { path: '/backtest', label: '回測', icon: RefreshCcw },
   { path: '/optimize', label: '最佳化', icon: Target },
+  { path: '/monte-carlo', label: '蒙地卡羅', icon: Dice5 },
 ]
 
 // 關閉sidebar和backdrop
