@@ -485,6 +485,7 @@ const backtestError = ref('')
 const showSaveModal = ref(false)
 const saveName = ref('')
 const currentLoadedPortfolioId = ref(null)
+const loadedPortfolioName = ref('')  // ✅ 追蹤已加載的組合名稱
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -886,14 +887,35 @@ function loadSaved(p) {
   btConfig.initial_amount = p.initial_amount
   if (p.results_json) results.value = p.results_json
   currentLoadedPortfolioId.value = p.id
+  loadedPortfolioName.value = p.name  // ✅ 記錄已加載的組合名稱
   saveName.value = p.name
 }
 
 async function saveBacktest() {
   if (!saveName.value.trim()) return
   try {
+    // ✅ 檢查名稱是否改變：同名時更新，異名時另存新檔
+    let portfolioId = null
+    if (currentLoadedPortfolioId.value && saveName.value === loadedPortfolioName.value) {
+      // 同名：詢問用戶是否覆蓋
+      const confirmed = confirm(`確定要更新「${saveName.value}」嗎？`)
+      if (!confirmed) return
+      portfolioId = currentLoadedPortfolioId.value
+    } else if (currentLoadedPortfolioId.value && saveName.value !== loadedPortfolioName.value) {
+      // 異名：詢問用戶是新增還是覆蓋
+      const response = confirm(
+        `您已加載的回測為「${loadedPortfolioName.value}」，現在儲存為「${saveName.value}」。\n\n` +
+        `點擊【確定】另存新檔\n` +
+        `點擊【取消】返回修改名稱`
+      )
+      if (!response) return
+      // 不傳遞 portfolioId，建立新組合
+      portfolioId = null
+    }
+    // else: 未加載任何組合，新增新組合（portfolioId = null）
+
     await axios.post(`${API_BASE}/api/backtest/save`, {
-      id: currentLoadedPortfolioId.value,
+      id: portfolioId,
       name: saveName.value,
       items: selectedItems.value,
       start_date: btConfig.start_date,
@@ -902,8 +924,8 @@ async function saveBacktest() {
       results_json: results.value,
     }, { headers: auth.headers })
     showSaveModal.value = false
-    // Only reset saveName if we're not dealing with a loaded portfolio
-    if (!currentLoadedPortfolioId.value) saveName.value = ''
+    // 如果建立了新組合，重置名稱；如果覆蓋，保持不變
+    if (!portfolioId) saveName.value = ''
     await loadSavedPortfolios()
     alert('回測已儲存！')
   } catch (e) { alert('儲存失敗: ' + (e.response?.data?.detail || e.message)) }

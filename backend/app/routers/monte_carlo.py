@@ -19,6 +19,7 @@ class MonteCarloItem(BaseModel):
     category: str = "us_etf"
 
 class MonteCarloSaveRequest(BaseModel):
+    id: Optional[str] = None  # ✅ 用於 upsert：如提供 id，則更新；否則新增
     name: str
     items: List[MonteCarloItem]
     initial_amount: float
@@ -30,7 +31,6 @@ class MonteCarloSaveRequest(BaseModel):
     inflation_std: float = 0.01
     adjust_for_inflation: bool = True
     results_json: Optional[dict] = None
-    portfolio_id: Optional[str] = None  # 用於自動儲存時關聯回原組合
 
 @router.post("/run", response_model=MonteCarloResponse)
 @cache(expire=3600)
@@ -122,26 +122,53 @@ async def save_monte_carlo(body: MonteCarloSaveRequest, authorization: str = Hea
     
     logger.info(f"[MONTE_CARLO SAVE] Saving with data: {mc_data}")
     
-    try:
-        # 寫入 backtest_portfolios 表
-        mc_res = sb.table("backtest_portfolios").insert(mc_data).execute()
-    except Exception as e:
-        logger.error(f"[MONTE_CARLO SAVE] Insert failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"無法儲存蒙地卡羅結果: {str(e)}")
+    # ✅ 支持 upsert：如果提供 id，則更新；否則建立新組合
+    if body.id:
+        mc_data["id"] = body.id
+        try:
+            mc_res = sb.table("backtest_portfolios").upsert(mc_data).execute()
+        except Exception as e:
+            logger.error(f"[MONTE_CARLO SAVE] Upsert failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"無法儲存蒙地卡羅結果: {str(e)}")
+        # ✅ 更新時刪除舊的 items，稍後重新插入新的
+        try:
+            sb.table("backtest_portfolio_items").delete().eq("portfolio_id", body.id).execute()
+        except Exception as e:
+            logger.error(f"[MONTE_CARLO SAVE] Delete items failed: {str(e)}", exc_info=True)
+        simulation_id = body.id
+    else:
+        try:
+            # 寫入 backtest_portfolios 表
+            mc_res = sb.table("backtest_portfolios").insert(mc_data).execute()
+        except Exception as e:
+            logger.error(f"[MONTE_CARLO SAVE] Insert failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"無法儲存蒙地卡羅結果: {str(e)}")
+        simulation_id = mc_res.data[0]["id"]
 
-    simulation_id = mc_res.data[0]["id"]
-    items_data = [
-        {
-            "portfolio_id": simulation_id,  # ✅ 改為 portfolio_id（共用表的 FK）
-            "symbol": it.symbol,
-            "name": it.name,
-            "weight": it.weight,
-            "category": it.category,
-        }
-        for it in body.items
-    ]
-    # ✅ 改為寫入 backtest_portfolio_items（共用 items 表）
-    sb.table("backtest_portfolio_items").insert(items_data).execute()
+    logger.info(f"[MONTE_CARLO SAVE] Saving with data: {mc_data}")
+    
+    # ✅ 蒙地卡羅結果：從 body.items 中提取權重，儲存到 items 表
+    # 只儲存權重 > 0 的項目，避免 weight check constraint 問題
+    items_data = []
+    for it in body.items:
+        if it.weight > 0:  # ✅ 只儲存權重 > 0 的項目
+            items_data.append({
+                "portfolio_id": simulation_id,
+                "symbol": it.symbol,
+                "name": it.name,
+                "weight": it.weight,
+                "category": it.category,
+            })
+    
+    logger.info(f"[MONTE_CARLO SAVE] Inserting {len(items_data)} items with valid weights")
+    
+    if items_data:
+        try:
+            sb.table("backtest_portfolio_items").insert(items_data).execute()
+        except Exception as e:
+            logger.error(f"[MONTE_CARLO SAVE] Insert items failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"無法儲存組合項目: {str(e)}")
+    
     return {"message": "蒙地卡羅結果已儲存", "monte_carlo_id": simulation_id}
 
 @router.get("")

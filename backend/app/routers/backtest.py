@@ -101,7 +101,16 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
         }
         for it in body.items
     ]
-    sb.table("backtest_portfolio_items").insert(items_data).execute()
+    
+    # ✅ 添加詳細的錯誤處理
+    try:
+        sb.table("backtest_portfolio_items").insert(items_data).execute()
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"[BACKTEST SAVE] Insert items failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"無法儲存組合項目: {str(e)}")
+    
     return {"message": "Portfolio saved", "portfolio_id": portfolio_id}
 
 

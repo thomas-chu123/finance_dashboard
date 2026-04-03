@@ -352,6 +352,7 @@ const savingOptimization = ref(false)
 const saveError = ref('')
 const loadedPortfolioId = ref(null)  // 追蹤載入的組合 ID，用於自動儲存
 const loadedPortfolioName = ref('')  // 追蹤載入的組合名稱
+const loadedPortfolioType = ref(null)  // 追蹤載入的組合類型（backtest/optimize/monte_carlo）
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -669,7 +670,20 @@ async function deleteSaved(id) {
 }
 
 function loadSaved(p) {
-  selectedItems.value = p.items.map(i => ({ ...i }))
+  // ✅ 優先從 results_json 中恢復所有資產（包括權重為 0 的資產）
+  // 這樣可以恢復完整的優化組合，而不是只加載儲存的資產
+  if (p.results_json && p.results_json.max_sharpe && p.results_json.max_sharpe.weights) {
+    const weights = p.results_json.max_sharpe.weights
+    selectedItems.value = Object.entries(weights).map(([symbol, weight]) => ({
+      symbol,
+      name: symbol,
+      weight: weight || 0,
+      category: p.items?.[0]?.category || 'us_etf'  // 從已儲存的資產推斷類別
+    }))
+  } else {
+    // ✅ 後備方案：使用儲存的 items（如果沒有結果數據）
+    selectedItems.value = p.items.map(i => ({ ...i }))
+  }
   
   // ✅ 檢查日期有效性：如果為 null（如 Monte Carlo 等不需要日期的類型），設置默認值
   if (p.start_date && p.end_date) {
@@ -688,6 +702,7 @@ function loadSaved(p) {
   // ✅ 記錄載入的組合 ID 用於自動儲存
   loadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name
+  loadedPortfolioType.value = p.portfolio_type  // ✅ 記錄組合類型
   // Switch to config panel immediately
   showSaved.value = false
 }
@@ -696,13 +711,29 @@ function loadSaved(p) {
 async function autoSaveOptimization() {
   try {
     console.log('[OptimizeView] Auto-saving optimization results...')
+    // ✅ 權重分配邏輯：
+    // - 如果加載的是回測組合，保持回測權重
+    // - 否則強制使用均勻分配（1資產=100%, 3資產=各33.33%）
+    const itemsToSave = selectedItems.value.map(item => {
+      let weight = item.weight || 0
+      // 只在加載回測組合時保持原始權重；否則強制均勻分配
+      if (loadedPortfolioType.value === 'backtest') {
+        // 保持原始權重
+      } else {
+        // 強制均勻分配（不管原來權重是什麼）
+        weight = 100 / selectedItems.value.length
+      }
+      return { ...item, weight }
+    })
+    
+    // ✅ 自動儲存：以同名覆蓋原組合，無需增加後綴
     const response = await axios.post(`${API_BASE}/api/optimize/save`, {
-      name: `${loadedPortfolioName.value} - 優化結果`,
-      items: selectedItems.value,
+      id: loadedPortfolioId.value,  // ✅ 傳遞 id 以執行 upsert
+      name: loadedPortfolioName.value,  // ✅ 同名覆蓋，不增加後綴
+      items: itemsToSave,  // ✅ 傳遞計算後的權重
       start_date: optConfig.start_date,
       end_date: optConfig.end_date,
       results_json: results.value,
-      portfolio_id: loadedPortfolioId.value,
     }, { headers: auth.headers })
     console.log('[OptimizeView] Auto-save successful:', response.data)
     // ✅ 自動儲存成功：自動刷新側邊欄列表(無需用戶手動操作)
@@ -718,18 +749,59 @@ async function saveOptimization() {
   saveError.value = ''
   savingOptimization.value = true
   try {
+    // ✅ 權重分配邏輯：
+    // - 如果加載的是回測組合，保持回測權重
+    // - 否則強制使用均勻分配（1資產=100%, 3資產=各33.33%）
+    const itemsToSave = selectedItems.value.map(item => {
+      let weight = item.weight || 0
+      // 只在加載回測組合時保持原始權重；否則強制均勻分配
+      if (loadedPortfolioType.value === 'backtest') {
+        // 保持原始權重
+      } else {
+        // 強制均勻分配（不管原來權重是什麼）
+        weight = 100 / selectedItems.value.length
+      }
+      return { ...item, weight }
+    })
+    
+    // ✅ 檢查名稱是否改變：同名時更新，異名時另存新檔
+    let portfolioId = null
+    if (loadedPortfolioId.value && saveName.value === loadedPortfolioName.value) {
+      // 同名：詢問用戶是否覆蓋
+      const confirmed = confirm(`確定要更新「${saveName.value}」嗎？`)
+      if (!confirmed) {
+        savingOptimization.value = false
+        return
+      }
+      portfolioId = loadedPortfolioId.value
+    } else if (loadedPortfolioId.value && saveName.value !== loadedPortfolioName.value) {
+      // 異名：詢問用戶是新增還是覆蓋
+      const response = confirm(
+        `您已加載的優化結果為「${loadedPortfolioName.value}」，現在儲存為「${saveName.value}」。\n\n` +
+        `點擊【確定】另存新檔\n` +
+        `點擊【取消】返回修改名稱`
+      )
+      if (!response) {
+        savingOptimization.value = false
+        return
+      }
+      // 不傳遞 portfolioId，建立新組合
+      portfolioId = null
+    }
+    // else: 未加載任何組合，新增新組合（portfolioId = null）
+
     await axios.post(`${API_BASE}/api/optimize/save`, {
+      id: portfolioId,
       name: saveName.value,
-      items: selectedItems.value,
+      items: itemsToSave,  // ✅ 傳遞計算後的權重
       start_date: optConfig.start_date,
       end_date: optConfig.end_date,
       results_json: results.value,
-      // portfolio_id 只在手動儲存時設為 null（新組合）
-      portfolio_id: null,
     }, { headers: auth.headers })
     showSaveModal.value = false
-    saveName.value = ''
-    // 重置載入的組合
+    // 如果建立了新組合，重置名稱；如果覆蓋，保持不變
+    if (!portfolioId) saveName.value = ''
+    // 重置載入的組合（如果覆蓋更新，需要重新加載以獲取最新時間戳等元數據）
     loadedPortfolioId.value = null
     loadedPortfolioName.value = ''
     // ✅ 重新加載側邊欄列表

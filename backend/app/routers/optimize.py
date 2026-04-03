@@ -20,14 +20,15 @@ class OptimizeItem(BaseModel):
     symbol: str
     name: Optional[str] = None
     category: str = "us_etf"
+    weight: float = 0  # ✅ 添加權重字段
 
 class OptimizeSaveRequest(BaseModel):
+    id: Optional[str] = None  # ✅ 用於 upsert：如提供 id，則更新；否則新增
     name: str
     items: List[OptimizeItem]
     start_date: str
     end_date: str
     results_json: Optional[dict] = None
-    portfolio_id: Optional[str] = None  # 用於自動儲存時關聯回原組合
 
 @router.post("")
 @cache(expire=3600)  # Cache identical requests for 1 hour
@@ -96,28 +97,55 @@ async def save_optimization(body: OptimizeSaveRequest, authorization: str = Head
         "results_json": body.results_json,
     }
     
+    # ✅ 支持 upsert：如果提供 id，則更新；否則建立新組合
+    if body.id:
+        optimization_data["id"] = body.id
+        try:
+            opt_res = sb.table("backtest_portfolios").upsert(optimization_data).execute()
+        except Exception as e:
+            logger.error(f"[OPTIMIZE SAVE] Upsert failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"無法儲存最佳化結果: {str(e)}")
+        # ✅ 更新時刪除舊的 items，稍後重新插入新的
+        try:
+            sb.table("backtest_portfolio_items").delete().eq("portfolio_id", body.id).execute()
+        except Exception as e:
+            logger.error(f"[OPTIMIZE SAVE] Delete items failed: {str(e)}", exc_info=True)
+        optimization_id = body.id
+    else:
+        try:
+            opt_res = sb.table("backtest_portfolios").insert(optimization_data).execute()
+        except Exception as e:
+            logger.error(f"[OPTIMIZE SAVE] Insert failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"無法儲存最佳化結果: {str(e)}")
+        if not opt_res.data:
+            raise HTTPException(status_code=500, detail="無法儲存最佳化結果")
+        optimization_id = opt_res.data[0]["id"]
+    
     logger.info(f"[OPTIMIZE SAVE] Saving with data: {optimization_data}")
     
-    try:
-        # 寫入 backtest_portfolios 表
-        opt_res = sb.table("backtest_portfolios").insert(optimization_data).execute()
-    except Exception as e:
-        logger.error(f"[OPTIMIZE SAVE] Insert failed: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"無法儲存最佳化結果: {str(e)}")
-
-    optimization_id = opt_res.data[0]["id"]
-    items_data = [
-        {
-            "portfolio_id": optimization_id,  # ✅ 改為 portfolio_id（共用表的 FK）
-            "symbol": it.symbol,
-            "name": it.name,
-            "weight": 0,  # ✅ 優化結果的權重在 results_json 中，item 單獨不儲存權重
-            "category": it.category,
-        }
-        for it in body.items
-    ]
-    # ✅ 改為寫入 backtest_portfolio_items（共用 items 表）
-    sb.table("backtest_portfolio_items").insert(items_data).execute()
+    # ✅ 使用前端傳來的 body.items 的權重，而不是從 results_json 重新提取
+    # 前端已經計算好均勻分配或優化權重，直接使用
+    items_data = []
+    for it in body.items:
+        weight = it.weight
+        if weight > 0:  # ✅ 只儲存權重 > 0 的項目
+            items_data.append({
+                "portfolio_id": optimization_id,
+                "symbol": it.symbol,
+                "name": it.name,
+                "weight": weight,
+                "category": it.category,
+            })
+    
+    logger.info(f"[OPTIMIZE SAVE] Inserting {len(items_data)} items with valid weights")
+    
+    if items_data:
+        try:
+            sb.table("backtest_portfolio_items").insert(items_data).execute()
+        except Exception as e:
+            logger.error(f"[OPTIMIZE SAVE] Insert items failed: {str(e)}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"無法儲存組合項目: {str(e)}")
+    
     return {"message": "優化結果已儲存", "optimization_id": optimization_id}
 
 @router.get("")
