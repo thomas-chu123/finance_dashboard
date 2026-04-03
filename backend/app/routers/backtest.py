@@ -76,11 +76,18 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
         "initial_amount": body.initial_amount,
         "results_json": body.results_json,
     }
-    port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
-    if not port_res.data:
-        raise HTTPException(status_code=500, detail="Failed to save portfolio")
 
-    portfolio_id = port_res.data[0]["id"]
+    if body.id:
+        portfolio_data["id"] = body.id
+        port_res = sb.table("backtest_portfolios").upsert(portfolio_data).execute()
+        sb.table("backtest_portfolio_items").delete().eq("portfolio_id", body.id).execute()
+        portfolio_id = body.id
+    else:
+        port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
+        if not port_res.data:
+            raise HTTPException(status_code=500, detail="Failed to save portfolio")
+        portfolio_id = port_res.data[0]["id"]
+
     items_data = [
         {
             "portfolio_id": portfolio_id,

@@ -484,6 +484,7 @@ const runProgress = ref(0)
 const backtestError = ref('')
 const showSaveModal = ref(false)
 const saveName = ref('')
+const currentLoadedPortfolioId = ref(null)
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -535,6 +536,10 @@ function toggleSymbol(s) {
 function removeSymbol(sym) {
   selectedItems.value = selectedItems.value.filter(i => i.symbol !== sym)
   equalizeWeights()
+  if (selectedItems.value.length === 0) {
+    currentLoadedPortfolioId.value = null
+    saveName.value = ''
+  }
 }
 
 function equalizeWeights() {
@@ -607,6 +612,24 @@ async function runBacktest() {
     await new Promise(r => setTimeout(r, 400))
     console.log('[DEBUG] Backtest results:', res.data)
     results.value = res.data
+    
+    // Auto-save if it's a loaded portfolio
+    if (currentLoadedPortfolioId.value && saveName.value) {
+      try {
+        await axios.post(`${API_BASE}/api/backtest/save`, {
+          id: currentLoadedPortfolioId.value,
+          name: saveName.value,
+          items: selectedItems.value,
+          start_date: btConfig.start_date,
+          end_date: btConfig.end_date,
+          initial_amount: btConfig.initial_amount,
+          results_json: results.value,
+        }, { headers: auth.headers })
+        await loadSavedPortfolios()
+      } catch (saveErr) {
+        console.error('[DEBUG] Auto-save failed:', saveErr)
+      }
+    }
   } catch (e) {
     clearInterval(progressInterval)
     console.error('[DEBUG] Backtest error:', e)
@@ -855,12 +878,15 @@ function loadSaved(p) {
   btConfig.end_date = p.end_date
   btConfig.initial_amount = p.initial_amount
   if (p.results_json) results.value = p.results_json
+  currentLoadedPortfolioId.value = p.id
+  saveName.value = p.name
 }
 
 async function saveBacktest() {
   if (!saveName.value.trim()) return
   try {
     await axios.post(`${API_BASE}/api/backtest/save`, {
+      id: currentLoadedPortfolioId.value,
       name: saveName.value,
       items: selectedItems.value,
       start_date: btConfig.start_date,
@@ -869,7 +895,8 @@ async function saveBacktest() {
       results_json: results.value,
     }, { headers: auth.headers })
     showSaveModal.value = false
-    saveName.value = ''
+    // Only reset saveName if we're not dealing with a loaded portfolio
+    if (!currentLoadedPortfolioId.value) saveName.value = ''
     await loadSavedPortfolios()
     alert('回測已儲存！')
   } catch (e) { alert('儲存失敗: ' + (e.response?.data?.detail || e.message)) }

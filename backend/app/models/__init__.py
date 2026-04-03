@@ -236,6 +236,7 @@ class BacktestRunRequest(BaseModel):
 
 
 class BacktestSaveRequest(BaseModel):
+    id: Optional[str] = None
     name: str
     items: List[BacktestItem]
     start_date: str
