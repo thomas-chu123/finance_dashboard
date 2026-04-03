@@ -124,7 +124,7 @@
 
     <!-- Optimization Config -->
     <div v-if="!showSaved" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
-      <!-- Left: config -->
+      <!-- Left: Asset selection -->
       <div>
         <div class="glass-card mb-2">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最少 2 個, 最多 10 個)</h3></div>
@@ -156,52 +156,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Selected list -->
-            <div v-if="selectedItems.length > 0">
-              <div class="text-xs text-muted mb-4 flex items-center justify-between">
-                <span>已選資產 ({{ selectedItems.length }}/10)</span>
-                <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
-                  總權重: {{ totalWeight.toFixed(1) }}%
-                </div>
-              </div>
-              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
-                <div class="flex items-center justify-between mb-3">
-                  <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
-                      {{ item.symbol.substring(0, 2) }}
-                    </div>
-                    <div class="flex flex-col">
-                      <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
-                      <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-4">
-                    <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
-                    <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
-                      <X class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <div class="w-full">
-                  <input 
-                    v-model.number="item.weight" 
-                    type="range" 
-                    min="1" 
-                    max="100" 
-                    step="1"
-                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500 weight-range-slider"
-                    @input="adjustWeights(item.symbol, item.weight)" 
-                  />
-                </div>
-              </div>
-
-              <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
-                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
-                  平均分配
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -222,40 +176,88 @@
         </div>
       </div>
 
-      <!-- Right: Action area -->
+      <!-- Right: selected + weights -->
       <div>
-        <div class="glass-card mb-2">
-          <div class="p-3 sm:p-4" style="display:flex;flex-direction:column;justify-content:center;min-height:180px;text-align:center;">
-            <p class="text-[var(--text-muted)] mb-3" style="font-size: 0.8rem; line-height: 1.5;">
-              系統將根據選定資產的歷史走勢，計算並建構出 <strong>效率前緣 (Efficient Frontier)</strong>。
-            </p>
-            <p class="text-[var(--text-muted)] mb-6" style="font-size: 0.8rem; line-height: 1.5;">
-              提供「最大夏普值 (最高性價比)」與「最小波動率 (最穩健)」兩種最佳權重組合。
-            </p>
-            <button class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runOptimization"
-              :disabled="runLoading || selectedItems.length < 2 || selectedItems.length > 10">
-              <template v-if="runLoading">
-                <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />模型計算中...
-              </template>
-              <template v-else>
-                <Dna class="w-4 h-4 mr-2 inline" />開始最佳化分析
-              </template>
-            </button>
-            <div v-if="selectedItems.length < 2" class="text-red text-sm mt-8">請至少選擇 2 個資產進行分析</div>
+        <div class="glass-card mb-2 flex flex-col" style="max-height: 60vh;">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
+            <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
+            <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
+              總權重: {{ totalWeight.toFixed(1) }}%
+            </div>
+          </div>
+          <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+            <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
+              請從左側選擇資產
+            </div>
+            <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
+                    {{ item.symbol.substring(0, 2) }}
+                  </div>
+                  <div class="flex flex-col">
+                    <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                    <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                  <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                    <X class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div class="w-full">
+                <input 
+                  v-model.number="item.weight" 
+                  type="range" 
+                  min="1" 
+                  max="100" 
+                  step="1"
+                  class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500 weight-range-slider"
+                  @input="adjustWeights(item.symbol, item.weight)" 
+                />
+              </div>
+            </div>
+
+            <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
+              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
+                <Scale class="w-4 h-4 mr-2 inline" />平均分配
+              </button>
+              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="runOptimization" :disabled="selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5">
+                <Zap class="w-4 h-4 mr-2 inline" />開始優化
+              </button>
+            </div>
+            <div v-else-if="selectedItems.length === 1" class="mt-4">
+              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" disabled>
+                請至少選擇 2 個資產
+              </button>
+            </div>
+
+            <!-- Error message -->
+            <div v-if="optError" class="p-3 mt-4 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
+
+            <!-- Save and run buttons -->
+            <div v-if="results" class="mt-6 flex gap-3">
+              <button class="flex-1 flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" @click="showSaveModal = true" :disabled="savingOptimization">
+                <Save class="w-4 h-4 mr-2" />儲存方案
+              </button>
+            </div>
+
+            <!-- Loading indicator -->
+            <div v-if="runLoading" class="mt-6 p-4 text-center text-[var(--text-muted)]">
+              <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-brand-500/10 animate-pulse mb-2">
+                <Zap class="w-4 h-4 text-brand-500 animate-spin" />
+              </div>
+              <div class="text-sm">模型計算中...</div>
+            </div>
           </div>
         </div>
-        <div v-if="optError" class="p-3 mb-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
       </div>
-      <!-- Save button -->
-      <div v-if="results" class="flex gap-3 mt-4">
-        <button class="flex-1 flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
-          <Save class="w-4 h-4 mr-2" />儲存最佳化方案
-        </button>
-      </div>
-    </div><!-- end !showSaved -->
+    </div>
 
-    <!-- Results Section -->
-    <div v-if="results && !showSaved" class="mt-16">
+    <!-- Optimization Results -->
+    <div v-if="!showSaved && results" class="mt-6 space-y-6">
       <h3 class="mb-2">最佳化分析結果</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">

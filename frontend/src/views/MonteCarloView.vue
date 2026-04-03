@@ -123,18 +123,18 @@
     </div>
 
     <!-- Configuration Panel -->
-    <div v-if="!showSaved" class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-      <!-- Asset Selection -->
-      <div class="lg:col-span-1 space-y-4">
-        <div class="glass-card h-full flex flex-col">
+    <div v-if="!showSaved" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
+      <!-- Asset Selection (Left) -->
+      <div class="space-y-4">
+        <div class="glass-card flex flex-col">
           <div class="p-4 border-b border-[var(--border-color)]">
             <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Target class="w-4 h-4 text-brand-500" />
-              配置資產權重
+              配置資產
             </h3>
           </div>
           <div class="p-4 flex-1 flex flex-col space-y-4">
-            <!-- Asset Selection UI (Simplified version of OptimizeView) -->
+            <!-- Asset Selection UI -->
             <div class="space-y-3">
               <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
                 <button v-for="t in symbolTypes" :key="t.value"
@@ -162,33 +162,51 @@
                 </div>
               </div>
             </div>
-
-            <!-- Selected Assets Weights -->
-            <div class="space-y-3 overflow-y-auto pr-1" style="max-height: 300px;">
-              <div v-for="item in selectedItems" :key="item.symbol" class="p-3 rounded-lg bg-[var(--input-bg)] border border-[var(--border-color)] space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-[var(--text-primary)]">{{ item.symbol }}</span>
-                  <button @click="removeSymbol(item.symbol)" class="text-zinc-400 hover:text-rose-500 transition-colors">
-                    <X class="w-3 h-3" />
-                  </button>
-                </div>
-                <div class="flex items-center gap-3">
-                  <input type="range" v-model.number="item.weight" min="0" max="100" step="5" class="weight-slider flex-1 h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
-                  <span class="text-xs font-mono font-bold w-14 text-right rounded px-2 py-1 bg-brand-500/10 dark:bg-brand-500/10 text-brand-500">{{ item.weight }}<span class="ml-0.5">%</span></span>
-                </div>
-              </div>
-            </div>
-
-            <div v-if="totalWeight !== 100" class="text-[10px] text-amber-500 font-medium">
-              ⚠️ 當前權重總和為 {{ totalWeight }}% (需為 100%)
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Simulation Parameters -->
-      <div class="lg:col-span-1 space-y-4">
-        <div class="glass-card h-full flex flex-col">
+      <!-- Right: selected assets weights + simulation parameters -->
+      <div class="space-y-4" style="max-height: 70vh; overflow-y-auto;">
+        <!-- Selected Assets Weights Card (like OptimizeView) -->
+        <div class="glass-card flex flex-col" style="max-height: 25vh;">
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
+            <h3>已選資產 ({{ selectedItems.length }})</h3>
+            <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
+              總權重: {{ totalWeight.toFixed(1) }}%
+            </div>
+          </div>
+          <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+            <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
+              請從左側選擇資產
+            </div>
+            <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
+                    {{ item.symbol.substring(0, 2) }}
+                  </div>
+                  <div class="flex flex-col">
+                    <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                    <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                  <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                    <X class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <div class="w-full">
+                <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulation Parameters -->
+        <div class="glass-card flex flex-col">
           <div class="p-4 border-b border-[var(--border-color)]">
             <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Dice5 class="w-4 h-4 text-brand-500" />
@@ -279,60 +297,47 @@
         </div>
       </div>
 
-      <!-- Quick Summary Stats (Visible after run) -->
-      <div class="lg:col-span-1">
-        <div v-if="results" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-          <div class="glass-card bg-brand-500/10 border-brand-500/20">
-            <div class="p-6 text-center">
-              <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">投資成功率</h4>
-              <div class="text-5xl font-black text-brand-500 tracking-tighter">
-                {{ (results.summary.success_rate * 100).toFixed(1) }}<span class="text-2xl">%</span>
-              </div>
-              <p class="text-[10px] text-brand-600 font-medium mt-2">模擬達成保本目標 (終值 ≥ 初始投入) 的比例</p>
+      <!-- Results Summary (spans full width) -->
+      <div v-if="results" class="lg:col-start-2 space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+        <div class="glass-card bg-brand-500/10 border-brand-500/20">
+          <div class="p-6 text-center">
+            <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">投資成功率</h4>
+            <div class="text-5xl font-black text-brand-500 tracking-tighter">
+              {{ (results.summary.success_rate * 100).toFixed(1) }}<span class="text-2xl">%</span>
             </div>
+            <p class="text-[10px] text-brand-600 font-medium mt-2">模擬達成保本目標 (終值 ≥ 初始投入) 的比例</p>
           </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="glass-card p-4">
-              <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">預期中位數</h4>
-              <div class="text-lg font-bold text-[var(--text-primary)] truncate">
-                ${{ formatNumber(results.summary.median_end_balance) }}
-              </div>
-              <div class="text-[10px] text-zinc-500">第 50 百分位數</div>
-            </div>
-            <div class="glass-card p-4">
-              <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">最悲觀情況</h4>
-              <div class="text-lg font-bold text-rose-500 truncate">
-                ${{ formatNumber(results.summary.p10_end_balance) }}
-              </div>
-              <div class="text-[10px] text-zinc-500">第 10 百分位數 (P10)</div>
-            </div>
-          </div>
-
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="glass-card p-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-brand-500/10 dark:bg-brand-500/20 flex items-center justify-center">
-                <History class="w-5 h-5 text-brand-500" />
-              </div>
-              <div>
-                <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">樣本數據範圍</h4>
-                <div class="text-sm font-bold text-[var(--text-primary)]">
-                  使用過去 {{ results.history_years }} 年歷史數據
-                </div>
-              </div>
+            <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">預期中位數</h4>
+            <div class="text-lg font-bold text-[var(--text-primary)] truncate">
+              ${{ formatNumber(results.summary.median_end_balance) }}
             </div>
+            <div class="text-[10px] text-zinc-500">第 50 百分位數</div>
+          </div>
+          <div class="glass-card p-4">
+            <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">最悲觀情況</h4>
+            <div class="text-lg font-bold text-rose-500 truncate">
+              ${{ formatNumber(results.summary.p10_end_balance) }}
+            </div>
+            <div class="text-[10px] text-zinc-500">第 10 百分位數 (P10)</div>
           </div>
         </div>
 
-        <!-- Initial Placeholder -->
-        <div v-else class="glass-card h-full flex flex-col items-center justify-center p-8 text-center bg-zinc-50/50 dark:bg-zinc-900/50 border-dashed">
-          <div class="w-16 h-16 rounded-2xl bg-brand-500/10 dark:bg-brand-500/20 flex items-center justify-center mb-4">
-            <BarChart3 class="w-8 h-8 text-brand-500" />
+        <div class="glass-card p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-brand-500/10 dark:bg-brand-500/20 flex items-center justify-center">
+              <History class="w-5 h-5 text-brand-500" />
+            </div>
+            <div>
+              <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">樣本數據範圍</h4>
+              <div class="text-sm font-bold text-[var(--text-primary)]">
+                使用過去 {{ results.history_years }} 年歷史數據
+              </div>
+            </div>
           </div>
-          <h3 class="text-sm font-bold text-[var(--text-primary)] mb-2">準備開始模擬</h3>
-          <p class="text-xs text-[var(--text-secondary)] leading-relaxed">
-            請在左側選擇資產權重並設定模擬參數，系統將為您預測未來資產分佈狀況。
-          </p>
         </div>
       </div>
     </div>
