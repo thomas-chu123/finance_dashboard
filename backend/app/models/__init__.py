@@ -249,9 +249,10 @@ class BacktestPortfolioResponse(BaseModel):
     id: str
     user_id: str
     name: str
-    start_date: str
-    end_date: str
+    start_date: Optional[str] = None  # ✅ 蒙地卡羅和優化不需要日期
+    end_date: Optional[str] = None    # ✅ 蒙地卡羅和優化不需要日期
     initial_amount: float
+    portfolio_type: Optional[str] = "backtest"  # ✅ 用於區分功能類型
     results_json: Optional[dict]
     items: Optional[List[dict]] = None
     created_at: str

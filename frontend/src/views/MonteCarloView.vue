@@ -363,6 +363,36 @@
       <AlertTriangle class="w-5 h-5 flex-shrink-0" />
       {{ error }}
     </div>
+
+    <!-- Save button -->
+    <div v-if="results && !showSaved" class="flex gap-3 mt-8 justify-center mb-8">
+      <button class="flex items-center justify-center px-6 py-3 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+        <Save class="w-4 h-4 mr-2" />儲存模擬結果
+      </button>
+    </div>
+
+    <!-- Save modal -->
+    <Transition name="fade">
+      <div v-if="showSaveModal" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[var(--bg-main)] rounded-xl shadow-xl w-full max-w-md overflow-hidden ring-1 ring-[var(--border-color)]">
+          <div class="px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center font-semibold text-[var(--text-primary)]"><h3>儲存模擬結果</h3><button class="text-muted hover:text-[var(--text-primary)] transition-colors" @click="showSaveModal = false"><X class="w-4 h-4" /></button></div>
+          <div class="p-6">
+            <div class="space-y-1 mb-4">
+              <label class="block text-sm font-medium text-muted">結果名稱</label>
+              <input v-model="saveName" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="例: 保守型30年退休規劃" />
+            </div>
+            <div v-if="saveError" class="p-3 mb-4 text-sm text-red-600 rounded-lg bg-red-50 dark:bg-red-900/20">{{ saveError }}</div>
+          </div>
+          <div class="px-6 py-4 bg-[var(--bg-sidebar)] flex justify-end gap-3">
+            <button class="px-4 py-2 text-sm font-medium text-muted hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showSaveModal = false; saveName = ''">取消</button>
+            <button class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" @click="saveMonteCarloSimulation" :disabled="savingSimulation">
+              <Loader2 v-if="savingSimulation" class="w-4 h-4 mr-2 inline animate-spin" />
+              <span v-else>儲存</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -372,7 +402,7 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { 
   Target, Search, Plus, Check, X, Dice5, Play, 
-  Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft
+  Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft, Save
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -386,6 +416,12 @@ const savedPortfolios = ref([])
 const loadingSaved = ref(false)
 const currentPage = ref(1)  // 分頁: 當前頁
 const pageSize = ref(6)     // 分頁: 每頁項目數
+const showSaveModal = ref(false)
+const saveName = ref('')
+const savingSimulation = ref(false)
+const saveError = ref('')
+const loadedPortfolioId = ref(null)  // 追蹤載入的組合 ID，用於自動儲存
+const loadedPortfolioName = ref('')  // 追蹤載入的組合名稱
 
 const config = reactive({
   initial_amount: 100000,
@@ -491,6 +527,11 @@ async function runSimulation() {
     
     const res = await axios.post(`${API_BASE}/api/monte-carlo/run`, payload, { headers: auth.headers })
     results.value = res.data
+    
+    // ✅ 如果是從載入的組合執行，自動儲存結果
+    if (loadedPortfolioId.value) {
+      await autoSaveMonteCarloSimulation()
+    }
   } catch (err) {
     error.value = err.response?.data?.detail || '模擬分析執行失敗，請稍後再試。'
     console.error('Simulation failed:', err)
@@ -596,6 +637,8 @@ function formatNumber(num) {
 
 async function loadSavedPortfolios() {
   try {
+    // ✅ 改為讀取 /api/backtest，顯示所有類型的組合（backtest, optimize, monte_carlo）
+    // 這樣 MonteCarloView 可以加載任何功能保存的組合
     const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
     savedPortfolios.value = res.data
     currentPage.value = 1  // ✅ 重置分頁到第一頁
@@ -606,8 +649,10 @@ async function loadSavedPortfolios() {
 }
 
 async function deleteSaved(id) {
-  if (!confirm('確定刪除此模擬組合？')) return
+  if (!confirm('確定刪除此蒙地卡羅結果？')) return
   try {
+    saveError.value = ''
+    // ✅ 改為使用 /api/backtest 刪除組合
     await axios.delete(`${API_BASE}/api/backtest/${id}`, { headers: auth.headers })
     await loadSavedPortfolios()
   } catch (e) { console.error('Delete failed', e) }
@@ -616,12 +661,97 @@ async function deleteSaved(id) {
 function loadSaved(p) {
   selectedItems.value = p.items.map(i => ({ ...i }))
   config.initial_amount = p.initial_amount || 100000
-  config.years = p.years || 30
-  config.simulations = p.simulations || 10000
+  
+  // ✅ 從 results_json.config 中提取配置參數（新方案）
+  const configFromResults = p.results_json?.config
+  if (configFromResults) {
+    config.years = configFromResults.years || 30
+    config.simulations = configFromResults.simulations || 10000
+    config.annual_contribution = configFromResults.annual_contribution || 0
+    config.annual_withdrawal = configFromResults.annual_withdrawal || 4
+    config.inflation_mean = (configFromResults.inflation_mean || 0.03) * 100
+    config.inflation_std = (configFromResults.inflation_std || 0.01) * 100
+    config.adjust_for_inflation = configFromResults.adjust_for_inflation !== false
+  } else {
+    // ✅ 後備方案：直接從 portfolio 對象讀取（舊數據）
+    config.years = p.years || 30
+    config.simulations = p.simulations || 10000
+    config.annual_contribution = p.annual_contribution || 0
+    config.annual_withdrawal = p.annual_withdrawal || 4
+    config.inflation_mean = (p.inflation_mean || 0.03) * 100
+    config.inflation_std = (p.inflation_std || 0.01) * 100
+    config.adjust_for_inflation = p.adjust_for_inflation !== false
+  }
+  
   // Only restore results if valid monte carlo results_json exists
   results.value = (p.results_json && p.results_json.summary) ? p.results_json : null
+  // ✅ 記錄載入的組合 ID 用於自動儲存
+  loadedPortfolioId.value = p.id
+  loadedPortfolioName.value = p.name
   // Switch to config panel immediately
   showSaved.value = false
+}
+
+// ✅ 自動儲存：當從已載入組合執行蒙地卡羅模擬時自動保存結果
+async function autoSaveMonteCarloSimulation() {
+  try {
+    console.log('[MonteCarloView] Auto-saving simulation results...')
+    const response = await axios.post(`${API_BASE}/api/monte-carlo/save`, {
+      name: `${loadedPortfolioName.value} - 模擬結果`,
+      items: selectedItems.value,
+      initial_amount: config.initial_amount,
+      years: config.years,
+      simulations: config.simulations,
+      annual_contribution: config.annual_contribution,
+      annual_withdrawal: config.annual_withdrawal,
+      inflation_mean: config.adjust_for_inflation ? config.inflation_mean : 0,
+      inflation_std: config.adjust_for_inflation ? config.inflation_std : 0,
+      adjust_for_inflation: config.adjust_for_inflation,
+      results_json: results.value,
+      portfolio_id: loadedPortfolioId.value,
+    }, { headers: auth.headers })
+    console.log('[MonteCarloView] Auto-save successful:', response.data)
+    // ✅ 自動儲存成功：自動刷新側邊欄列表(無需用戶手動操作)
+    await loadSavedPortfolios()
+  } catch (e) {
+    console.error('[MonteCarloView] Auto-save failed:', e.message, e.response?.data)
+    // 不中斷用戶，允許手動儲存
+  }
+}
+
+async function saveMonteCarloSimulation() {
+  if (!saveName.value.trim()) return
+  saveError.value = ''
+  savingSimulation.value = true
+  try {
+    await axios.post(`${API_BASE}/api/monte-carlo/save`, {
+      name: saveName.value,
+      items: selectedItems.value,
+      initial_amount: config.initial_amount,
+      years: config.years,
+      simulations: config.simulations,
+      annual_contribution: config.annual_contribution,
+      annual_withdrawal: config.annual_withdrawal,
+      inflation_mean: config.adjust_for_inflation ? config.inflation_mean : 0,
+      inflation_std: config.adjust_for_inflation ? config.inflation_std : 0,
+      adjust_for_inflation: config.adjust_for_inflation,
+      results_json: results.value,
+      // portfolio_id 只在手動儲存時設為 null（新組合）
+      portfolio_id: null,
+    }, { headers: auth.headers })
+    showSaveModal.value = false
+    saveName.value = ''
+    // 重置載入的組合
+    loadedPortfolioId.value = null
+    loadedPortfolioName.value = ''
+    // ✅ 重新加載側邊欄列表
+    await loadSavedPortfolios()
+    alert('模擬結果已儲存！')
+  } catch (e) { 
+    saveError.value = e.response?.data?.detail || e.message 
+  } finally {
+    savingSimulation.value = false
+  }
 }
 
 onMounted(() => {

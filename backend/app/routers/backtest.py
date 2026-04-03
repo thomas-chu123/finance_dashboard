@@ -42,6 +42,7 @@ async def list_portfolios(authorization: str = Header(default="")):
     sb = get_supabase()
     
     # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
+    # ✅ 回測視圖應顯示 ALL 類型的組合（不過濾），以便跨功能加載
     portfolios = (
         sb.table("backtest_portfolios")
         .select("*, backtest_portfolio_items(*)")  # 在一個查詢中獲取 items
@@ -68,12 +69,14 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
     user_id = get_user_id(authorization)
     sb = get_supabase()
 
+    # ✅ 添加 portfolio_type='backtest' 以支持多功能共用表
     portfolio_data = {
         "user_id": user_id,
         "name": body.name,
         "start_date": body.start_date,
         "end_date": body.end_date,
         "initial_amount": body.initial_amount,
+        "portfolio_type": "backtest",  # ✅ 標記為回測功能
         "results_json": body.results_json,
     }
 

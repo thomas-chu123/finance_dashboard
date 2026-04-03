@@ -582,6 +582,13 @@ async function loadSymbols() {
 
 async function runBacktest() {
   backtestError.value = ''
+  
+  // ✅ 驗證日期是否有效
+  if (!btConfig.start_date || !btConfig.end_date) {
+    backtestError.value = '請設置回測起始日期和結束日期'
+    return
+  }
+  
   runLoading.value = true
   runProgress.value = 0
   results.value = null

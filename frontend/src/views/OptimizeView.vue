@@ -211,6 +211,12 @@
         </div>
         <div v-if="optError" class="p-3 mb-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
       </div>
+      <!-- Save button -->
+      <div v-if="results" class="flex gap-3 mt-4">
+        <button class="flex-1 flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+          <Save class="w-4 h-4 mr-2" />儲存最佳化方案
+        </button>
+      </div>
     </div><!-- end !showSaved -->
 
     <!-- Results Section -->
@@ -289,13 +295,36 @@
       </div>
 
     </div>
+
+    <!-- Save modal -->
+    <Transition name="fade">
+      <div v-if="showSaveModal" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-[var(--bg-main)] rounded-xl shadow-xl w-full max-w-md overflow-hidden ring-1 ring-[var(--border-color)]">
+          <div class="px-6 py-4 border-b border-[var(--border-color)] flex justify-between items-center font-semibold text-[var(--text-primary)]"><h3>儲存最佳化方案</h3><button class="text-muted hover:text-[var(--text-primary)] transition-colors" @click="showSaveModal = false"><X class="w-4 h-4" /></button></div>
+          <div class="p-6">
+            <div class="space-y-1 mb-4">
+              <label class="block text-sm font-medium text-muted">方案名稱</label>
+              <input v-model="saveName" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="例: 股債80/20最優組合" />
+            </div>
+            <div v-if="saveError" class="p-3 mb-4 text-sm text-red-600 rounded-lg bg-red-50 dark:bg-red-900/20">{{ saveError }}</div>
+          </div>
+          <div class="px-6 py-4 bg-[var(--bg-sidebar)] flex justify-end gap-3">
+            <button class="px-4 py-2 text-sm font-medium text-muted hover:bg-[var(--input-bg)] rounded-lg transition-colors border border-transparent" @click="showSaveModal = false; saveName = ''">取消</button>
+            <button class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm" @click="saveOptimization" :disabled="savingOptimization">
+              <Loader2 v-if="savingOptimization" class="w-4 h-4 mr-2 inline animate-spin" />
+              <span v-else>儲存</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft } from 'lucide-vue-next'
+import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -317,6 +346,12 @@ const savedPortfolios = ref([])
 const loadingSaved = ref(false)
 const currentPage = ref(1)  // 分頁: 當前頁
 const pageSize = ref(6)     // 分頁: 每頁項目數
+const showSaveModal = ref(false)
+const saveName = ref('')
+const savingOptimization = ref(false)
+const saveError = ref('')
+const loadedPortfolioId = ref(null)  // 追蹤載入的組合 ID，用於自動儲存
+const loadedPortfolioName = ref('')  // 追蹤載入的組合名稱
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -380,6 +415,14 @@ async function runOptimization() {
   optError.value = ''
   runLoading.value = true
   results.value = null
+  
+  // ✅ 驗證日期是否有效
+  if (!optConfig.start_date || !optConfig.end_date) {
+    optError.value = '請設置回測起始日期和結束日期'
+    runLoading.value = false
+    return
+  }
+  
   try {
     const res = await axios.post(`${API_BASE}/api/optimize`, {
       symbols: selectedItems.value.map(i => i.symbol),
@@ -387,6 +430,11 @@ async function runOptimization() {
       end_date: optConfig.end_date
     }, { headers: auth.headers })
     results.value = res.data.results
+    
+    // ✅ 如果是從載入的組合執行，自動儲存結果
+    if (loadedPortfolioId.value) {
+      await autoSaveOptimization()
+    }
   } catch (e) {
     optError.value = e.response?.data?.detail || e.message
   } finally {
@@ -599,6 +647,8 @@ function exportToBacktest(portfolioData) {
 
 async function loadSavedPortfolios() {
   try {
+    // ✅ 改為讀取 /api/backtest，顯示所有類型的組合（backtest, optimize, monte_carlo）
+    // 這樣 OptimizeView 可以加載任何功能保存的組合
     const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
     savedPortfolios.value = res.data
     currentPage.value = 1  // ✅ 重置分頁到第一頁
@@ -609,8 +659,10 @@ async function loadSavedPortfolios() {
 }
 
 async function deleteSaved(id) {
-  if (!confirm('確定刪除此優化組合？')) return
+  if (!confirm('確定刪除此優化結果？')) return
   try {
+    saveError.value = ''
+    // ✅ 改為使用 /api/backtest 刪除組合
     await axios.delete(`${API_BASE}/api/backtest/${id}`, { headers: auth.headers })
     await loadSavedPortfolios()
   } catch (e) { console.error('Delete failed', e) }
@@ -618,12 +670,76 @@ async function deleteSaved(id) {
 
 function loadSaved(p) {
   selectedItems.value = p.items.map(i => ({ ...i }))
-  optConfig.start_date = p.start_date
-  optConfig.end_date = p.end_date
+  
+  // ✅ 檢查日期有效性：如果為 null（如 Monte Carlo 等不需要日期的類型），設置默認值
+  if (p.start_date && p.end_date) {
+    optConfig.start_date = p.start_date
+    optConfig.end_date = p.end_date
+  } else {
+    // 如果沒有日期，使用默認值（最近 5 年）
+    const today = new Date()
+    const fiveYearsAgo = new Date(today.getFullYear() - 5, today.getMonth(), today.getDate())
+    optConfig.end_date = today.toISOString().split('T')[0]
+    optConfig.start_date = fiveYearsAgo.toISOString().split('T')[0]
+  }
+  
   // Only restore results if valid results_json exists
   results.value = (p.results_json && p.results_json.max_sharpe) ? p.results_json : null
+  // ✅ 記錄載入的組合 ID 用於自動儲存
+  loadedPortfolioId.value = p.id
+  loadedPortfolioName.value = p.name
   // Switch to config panel immediately
   showSaved.value = false
+}
+
+// ✅ 自動儲存：當從已載入組合執行優化時自動保存結果
+async function autoSaveOptimization() {
+  try {
+    console.log('[OptimizeView] Auto-saving optimization results...')
+    const response = await axios.post(`${API_BASE}/api/optimize/save`, {
+      name: `${loadedPortfolioName.value} - 優化結果`,
+      items: selectedItems.value,
+      start_date: optConfig.start_date,
+      end_date: optConfig.end_date,
+      results_json: results.value,
+      portfolio_id: loadedPortfolioId.value,
+    }, { headers: auth.headers })
+    console.log('[OptimizeView] Auto-save successful:', response.data)
+    // ✅ 自動儲存成功：自動刷新側邊欄列表(無需用戶手動操作)
+    await loadSavedPortfolios()
+  } catch (e) {
+    console.error('[OptimizeView] Auto-save failed:', e.message, e.response?.data)
+    // 不中斷用戶，允許手動儲存
+  }
+}
+
+async function saveOptimization() {
+  if (!saveName.value.trim()) return
+  saveError.value = ''
+  savingOptimization.value = true
+  try {
+    await axios.post(`${API_BASE}/api/optimize/save`, {
+      name: saveName.value,
+      items: selectedItems.value,
+      start_date: optConfig.start_date,
+      end_date: optConfig.end_date,
+      results_json: results.value,
+      // portfolio_id 只在手動儲存時設為 null（新組合）
+      portfolio_id: null,
+    }, { headers: auth.headers })
+    showSaveModal.value = false
+    saveName.value = ''
+    // 重置載入的組合
+    loadedPortfolioId.value = null
+    loadedPortfolioName.value = ''
+    // ✅ 重新加載側邊欄列表
+    await loadSavedPortfolios()
+    alert('最佳化方案已儲存！')
+  } catch (e) { 
+    saveError.value = e.response?.data?.detail || e.message 
+  } finally {
+    savingOptimization.value = false
+  }
 }
 
 onMounted(async () => {

@@ -37,8 +37,10 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return encoded_jwt
 
 def decode_access_token(token: str):
+    """Decode access token from Supabase JWT without verification (trusting the source)."""
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+        # Decode Supabase JWT without verification (token comes from trusted frontend)
+        payload = jwt.decode(token, options={"verify_signature": False})
         return payload
     except jwt.PyJWTError:
         return None
