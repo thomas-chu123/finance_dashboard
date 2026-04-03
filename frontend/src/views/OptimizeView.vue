@@ -159,12 +159,47 @@
 
             <!-- Selected list -->
             <div v-if="selectedItems.length > 0">
-              <div class="text-xs text-muted mb-4">已選擇 ({{ selectedItems.length }}/10)</div>
-              <div class="flex items-center gap-2" style="flex-wrap:wrap;">
-                <div v-for="item in selectedItems" :key="item.symbol" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium" :style="{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#16a34a' }">
-                  {{ item.symbol }}
-                  <span style="cursor:pointer;opacity:0.6;" @click="removeSymbol(item.symbol)"><X class="w-3 h-3" /></span>
+              <div class="text-xs text-muted mb-4 flex items-center justify-between">
+                <span>已選資產 ({{ selectedItems.length }}/10)</span>
+                <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
+                  總權重: {{ totalWeight.toFixed(1) }}%
                 </div>
+              </div>
+              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
+                      {{ item.symbol.substring(0, 2) }}
+                    </div>
+                    <div class="flex flex-col">
+                      <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                      <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                    <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                      <X class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div class="w-full">
+                  <input 
+                    v-model.number="item.weight" 
+                    type="range" 
+                    min="1" 
+                    max="100" 
+                    step="1"
+                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500 weight-range-slider"
+                    @input="adjustWeights(item.symbol, item.weight)" 
+                  />
+                </div>
+              </div>
+
+              <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
+                  平均分配
+                </button>
               </div>
             </div>
           </div>
@@ -387,18 +422,21 @@ function toggleSymbol(s) {
   if (isSelected(s.symbol)) {
     removeSymbol(s.symbol)
   } else if (selectedItems.value.length < 10) {
-    selectedItems.value.push(s)
+    selectedItems.value.push({ ...s, weight: Math.floor(100 / (selectedItems.value.length + 1)) })
+    equalizeWeights()
   }
 }
 
 function removeSymbol(sym) {
   selectedItems.value = selectedItems.value.filter(i => i.symbol !== sym)
+  equalizeWeights()
 }
 
 function addSearchSymbol() {
   const sym = symbolSearch.value.trim().toUpperCase()
   if (!sym || isSelected(sym) || selectedItems.value.length >= 10) return
-  selectedItems.value.push({ symbol: sym, name: sym, category: symbolType.value })
+  selectedItems.value.push({ symbol: sym, name: sym, category: symbolType.value, weight: Math.floor(100 / (selectedItems.value.length + 1)) })
+  equalizeWeights()
   symbolSearch.value = ''
 }
 
@@ -443,6 +481,22 @@ async function runOptimization() {
   }
 }
 
+// ✅ 均勻分配權重
+function equalizeWeights() {
+  if (!selectedItems.value.length) return
+  const w = parseFloat((100 / selectedItems.value.length).toFixed(1))
+  selectedItems.value.forEach((item, idx) => {
+    item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
+  })
+}
+
+// ✅ 調整權重
+function adjustWeights(symbol, newWeight) {
+  const item = selectedItems.value.find(i => i.symbol === symbol)
+  if (!item) return
+  item.weight = newWeight
+}
+
 function createPieOption(portfolioData) {
   if (!portfolioData) return {}
   const data = Object.entries(portfolioData.weights)
@@ -464,6 +518,8 @@ function createPieOption(portfolioData) {
     ]
   }
 }
+
+const totalWeight = computed(() => selectedItems.value.reduce((s, i) => s + (i.weight || 0), 0))
 
 const maxSharpePieOption = computed(() => createPieOption(results.value?.max_sharpe))
 const minVolPieOption = computed(() => createPieOption(results.value?.min_volatility))
@@ -711,19 +767,9 @@ function loadSaved(p) {
 async function autoSaveOptimization() {
   try {
     console.log('[OptimizeView] Auto-saving optimization results...')
-    // ✅ 權重分配邏輯：
-    // - 如果加載的是回測組合，保持回測權重
-    // - 否則強制使用均勻分配（1資產=100%, 3資產=各33.33%）
+    // ✅ 直接使用用戶設定的權重
     const itemsToSave = selectedItems.value.map(item => {
-      let weight = item.weight || 0
-      // 只在加載回測組合時保持原始權重；否則強制均勻分配
-      if (loadedPortfolioType.value === 'backtest') {
-        // 保持原始權重
-      } else {
-        // 強制均勻分配（不管原來權重是什麼）
-        weight = 100 / selectedItems.value.length
-      }
-      return { ...item, weight }
+      return { ...item, weight: item.weight || 0 }
     })
     
     // ✅ 自動儲存：以同名覆蓋原組合，無需增加後綴
@@ -749,19 +795,9 @@ async function saveOptimization() {
   saveError.value = ''
   savingOptimization.value = true
   try {
-    // ✅ 權重分配邏輯：
-    // - 如果加載的是回測組合，保持回測權重
-    // - 否則強制使用均勻分配（1資產=100%, 3資產=各33.33%）
+    // ✅ 直接使用用戶設定的權重
     const itemsToSave = selectedItems.value.map(item => {
-      let weight = item.weight || 0
-      // 只在加載回測組合時保持原始權重；否則強制均勻分配
-      if (loadedPortfolioType.value === 'backtest') {
-        // 保持原始權重
-      } else {
-        // 強制均勻分配（不管原來權重是什麼）
-        weight = 100 / selectedItems.value.length
-      }
-      return { ...item, weight }
+      return { ...item, weight: item.weight || 0 }
     })
     
     // ✅ 檢查名稱是否改變：同名時更新，異名時另存新檔

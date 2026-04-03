@@ -698,19 +698,9 @@ function loadSaved(p) {
 async function autoSaveMonteCarloSimulation() {
   try {
     console.log('[MonteCarloView] Auto-saving simulation results...')
-    // ✅ 權重分配邏輯：
-    // - 如果加載的是回測組合，保持回測權重
-    // - 否則強制使用均勻分配（1資產=100%, 3資產=各33.33%）
+    // ✅ 直接使用用戶設定的權重
     const itemsToSave = selectedItems.value.map(item => {
-      let weight = item.weight || 0
-      // 只在加載回測組合時保持原始權重；否則強制均勻分配
-      if (loadedPortfolioType.value === 'backtest') {
-        // 保持原始權重
-      } else {
-        // 強制均勻分配（不管原來權重是什麼）
-        weight = 100 / selectedItems.value.length
-      }
-      return { ...item, weight }
+      return { ...item, weight: item.weight || 0 }
     })
     
     // ✅ 自動儲存：以同名覆蓋原組合，無需增加後綴
@@ -742,19 +732,9 @@ async function saveMonteCarloSimulation() {
   saveError.value = ''
   savingSimulation.value = true
   try {
-    // ✅ 權重分配邏輯：
-    // - 如果加載的是回測組合，保持回測權重
-    // - 否則強制使用均勻分配（1資產=100%, 3資產=各33.33%）
+    // ✅ 直接使用用戶設定的權重
     const itemsToSave = selectedItems.value.map(item => {
-      let weight = item.weight || 0
-      // 只在加載回測組合時保持原始權重；否則強制均勻分配
-      if (loadedPortfolioType.value === 'backtest') {
-        // 保持原始權重
-      } else {
-        // 強制均勻分配（不管原來權重是什麼）
-        weight = 100 / selectedItems.value.length
-      }
-      return { ...item, weight }
+      return { ...item, weight: item.weight || 0 }
     })
     
     // ✅ 檢查名稱是否改變：同名時更新，異名時另存新檔
