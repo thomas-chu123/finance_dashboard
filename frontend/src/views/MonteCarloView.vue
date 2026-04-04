@@ -267,14 +267,6 @@
                 </div>
               </div>
 
-              <button 
-                @click="runSimulation"
-                :disabled="loading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5"
-                class="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
-                <Play v-else class="w-4 h-4 fill-current" />
-                {{ loading ? '模擬運算中...' : '開始模擬分析' }}
-              </button>
             </div>
           </div>
         </div>
@@ -314,6 +306,25 @@
                 <div class="w-full">
                   <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
                 </div>
+              </div>
+
+              <div v-if="selectedItems.length > 0" class="mt-6 flex flex-col gap-3">
+                <div class="flex gap-4">
+                  <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg flex-1" @click="equalizeWeights">
+                    <Scale class="w-4 h-4 mr-2 inline" />平均分配
+                  </button>
+                  <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg flex-1" @click="showSaveModal = true">
+                    <Save class="w-4 h-4 mr-2 inline" />儲存組合
+                  </button>
+                </div>
+                <button 
+                  @click="runSimulation"
+                  :disabled="loading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5"
+                  class="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
+                  <Play v-else class="w-4 h-4 fill-current" />
+                  {{ loading ? '模擬運算中...' : '開始模擬分析' }}
+                </button>
               </div>
             </div>
           </div>
@@ -429,7 +440,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { 
-  Target, Search, Plus, Check, X, Dice5, Play, 
+  Target, Search, Plus, Check, X, Dice5, Play, Scale,
   Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft, Save
 } from 'lucide-vue-next'
 
@@ -500,25 +511,22 @@ function toggleSymbol(s) {
     removeSymbol(s.symbol)
   } else if (selectedItems.value.length < 10) {
     selectedItems.value.push({ ...s, weight: 0 })
-    // Auto-distribute weights equally among all items
-    const count = selectedItems.value.length
-    const equalWeight = Math.round((100 / count) * 100) / 100 // 四捨五入到2位小數
-    selectedItems.value.forEach(item => {
-      item.weight = equalWeight
-    })
+    equalizeWeights()
   }
 }
 
 function removeSymbol(sym) {
   selectedItems.value = selectedItems.value.filter(i => i.symbol !== sym)
-  // Re-distribute weights equally among remaining items
-  if (selectedItems.value.length > 0) {
-    const count = selectedItems.value.length
-    const equalWeight = Math.round((100 / count) * 100) / 100
-    selectedItems.value.forEach(item => {
-      item.weight = equalWeight
-    })
-  }
+  equalizeWeights()
+}
+
+// ✅ 均勻分配權重
+function equalizeWeights() {
+  if (!selectedItems.value.length) return
+  const w = parseFloat((100 / selectedItems.value.length).toFixed(1))
+  selectedItems.value.forEach((item, idx) => {
+    item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
+  })
 }
 
 async function loadSymbols() {
