@@ -905,9 +905,9 @@ async function deleteSaved(id) {
 function loadSaved(p) {
   showSaved.value = false
   selectedItems.value = p.items.map(i => ({ ...i }))
-  btConfig.start_date = p.start_date
-  btConfig.end_date = p.end_date
-  btConfig.initial_amount = p.initial_amount
+  btConfig.start_date = p.start_date || '2020-01-01'
+  btConfig.end_date = p.end_date || new Date().toISOString().split('T')[0]
+  btConfig.initial_amount = p.initial_amount || 100000
   results.value = p.results_json
   currentLoadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name  // ✅ 記錄已加載的組合名稱
@@ -986,8 +986,8 @@ onMounted(async () => {
     try {
       const preset = JSON.parse(presetStr)
       selectedItems.value = preset.items
-      btConfig.start_date = preset.start_date
-      btConfig.end_date = preset.end_date
+      btConfig.start_date = preset.start_date || '2020-01-01'
+      btConfig.end_date = preset.end_date || new Date().toISOString().split('T')[0]
       sessionStorage.removeItem('backtest_preset') // clean up
       
       // Auto run backtest if valid

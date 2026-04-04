@@ -777,11 +777,9 @@ function loadSaved(p) {
     optConfig.start_date = p.start_date
     optConfig.end_date = p.end_date
   } else {
-    // 如果沒有日期，使用默認值（最近 5 年）
-    const today = new Date()
-    const fiveYearsAgo = new Date(today.getFullYear() - 5, today.getMonth(), today.getDate())
-    optConfig.end_date = today.toISOString().split('T')[0]
-    optConfig.start_date = fiveYearsAgo.toISOString().split('T')[0]
+    // 如果沒有日期，使用默認值 (2020-01-01)
+    optConfig.start_date = '2020-01-01'
+    optConfig.end_date = new Date().toISOString().split('T')[0]
   }
   
   // Only restore results if valid results_json exists
