@@ -170,37 +170,41 @@
         <!-- Left: config -->
         <div>
           <div class="glass-card mb-2">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>選擇資產 (最多 10 個)</h3></div>
+            <div class="p-4 border-b border-[var(--border-color)]">
+              <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <Target class="w-4 h-4 text-brand-500" />
+                配置資產
+              </h3>
+            </div>
             <div class="p-3 sm:p-4">
-              <!-- Quick symbol search -->
-              <div class="space-y-1 mb-2">
-                <label class="block text-sm font-medium text-muted">搜尋代碼或名稱</label>
-                <div class="relative">
-                  <input v-model="symbolSearch" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5 pr-10" placeholder="輸入 0050, SPY, BTC..." @keydown.enter="addSearchSymbol" />
-                  <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <Rocket class="w-4 h-4 text-muted" />
-                  </div>
+              <div class="space-y-3">
+                <!-- Symbol type tabs -->
+                <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                  <button v-for="t in symbolTypes" :key="t.value"
+                    :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                    @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
                 </div>
-              </div>
 
-              <!-- Symbol type tabs -->
-              <div class="flex gap-2 mb-6 overflow-x-auto scrollbar-none pb-1">
-                <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-muted border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
-                  @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
-              </div>
+                <!-- Quick symbol search -->
+                <div class="relative">
+                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
+                  <input v-model="symbolSearch" type="text" 
+                    class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
+                    placeholder="搜尋及點選資產..." 
+                    @keydown.enter="addSearchSymbol" />
+                </div>
 
-              <!-- Symbol list -->
-              <div class="max-h-40 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50">
-                <div v-for="s in filteredSymbols.slice(0, 1000)" :key="s.symbol"
-                :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
-                  @click="toggleSymbol(s)">
-                  <div class="flex flex-col flex-1 min-w-0 pr-4">
-                    <span class="font-bold text-sm text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
-                    <span class="text-xs text-muted truncate">{{ s.name }}</span>
-                  </div>
-                  <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-500 text-white shadow-sm">
-                    <Check class="w-3.5 h-3.5" />
+                <!-- Symbol list -->
+                <div class="h-48 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 custom-scrollbar">
+                  <div v-for="s in filteredSymbols.slice(0, 100)" :key="s.symbol"
+                    :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]']"
+                    @click="toggleSymbol(s)">
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-bold text-sm text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                      <span class="text-[10px] text-[var(--text-secondary)] truncate">{{ s.name }}</span>
+                    </div>
+                    <Plus v-if="!isSelected(s.symbol)" class="w-3 h-3 text-zinc-400" />
+                    <Check v-else class="w-3 h-3 text-brand-500" />
                   </div>
                 </div>
               </div>
@@ -233,8 +237,8 @@
         <div>
           <div class="glass-card mb-2 flex flex-col" style="max-height: 60vh;">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-              <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
-              <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
+              <h3>已選資產 ({{ selectedItems.length }})</h3>
+              <div class="text-sm" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'text-brand-600' : 'text-rose-600'">
                 總權重: {{ totalWeight.toFixed(1) }}%
               </div>
             </div>
@@ -261,15 +265,7 @@
                   </div>
                 </div>
                 <div class="w-full">
-                  <input 
-                    v-model.number="item.weight" 
-                    type="range" 
-                    min="1" 
-                    max="100" 
-                    step="1"
-                    class="w-full h-2 bg-[var(--border-color)]/20 rounded-lg appearance-none cursor-pointer accent-brand-500 weight-range-slider"
-                    @input="adjustWeights(item.symbol, item.weight)" 
-                  />
+                  <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
                 </div>
               </div>
 
@@ -483,7 +479,7 @@ import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { useBreakpoint } from '../composables/useBreakpoint'
-import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft } from 'lucide-vue-next'
+import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 
 const auth = useAuthStore()
