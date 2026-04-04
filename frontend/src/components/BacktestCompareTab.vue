@@ -440,7 +440,7 @@ const growthChartOption = computed(() => {
     },
     xAxis: {
       type: 'category', data: dates,
-      axisLabel: { fontSize: 10, color: '#8b949e', formatter: v => v.split('-')[0] },
+      axisLabel: { fontSize: 10, color: '#8b949e', formatter: v => v.substring(0, 7) },
       axisLine: axisLineStyle, splitLine: { show: false },
     },
     yAxis: {
@@ -568,7 +568,7 @@ const drawdownChartOption = computed(() => {
     },
     xAxis: {
       type: 'category', data: dates,
-      axisLabel: { fontSize: 10, color: '#8b949e', formatter: v => v.split('-')[0] },
+      axisLabel: { fontSize: 10, color: '#8b949e', formatter: v => v.substring(0, 7) },
       axisLine: axisLineStyle, splitLine: { show: false },
     },
     yAxis: {

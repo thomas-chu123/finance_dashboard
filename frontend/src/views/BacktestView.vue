@@ -736,12 +736,12 @@ const growthChartOption = computed(() => {
       nameLocation: 'middle',
       nameGap: 35,
       data: dates, 
-      axisLabel: { 
-        fontSize: 10, 
-        color: '#8b949e', 
-        interval: Math.floor(dates.length / 8),
-        formatter: (value) => value.split('-')[0]
-      }, 
+      axisLabel: {
+          fontSize: 10,
+          color: '#8b949e',
+          interval: Math.floor(dates.length / 8),
+          formatter: (value) => value.substring(0, 7)
+        }, 
       axisLine: { lineStyle: { color: 'transparent' } },
       splitLine: { show: false }
     },
@@ -796,7 +796,17 @@ const drawdownChartOption = computed(() => {
     backgroundColor: 'transparent',
     textStyle: { color: '#e6edf3' },
     grid: { left: 60, right: 20, top: 10, bottom: 40 },
-    xAxis: { type: 'category', data: dates, axisLabel: { fontSize: 10, color: '#8b949e', interval: Math.floor(dates.length / 6) }, axisLine: { lineStyle: { color: '#30363d' } } },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      axisLabel: {
+        fontSize: 10,
+        color: '#8b949e',
+        interval: Math.floor(dates.length / 6),
+        formatter: (value) => value.substring(0, 7)
+      },
+      axisLine: { lineStyle: { color: '#30363d' } }
+    },
     yAxis: { type: 'value', axisLabel: { formatter: v => v + '%', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } }, max: 0 },
     tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${p[0].axisValue}<br/>回撤：${p[0].value}%` },
     series: [{
