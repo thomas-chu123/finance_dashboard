@@ -6,6 +6,7 @@ import logging
 import time
 from typing import List, Dict, Any, Optional
 from app.services.market_data import get_historical_prices, get_symbol_currency
+from app.utils import sanitize_data
 
 
 RISK_FREE_RATE = 0.02  # 2% annual
@@ -275,7 +276,7 @@ async def run_backtest(
 
 
     logger.info(f"[Backtest] Completed backtest for {len(symbols)} symbols in {time.time() - overall_start:.2f}s")
-    return {
+    result = {
         "metrics": {
             "initial_amount": round(initial_amount, 2),
             "final_amount": round(float(port_value.iloc[-1]), 2),
@@ -310,3 +311,4 @@ async def run_backtest(
             "end": str(df.index[-1].date()),
         },
     }
+    return sanitize_data(result)

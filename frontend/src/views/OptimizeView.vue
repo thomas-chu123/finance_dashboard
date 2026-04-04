@@ -123,7 +123,28 @@
     </div>
 
     <!-- Optimization Config -->
-    <div v-if="!showSaved" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
+    <div v-if="!showSaved">
+      <!-- Loaded notification (Same as BacktestView) -->
+      <div v-if="loadedPortfolioId" class="mb-6">
+        <div class="flex items-center justify-between p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-sm shadow-brand-500/20">
+              <FolderOpen class="w-4 h-4" />
+            </div>
+            <div>
+              <div class="text-[10px] sm:text-xs text-brand-600 font-bold uppercase tracking-wider">已加載組合</div>
+              <div class="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{{ loadedPortfolioName }}</div>
+            </div>
+          </div>
+          <button
+            class="p-2 text-muted hover:text-rose-600 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"
+            @click="loadedPortfolioId = null; loadedPortfolioName = ''; loadedPortfolioType = null; saveName = ''">
+            <X class="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <!-- Left: Asset selection -->
       <div>
         <div class="glass-card mb-2">
@@ -220,29 +241,36 @@
               </div>
             </div>
 
-            <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
-              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
-                <Scale class="w-4 h-4 mr-2 inline" />平均分配
-              </button>
-              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="runOptimization" :disabled="selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5">
+            <div v-if="selectedItems.length > 1" class="mt-6 space-y-3">
+              <div class="flex gap-4">
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg flex-1" @click="equalizeWeights">
+                  <Scale class="w-4 h-4 mr-2 inline" />平均分配
+                </button>
+                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg flex-1" @click="showSaveModal = true">
+                  <Save class="w-4 h-4 mr-2 inline" />儲存組合
+                </button>
+              </div>
+              <button 
+                class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full disabled:opacity-50" 
+                @click="runOptimization" 
+                :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
+              >
                 <Zap class="w-4 h-4 mr-2 inline" />開始優化
               </button>
             </div>
-            <div v-else-if="selectedItems.length === 1" class="mt-4">
-              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" disabled>
-                請至少選擇 2 個資產
+            <div v-else-if="selectedItems.length === 1" class="mt-6 flex flex-col gap-3">
+              <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg w-full" @click="showSaveModal = true">
+                <Save class="w-4 h-4 mr-2 inline" />儲存組合
               </button>
+              <div class="text-xs text-rose-500 text-center">
+                請至少選擇 2 個資產才可進行優化
+              </div>
             </div>
 
             <!-- Error message -->
             <div v-if="optError" class="p-3 mt-4 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
 
-            <!-- Save and run buttons -->
-            <div v-if="results" class="mt-6 flex gap-3">
-              <button class="flex-1 flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" @click="showSaveModal = true" :disabled="savingOptimization">
-                <Save class="w-4 h-4 mr-2" />儲存方案
-              </button>
-            </div>
+
 
             <!-- Loading indicator -->
             <div v-if="runLoading" class="mt-6 p-4 text-center text-[var(--text-muted)]">
@@ -255,6 +283,7 @@
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Optimization Results -->
     <div v-if="!showSaved && results" class="mt-6 space-y-6">
@@ -760,6 +789,7 @@ function loadSaved(p) {
   // ✅ 記錄載入的組合 ID 用於自動儲存
   loadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name
+  saveName.value = p.name // ✅ 同步儲存名稱以便快速儲存
   loadedPortfolioType.value = p.portfolio_type  // ✅ 記錄組合類型
   // Switch to config panel immediately
   showSaved.value = false
