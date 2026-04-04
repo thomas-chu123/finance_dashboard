@@ -231,14 +231,14 @@
 
         <!-- Right: selected + weights -->
         <div>
-          <div class="glass-card mb-2">
+          <div class="glass-card mb-2 flex flex-col" style="max-height: 60vh;">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
               <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
               <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
                 總權重: {{ totalWeight.toFixed(1) }}%
               </div>
             </div>
-            <div class="p-3 sm:p-4">
+            <div class="p-3 sm:p-4 overflow-y-auto flex-1">
               <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
                 請從左側選擇資產
               </div>
@@ -273,40 +273,43 @@
                 </div>
               </div>
 
-              <div v-if="selectedItems.length > 1" class="mt-6 flex gap-4">
-                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
-                  <Scale class="w-4 h-4 mr-2 inline" />平均分配
-                </button>
-                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="showSaveModal = true">
-                  <Save class="w-4 h-4 mr-2 inline" />儲存組合
-                </button>
-              </div>
-              <div v-else-if="selectedItems.length === 1" class="mt-4">
-                <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="width:100%;" @click="showSaveModal = true">
-                  <Save class="w-4 h-4 mr-2 inline" />儲存組合
+
+              <div v-if="selectedItems.length > 0" class="mt-6 flex flex-col gap-3">
+                <div v-if="selectedItems.length > 1" class="flex gap-4">
+                  <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="equalizeWeights">
+                    <Scale class="w-4 h-4 mr-2 inline" />平均分配
+                  </button>
+                  <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg" style="flex:1;" @click="showSaveModal = true">
+                    <Save class="w-4 h-4 mr-2 inline" />儲存組合
+                  </button>
+                </div>
+                <div v-else class="flex">
+                  <button class="px-3 py-1.5 text-sm font-medium text-muted border border-[var(--border-color)] hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors rounded-lg w-full" @click="showSaveModal = true">
+                    <Save class="w-4 h-4 mr-2 inline" />儲存組合
+                  </button>
+                </div>
+
+                <div v-if="backtestError" class="p-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ backtestError }}</div>
+
+                <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 shadow-sm animate-pulse">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm fw-600 text-[var(--text-primary)]">
+                      <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
+                    </span>
+                    <span class="text-xs text-accent fw-700">{{ Math.floor(runProgress) }}%</span>
+                  </div>
+                  <div class="h-2 bg-[var(--bg-sidebar)] rounded-full overflow-hidden relative">
+                    <div class="h-full bg-brand-500 rounded-full transition-all duration-300" :style="{ width: runProgress + '%' }"></div>
+                  </div>
+                </div>
+
+                <button v-else class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" @click="runBacktest"
+                  :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5">
+                  <Play class="w-4 h-4 mr-2 inline" />執行回測
                 </button>
               </div>
             </div>
           </div>
-
-          <div v-if="backtestError" class="p-3 mb-3 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">{{ backtestError }}</div>
-
-          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 mb-3 shadow-sm animate-pulse">
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm fw-600 text-[var(--text-primary)]">
-                <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
-              </span>
-              <span class="text-xs text-accent fw-700">{{ Math.floor(runProgress) }}%</span>
-            </div>
-            <div class="h-2 bg-[var(--bg-sidebar)] rounded-full overflow-hidden relative">
-              <div class="h-full bg-brand-500 rounded-full transition-all duration-300" :style="{ width: runProgress + '%' }"></div>
-            </div>
-          </div>
-
-          <button v-else class="px-5 py-3 bg-brand-500 hover:bg-brand-600 text-white text-base font-medium rounded-lg transition-colors shadow-sm w-full" style="width:100%;" @click="runBacktest"
-            :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5">
-            <Play class="w-4 h-4 mr-2 inline" />執行回測
-          </button>
         </div>
       </div>
 
