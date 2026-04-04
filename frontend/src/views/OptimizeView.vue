@@ -126,20 +126,20 @@
     <div v-if="!showSaved">
       <!-- Loaded notification (Same as BacktestView) -->
       <div v-if="loadedPortfolioId" class="mb-6">
-        <div class="flex items-center justify-between p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl">
+        <div class="flex items-center justify-between p-4 bg-brand-500/5 backdrop-blur-md border border-brand-500/20 rounded-2xl">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-sm shadow-brand-500/20">
-              <FolderOpen class="w-4 h-4" />
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+              <FolderOpen class="w-5 h-5" />
             </div>
             <div>
-              <div class="text-[10px] sm:text-xs text-brand-600 font-bold uppercase tracking-wider">已加載組合</div>
-              <div class="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{{ loadedPortfolioName }}</div>
+              <div class="text-[10px] sm:text-xs text-brand-600 font-bold uppercase tracking-widest opacity-80">已加載優化組合</div>
+              <div class="text-xs sm:text-base font-bold text-[var(--text-primary)]">{{ loadedPortfolioName }}</div>
             </div>
           </div>
           <button
-            class="p-2 text-muted hover:text-rose-600 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20"
+            class="p-2 text-muted hover:text-rose-600 transition-all rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20"
             @click="loadedPortfolioId = null; loadedPortfolioName = ''; loadedPortfolioType = null; saveName = ''">
-            <X class="w-4 h-4" />
+            <X class="w-5 h-5" />
           </button>
         </div>
       </div>

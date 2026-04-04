@@ -146,6 +146,26 @@
 
     <!-- Backtest runner -->
     <div v-else>
+      <!-- Loaded notification -->
+      <div v-if="currentLoadedPortfolioId" class="mb-6">
+        <div class="flex items-center justify-between p-4 bg-brand-500/5 backdrop-blur-md border border-brand-500/20 rounded-2xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+              <FolderOpen class="w-5 h-5" />
+            </div>
+            <div>
+              <div class="text-[10px] sm:text-xs text-brand-600 font-bold uppercase tracking-widest opacity-80">已加載回測組合</div>
+              <div class="text-xs sm:text-base font-bold text-[var(--text-primary)]">{{ loadedPortfolioName }}</div>
+            </div>
+          </div>
+          <button
+            class="p-2 text-muted hover:text-rose-600 transition-all rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20"
+            @click="currentLoadedPortfolioId = null; loadedPortfolioName = ''; loadedPortfolioType = null; saveName = ''">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
         <!-- Left: config -->
         <div>
@@ -486,6 +506,7 @@ const showSaveModal = ref(false)
 const saveName = ref('')
 const currentLoadedPortfolioId = ref(null)
 const loadedPortfolioName = ref('')  // ✅ 追蹤已加載的組合名稱
+const loadedPortfolioType = ref(null) // ✅ 追蹤已加載的組合類型
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -539,6 +560,8 @@ function removeSymbol(sym) {
   equalizeWeights()
   if (selectedItems.value.length === 0) {
     currentLoadedPortfolioId.value = null
+    loadedPortfolioName.value = ''
+    loadedPortfolioType.value = null
     saveName.value = ''
   }
 }
@@ -889,6 +912,7 @@ function loadSaved(p) {
   currentLoadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name  // ✅ 記錄已加載的組合名稱
   saveName.value = p.name
+  loadedPortfolioType.value = p.portfolio_type // ✅ 紀錄類別
   
   // ✅ 如果 load 的組合沒有 metrics，自動執行重新計算
   if (!p.results_json?.metrics) {

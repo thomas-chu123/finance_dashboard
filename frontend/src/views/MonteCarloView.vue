@@ -123,7 +123,28 @@
     </div>
 
     <!-- Configuration Panel -->
-    <div v-if="!showSaved" class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
+    <div v-if="!showSaved">
+      <!-- Loaded notification -->
+      <div v-if="loadedPortfolioId" class="mb-6">
+        <div class="flex items-center justify-between p-4 bg-brand-500/5 backdrop-blur-md border border-brand-500/20 rounded-2xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+              <FolderOpen class="w-5 h-5" />
+            </div>
+            <div>
+              <div class="text-[10px] sm:text-xs text-brand-600 font-bold uppercase tracking-widest opacity-80">已加載模擬組合</div>
+              <div class="text-xs sm:text-base font-bold text-[var(--text-primary)]">{{ loadedPortfolioName }}</div>
+            </div>
+          </div>
+          <button
+            class="p-2 text-muted hover:text-rose-600 transition-all rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/20"
+            @click="loadedPortfolioId = null; loadedPortfolioName = ''; loadedPortfolioType = null; saveName = ''">
+            <X class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
       <!-- Asset Selection (Left) -->
       <div class="space-y-4">
         <div class="glass-card flex flex-col">
@@ -167,7 +188,7 @@
       </div>
 
       <!-- Right: selected assets weights + simulation parameters -->
-      <div class="space-y-4" style="max-height: 70vh; overflow-y-auto;">
+      <div class="space-y-4" style="max-height:70vh; overflow-y:auto;">
         <!-- Selected Assets Weights Card (like OptimizeView) -->
         <div class="glass-card flex flex-col" style="max-height: 25vh;">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
@@ -341,6 +362,7 @@
         </div>
       </div>
     </div>
+  </div>
 
     <!-- Charts Section -->
     <div v-if="results && !showSaved" class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
@@ -694,6 +716,7 @@ function loadSaved(p) {
   // ✅ 記錄載入的組合 ID 用於自動儲存
   loadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name
+  saveName.value = p.name // ✅ 同步名稱以便快速儲存
   loadedPortfolioType.value = p.portfolio_type  // ✅ 記錄組合類型
   // Switch to config panel immediately
   showSaved.value = false
