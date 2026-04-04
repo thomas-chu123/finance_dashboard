@@ -196,7 +196,7 @@
                 :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)]/20 last:border-0 symbol-item', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--bg-sidebar)]/80', { 'opacity-40 cursor-not-allowed': selectedItems.length >= 10 && !isSelected(s.symbol) }]"
                   @click="toggleSymbol(s)">
                   <div class="flex flex-col flex-1 min-w-0 pr-4">
-                    <span class="font-bold text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                    <span class="font-bold text-sm text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
                     <span class="text-xs text-muted truncate">{{ s.name }}</span>
                   </div>
                   <div v-if="isSelected(s.symbol)" class="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-brand-500 text-white shadow-sm">
@@ -249,7 +249,7 @@
                       {{ item.symbol.substring(0, 2) }}
                     </div>
                     <div class="flex flex-col">
-                      <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                      <div class="font-bold text-sm text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
                       <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
                     </div>
                   </div>
