@@ -145,181 +145,183 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
-      <!-- Asset Selection (Left) -->
-      <div class="space-y-4">
-        <div class="glass-card flex flex-col">
-          <div class="p-4 border-b border-[var(--border-color)]">
-            <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-              <Target class="w-4 h-4 text-brand-500" />
-              配置資產
-            </h3>
-          </div>
-          <div class="p-4 flex-1 flex flex-col space-y-4">
-            <!-- Asset Selection UI -->
-            <div class="space-y-3">
-              <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-                <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
-                  @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
-              </div>
-              
-              <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
-                <input v-model="symbolSearch" type="text" 
-                  class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
-                  placeholder="搜尋及點選資產..." />
-              </div>
-
-              <div class="h-48 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 custom-scrollbar">
-                <div v-for="s in filteredSymbols.slice(0, 100)" :key="s.symbol"
-                  :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]']"
-                  @click="toggleSymbol(s)">
-                  <div class="flex flex-col min-w-0">
-                    <span class="font-bold text-xs text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
-                    <span class="text-[10px] text-[var(--text-secondary)] truncate">{{ s.name }}</span>
-                  </div>
-                  <Plus v-if="!isSelected(s.symbol)" class="w-3 h-3 text-zinc-400" />
-                  <Check v-else class="w-3 h-3 text-brand-500" />
+        <!-- Left Column -->
+        <div class="space-y-4">
+          <!-- Asset Selection -->
+          <div class="glass-card flex flex-col">
+            <div class="p-4 border-b border-[var(--border-color)]">
+              <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <Target class="w-4 h-4 text-brand-500" />
+                配置資產
+              </h3>
+            </div>
+            <div class="p-4 flex-1 flex flex-col space-y-4">
+              <!-- Asset Selection UI -->
+              <div class="space-y-3">
+                <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+                  <button v-for="t in symbolTypes" :key="t.value"
+                    :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                    @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right: selected assets weights + simulation parameters -->
-      <div class="space-y-4" style="max-height:70vh; overflow-y:auto;">
-        <!-- Selected Assets Weights Card (like OptimizeView) -->
-        <div class="glass-card flex flex-col" style="max-height: 25vh;">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-            <h3>已選資產 ({{ selectedItems.length }})</h3>
-            <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
-              總權重: {{ totalWeight.toFixed(1) }}%
-            </div>
-          </div>
-          <div class="p-3 sm:p-4 overflow-y-auto flex-1">
-            <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
-              請從左側選擇資產
-            </div>
-            <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
-                    {{ item.symbol.substring(0, 2) }}
-                  </div>
-                  <div class="flex flex-col">
-                    <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
-                    <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-4">
-                  <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
-                  <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
-                    <X class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <div class="w-full">
-                <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Simulation Parameters -->
-        <div class="glass-card flex flex-col">
-          <div class="p-4 border-b border-[var(--border-color)]">
-            <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-              <Dice5 class="w-4 h-4 text-brand-500" />
-              模擬參數設定
-            </h3>
-          </div>
-          <div class="p-6 space-y-6 flex-1 overflow-y-auto">
-            <div class="space-y-4">
-              <div class="space-y-1.5">
-                <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 (USD/TWD)</label>
+                
                 <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
-                  <input v-model.number="config.initial_amount" type="number" 
-                    class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 pl-8 pr-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
+                  <input v-model="symbolSearch" type="text" 
+                    class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
+                    placeholder="搜尋及點選資產..." />
                 </div>
-              </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬年數</label>
-                  <input v-model.number="config.years" type="number" 
-                    class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬次數</label>
-                  <select v-model.number="config.simulations" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)] h-10">
-                    <option :value="1000">1,000 次</option>
-                    <option :value="5000">5,000 次</option>
-                    <option :value="10000">10,000 次</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年投入金額 (+)</label>
-                  <input v-model.number="config.annual_contribution" type="number" 
-                    class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                </div>
-                <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年取百分比 (%)</label>
-                  <div class="relative">
-                    <input v-model.number="config.annual_withdrawal" type="number" step="0.1"
-                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 pr-8 pl-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">%</span>
+                <div class="h-48 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 custom-scrollbar">
+                  <div v-for="s in filteredSymbols.slice(0, 100)" :key="s.symbol"
+                    :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]']"
+                    @click="toggleSymbol(s)">
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-bold text-xs text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
+                      <span class="text-[10px] text-[var(--text-secondary)] truncate">{{ s.name }}</span>
+                    </div>
+                    <Plus v-if="!isSelected(s.symbol)" class="w-3 h-3 text-zinc-400" />
+                    <Check v-else class="w-3 h-3 text-brand-500" />
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="pt-6 border-t border-[var(--border-color)] space-y-4">
-              <div class="flex items-center justify-between">
-                <label class="text-sm font-medium text-[var(--text-primary)]">考慮通膨影響</label>
-                <label class="flex items-center cursor-pointer gap-2">
-                  <input type="checkbox" v-model="config.adjust_for_inflation" class="w-5 h-5 rounded accent-brand-500 cursor-pointer" />
-                </label>
-              </div>
-              
-              <div v-if="config.adjust_for_inflation" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+          <!-- Simulation Parameters -->
+          <div class="glass-card flex flex-col">
+            <div class="p-4 border-b border-[var(--border-color)]">
+              <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
+                <Dice5 class="w-4 h-4 text-brand-500" />
+                模擬參數設定
+              </h3>
+            </div>
+            <div class="p-6 space-y-6 flex-1 overflow-y-auto">
+              <div class="space-y-4">
                 <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">平均通膨率</label>
+                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 (USD/TWD)</label>
                   <div class="relative">
-                    <input v-model.number="config.inflation_mean" type="number" step="0.01"
-                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 px-3 text-xs font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">%</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                    <input v-model.number="config.initial_amount" type="number" 
+                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 pl-8 pr-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
                   </div>
                 </div>
-                <div class="space-y-1.5">
-                  <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">通膨波動度</label>
-                  <div class="relative">
-                    <input v-model.number="config.inflation_std" type="number" step="0.01"
-                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 px-3 text-xs font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">%</span>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬年數</label>
+                    <input v-model.number="config.years" type="number" 
+                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
                   </div>
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬次數</label>
+                    <select v-model.number="config.simulations" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)] h-10">
+                      <option :value="1000">1,000 次</option>
+                      <option :value="5000">5,000 次</option>
+                      <option :value="10000">10,000 次</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年投入金額 (+)</label>
+                    <input v-model.number="config.annual_contribution" type="number" 
+                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年取百分比 (%)</label>
+                    <div class="relative">
+                      <input v-model.number="config.annual_withdrawal" type="number" step="0.1"
+                        class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 pr-8 pl-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-6 border-t border-[var(--border-color)] space-y-4">
+                <div class="flex items-center justify-between">
+                  <label class="text-sm font-medium text-[var(--text-primary)]">考慮通膨影響</label>
+                  <label class="flex items-center cursor-pointer gap-2">
+                    <input type="checkbox" v-model="config.adjust_for_inflation" class="w-5 h-5 rounded accent-brand-500 cursor-pointer" />
+                  </label>
+                </div>
+                
+                <div v-if="config.adjust_for_inflation" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">平均通膨率</label>
+                    <div class="relative">
+                      <input v-model.number="config.inflation_mean" type="number" step="0.01"
+                        class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 px-3 text-xs font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">%</span>
+                    </div>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">通膨波動度</label>
+                    <div class="relative">
+                      <input v-model.number="config.inflation_std" type="number" step="0.01"
+                        class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 px-3 text-xs font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                @click="runSimulation"
+                :disabled="loading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5"
+                class="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
+                <Play v-else class="w-4 h-4 fill-current" />
+                {{ loading ? '模擬運算中...' : '開始模擬分析' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-4" style="max-height:70vh; overflow-y:auto;">
+          <!-- Selected Assets Weights Card -->
+          <div class="glass-card flex flex-col" style="max-height: 60vh;">
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
+              <h3>已選資產 ({{ selectedItems.length }})</h3>
+              <div class="text-sm" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'text-brand-600' : 'text-rose-600'">
+                總權重: {{ totalWeight.toFixed(1) }}%
+              </div>
+            </div>
+            <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+              <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
+                請從左側選擇資產
+              </div>
+              <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase">
+                      {{ item.symbol.substring(0, 2) }}
+                    </div>
+                    <div class="flex flex-col">
+                      <div class="font-bold text-[var(--text-primary)] leading-tight">{{ item.symbol }}</div>
+                      <div class="text-[10px] text-muted uppercase tracking-wider leading-tight">{{ item.name }}</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                    <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
+                      <X class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div class="w-full">
+                  <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
                 </div>
               </div>
             </div>
-
-            <button 
-              @click="runSimulation"
-              :disabled="loading || selectedItems.length === 0 || totalWeight !== 100"
-              class="w-full bg-brand-500 hover:bg-brand-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-              <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
-              <Play v-else class="w-4 h-4 fill-current" />
-              {{ loading ? '模擬運算中...' : '開始模擬分析' }}
-            </button>
           </div>
         </div>
       </div>
 
-      <!-- Results Summary (spans full width) -->
-      <div v-if="results" class="lg:col-start-2 space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+      <!-- Results Summary -->
+      <div v-if="results" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500 mt-6">
         <div class="glass-card bg-brand-500/10 border-brand-500/20">
           <div class="p-6 text-center">
             <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">投資成功率</h4>
@@ -361,8 +363,7 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </div> <!-- Closes v-if="!showSaved" -->
 
     <!-- Charts Section -->
     <div v-if="results && !showSaved" class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
