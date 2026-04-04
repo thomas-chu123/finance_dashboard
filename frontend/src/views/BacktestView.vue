@@ -312,46 +312,46 @@
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
-            <div :class="['text-xl font-bold', (results.metrics.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
-              {{ results.metrics.cagr }}%
+            <div :class="['text-xl font-bold', (results?.metrics?.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
+              {{ results?.metrics?.cagr ?? '--' }}{{ results?.metrics?.cagr !== undefined ? '%' : '' }}
             </div>
           </div>
           <!-- Sharpe -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SHARPE RATIO</div>
-            <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results.metrics.sharpe_ratio }}</div>
+            <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results?.metrics?.sharpe_ratio ?? '--' }}</div>
           </div>
           <!-- Sortino -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SORTINO RATIO</div>
-            <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results.metrics.sortino_ratio }}</div>
+            <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results?.metrics?.sortino_ratio ?? '--' }}</div>
           </div>
           <!-- Beta -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">BETA</div>
-            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results.metrics.beta }}</div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.beta ?? '--' }}</div>
           </div>
           <!-- Max Drawdown -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">MAX DRAWDOWN</div>
-            <div class="text-xl font-bold text-brand-600">{{ results.metrics.max_drawdown }}%</div>
+            <div class="text-xl font-bold text-brand-600">{{ results?.metrics?.max_drawdown ?? '--' }}{{ results?.metrics?.max_drawdown !== undefined ? '%' : '' }}</div>
           </div>
           <!-- Volatility -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VOLATILITY (STD)</div>
-            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results.metrics.annual_std }}%</div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.annual_std ?? '--' }}{{ results?.metrics?.annual_std !== undefined ? '%' : '' }}</div>
           </div>
           <!-- VaR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VAR (95%)</div>
-            <div class="text-xl font-bold text-orange-500">{{ results.metrics.var_95 }}%</div>
+            <div class="text-xl font-bold text-orange-500">{{ results?.metrics?.var_95 ?? '--' }}{{ results?.metrics?.var_95 !== undefined ? '%' : '' }}</div>
           </div>
           <!-- Final Amount -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">FINAL AMOUNT</div>
-            <div class="text-xl font-bold text-rose-600">${{ (results.metrics.final_amount || 0).toLocaleString() }}</div>
-            <div class="text-[10px] font-medium" :class="(results.metrics.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
-              RETURN: {{ results.metrics.total_return }}%
+            <div class="text-xl font-bold text-rose-600">${{ (results?.metrics?.final_amount ?? 0).toLocaleString() }}</div>
+            <div class="text-[10px] font-medium" :class="(results?.metrics?.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
+              RETURN: {{ results?.metrics?.total_return ?? '--' }}{{ results?.metrics?.total_return !== undefined ? '%' : '' }}
             </div>
           </div>
         </div>
@@ -401,7 +401,7 @@
         <div class="glass-card mb-6" v-if="results.drawdown_series">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
             <h3>回撤曲線 (Drawdown)</h3>
-            <span class="text-sm text-muted">最大回撤：<span class="text-brand-600 fw-600">{{ results.metrics.max_drawdown }}%</span></span>
+            <span class="text-sm text-muted">最大回撤：<span class="text-brand-600 fw-600">{{ results?.metrics?.max_drawdown ?? '--' }}%</span></span>
           </div>
           <div class="p-4 sm:p-6" style="height:240px;">
             <v-chart :option="drawdownChartOption" autoresize style="height:100%;" />
@@ -885,10 +885,19 @@ function loadSaved(p) {
   btConfig.start_date = p.start_date
   btConfig.end_date = p.end_date
   btConfig.initial_amount = p.initial_amount
-  if (p.results_json) results.value = p.results_json
+  results.value = p.results_json
   currentLoadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name  // ✅ 記錄已加載的組合名稱
   saveName.value = p.name
+  
+  // ✅ 如果 load 的組合沒有 metrics，自動執行重新計算
+  if (!p.results_json?.metrics) {
+    console.log('[DEBUG] Missing metrics, auto-running backtest...');
+    // 延遲一點點執行以確保 UI 已經切換
+    setTimeout(() => {
+      runBacktest();
+    }, 100);
+  }
 }
 
 async function saveBacktest() {
