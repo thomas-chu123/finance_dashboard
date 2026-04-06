@@ -768,22 +768,24 @@ async function handleSave() {
       notes: data.notes
     })
     
-    // Handle trigger_price based on trigger_mode
-    if (form.trigger_mode !== 'price') {
-      console.log('[TrackingView.handleSave] 非 price 模式: 移除 trigger_price 和 trigger_direction')
-      delete data.trigger_price
-      delete data.trigger_direction
-    } else {
-      console.log('[TrackingView.handleSave] Price 模式: 移除 RSI 參數')
-      if (!data.trigger_price) delete data.trigger_price
+    // 根據觸發模式決定要保留/刪除哪些參數
+    if (form.trigger_mode === 'price') {
+      // Price 模式：只需要 trigger_price，刪除 RSI 參數
+      console.log('[TrackingView.handleSave] Price 模式: 保留 trigger_price，刪除 RSI 參數')
       delete data.rsi_period
       delete data.rsi_below
       delete data.rsi_above
-    }
-    
-    // If both mode, keep both sets of parameters
-    if (form.trigger_mode === 'both') {
-      console.log('[TrackingView.handleSave] Both 模式: 保留所有參數')
+    } else if (form.trigger_mode === 'rsi') {
+      // RSI 模式：只需要 RSI 參數，刪除 price 相關參數
+      console.log('[TrackingView.handleSave] RSI 模式: 保留 RSI 參數，刪除 trigger_price')
+      delete data.trigger_price
+      delete data.trigger_direction
+    } else if (form.trigger_mode === 'both') {
+      // 'both' 模式：保留所有參數（同時滿足 price 和 RSI 條件）
+      console.log('[TrackingView.handleSave] 價格及RSI 模式: 保留所有參數(AND邏輯)')
+    } else if (form.trigger_mode === 'either') {
+      // 'either' 模式：保留所有參數（滿足 price 或 RSI 任一條件）
+      console.log('[TrackingView.handleSave] 價格或RSI 模式: 保留所有參數(OR邏輯)')
     }
     
     console.log('[TrackingView.handleSave] 最終提交數據:', data)
