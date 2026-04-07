@@ -5,6 +5,7 @@ from app.models import RegisterRequest, LoginRequest, TokenResponse
 from app.database import get_supabase
 from app.security import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.services.portfolio_template_service import init_user_default_portfolios
+
 import uuid
 import logging
 
@@ -39,17 +40,16 @@ async def register(body: RegisterRequest):
         if not insert_res.data:
             logger.error(f"Registration failed: Profile creation failed for {body.email}")
             raise HTTPException(status_code=400, detail="Registration failed during profile creation")
-            
-        logger.info(f"Registration successful for: {body.email} (ID: {new_user_id})")
         
-        # 🎯 初始化預設投資組合模板
+        # Initialize default portfolios for new user
         try:
             portfolio_ids = init_user_default_portfolios(new_user_id)
             logger.info(f"Initialized {len(portfolio_ids)} default portfolios for user {new_user_id}")
         except Exception as e:
-            logger.error(f"Failed to initialize default portfolios: {str(e)}", exc_info=True)
-            # 不拋出異常，允許使用者註冊成功，即使初始化預設投資組合失敗
+            logger.warning(f"Failed to initialize default portfolios for user {new_user_id}: {str(e)}")
             
+        logger.info(f"Registration successful for: {body.email} (ID: {new_user_id})")
+
         return {"message": "Registration successful", "user_id": new_user_id}
     except Exception as e:
         if isinstance(e, HTTPException):
