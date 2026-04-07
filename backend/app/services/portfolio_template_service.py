@@ -11,13 +11,35 @@ def get_all_templates() -> List[Dict[str, Any]]:
     """Get all available portfolio templates."""
     try:
         sb = get_supabase()
-        res = sb.table("portfolio_templates_with_items").select("*").execute()
-        if not res.data:
+        # Query directly from portfolio_templates table instead of view
+        # to avoid potential RLS issues with views
+        templates_res = (
+            sb.table("portfolio_templates")
+            .select("id, name, description, display_order")
+            .eq("is_active", True)
+            .order("display_order", desc=False)
+            .execute()
+        )
+        
+        if not templates_res.data:
+            logger.warning("No active templates found")
             return []
-        return sorted(res.data, key=lambda x: x.get('display_order', 0))
+        
+        templates = []
+        for template in templates_res.data:
+            template_dict = {
+                "template_id": template.get("id"),
+                "template_name": template.get("name"),
+                "description": template.get("description"),
+                "display_order": template.get("display_order"),
+            }
+            templates.append(template_dict)
+        
+        logger.info(f"Retrieved {len(templates)} active templates")
+        return templates
     except Exception as e:
         logger.error(f"Failed to get templates: {str(e)}", exc_info=True)
-        raise
+        return []
 
 
 def copy_template_to_user(user_id: str, template_id: str, portfolio_name: Optional[str] = None) -> str:
@@ -91,24 +113,32 @@ def init_user_default_portfolios(user_id: str) -> List[str]:
     try:
         logger.info(f"Initializing portfolios for user {user_id}")
         templates_data = get_all_templates()
+        
+        if not templates_data:
+            logger.warning(f"No templates found to initialize for user {user_id}")
+            return []
+        
         created_portfolio_ids = []
         
         for template_data in templates_data:
             try:
                 template_id = template_data.get("template_id")
                 if not template_id:
+                    logger.warning(f"Template has no ID: {template_data}")
                     continue
                 
+                logger.info(f"Creating portfolio from template {template_id} for user {user_id}")
                 portfolio_id = copy_template_to_user(user_id=user_id, template_id=template_id)
                 created_portfolio_ids.append(portfolio_id)
+                logger.info(f"Successfully created portfolio {portfolio_id}")
                 
             except Exception as e:
-                logger.error(f"Failed to create portfolio: {str(e)}")
+                logger.error(f"Failed to create portfolio from template {template_data.get('template_id')}: {str(e)}", exc_info=True)
                 continue
         
-        logger.info(f"Initialized {len(created_portfolio_ids)} portfolios")
+        logger.info(f"Initialized {len(created_portfolio_ids)} portfolios for user {user_id}")
         return created_portfolio_ids
         
     except Exception as e:
-        logger.error(f"Failed to initialize: {str(e)}", exc_info=True)
+        logger.error(f"Failed to initialize portfolios for user {user_id}: {str(e)}", exc_info=True)
         return []
