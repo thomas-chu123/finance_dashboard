@@ -8,6 +8,13 @@
 
       <!-- Body -->
       <div class="p-6 space-y-4">
+        <!-- Error Alert (if any) -->
+        <div v-if="deleteError" class="p-4 rounded-lg bg-red-500/20 border border-red-500/50">
+          <p class="text-sm text-red-600 dark:text-red-400">
+            ❌ {{ deleteError }}
+          </p>
+        </div>
+
         <!-- Warning Alert -->
         <div class="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
           <p class="text-sm text-red-600 dark:text-red-400 font-medium mb-2">
@@ -78,8 +85,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAdminStore } from '../stores/admin'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -89,15 +95,15 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'deleted'])
 
-const auth = useAuthStore()
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : window.location.origin)
-
+const admin = useAdminStore()
 const confirmText = ref('')
 const isDeleting = ref(false)
+const deleteError = ref(null)
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     confirmText.value = ''
+    deleteError.value = null
   }
 })
 
@@ -105,16 +111,18 @@ const confirmDelete = async () => {
   if (!props.user || confirmText.value !== props.user.display_name) return
 
   isDeleting.value = true
+  deleteError.value = null
   try {
-    await axios.delete(`${API_BASE}/api/admin/users/${props.user.id}`, {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    })
-
-    emit('deleted')
-    close()
+    const success = await admin.deleteUserAPI(props.user.id)
+    if (success) {
+      emit('deleted')
+      close()
+    } else {
+      deleteError.value = admin.error || '刪除失敗，請稍後重試'
+    }
   } catch (error) {
     console.error('刪除失敗:', error)
-    alert('刪除失敗: ' + (error.response?.data?.detail || error.message))
+    deleteError.value = error.message || '刪除失敗，請稍後重試'
   } finally {
     isDeleting.value = false
   }
@@ -122,6 +130,7 @@ const confirmDelete = async () => {
 
 const close = () => {
   confirmText.value = ''
+  deleteError.value = null
   emit('close')
 }
 </script>

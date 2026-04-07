@@ -8,6 +8,13 @@
 
       <!-- Body -->
       <div class="p-6 space-y-4">
+        <!-- Error Alert (if any) -->
+        <div v-if="saveError" class="p-4 rounded-lg bg-red-500/20 border border-red-500/50">
+          <p class="text-sm text-red-600 dark:text-red-400">
+            ❌ {{ saveError }}
+          </p>
+        </div>
+
         <!-- Display Name -->
         <div>
           <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">
@@ -73,8 +80,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAdminStore } from '../stores/admin'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -83,8 +89,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'saved'])
 
-const auth = useAuthStore()
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : window.location.origin)
+const admin = useAdminStore()
 
 const formData = ref({
   display_name: '',
@@ -93,6 +98,7 @@ const formData = ref({
 
 const isSaving = ref(false)
 const originalAdminStatus = ref(false)
+const saveError = ref(null)
 
 const isChangingAdminStatus = computed(() => {
   return formData.value.is_admin !== originalAdminStatus.value
@@ -116,6 +122,7 @@ watch(() => props.user, (newUser) => {
       is_admin: newUser.is_admin || false,
     }
     originalAdminStatus.value = newUser.is_admin || false
+    saveError.value = null
   }
 }, { immediate: true })
 
@@ -123,25 +130,33 @@ const saveChanges = async () => {
   if (!props.user) return
 
   isSaving.value = true
+  saveError.value = null
   try {
-    await axios.put(`${API_BASE}/api/admin/users/${props.user.id}`, {
+    // 更新用戶基本信息
+    await admin.updateUserLocal(props.user.id, {
       display_name: formData.value.display_name,
-    }, {
-      headers: { Authorization: `Bearer ${auth.token}` }
     })
 
-    // 如果改變了管理員狀態
+    // 如果改變了管理員狀態，發送到後端
     if (isChangingAdminStatus.value) {
-      await axios.put(`${API_BASE}/api/admin/users/${props.user.id}/admin`, {}, {
-        headers: { Authorization: `Bearer ${auth.token}` }
-      })
+      const updateData = {
+        display_name: formData.value.display_name,
+        is_admin: formData.value.is_admin,
+      }
+      await admin.updateUserAPI(props.user.id, updateData)
+    } else {
+      // 只更新名稱
+      const updateData = {
+        display_name: formData.value.display_name,
+      }
+      await admin.updateUserAPI(props.user.id, updateData)
     }
 
     emit('saved')
     close()
   } catch (error) {
     console.error('保存失敗:', error)
-    alert('保存失敗: ' + (error.response?.data?.detail || error.message))
+    saveError.value = error.message || '保存失敗，請稍後重試'
   } finally {
     isSaving.value = false
   }

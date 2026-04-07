@@ -8,6 +8,13 @@
 
       <!-- Body -->
       <div class="p-6 space-y-4">
+        <!-- Error Alert (if any) -->
+        <div v-if="resetError" class="p-4 rounded-lg bg-red-500/20 border border-red-500/50">
+          <p class="text-sm text-red-600 dark:text-red-400">
+            ❌ {{ resetError }}
+          </p>
+        </div>
+
         <!-- User Info -->
         <div class="p-3 rounded bg-[var(--bg-secondary)] border border-[var(--border-color)]">
           <div class="text-xs text-[var(--text-secondary)] space-y-1">
@@ -82,8 +89,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAdminStore } from '../stores/admin'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -92,12 +98,12 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'reset'])
 
-const auth = useAuthStore()
-const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : window.location.origin)
+const admin = useAdminStore()
 
 const newPassword = ref('')
 const confirmPassword = ref('')
 const isResetting = ref(false)
+const resetError = ref(null)
 
 const passwordMismatch = computed(() => {
   return newPassword.value && confirmPassword.value && newPassword.value !== confirmPassword.value
@@ -107,6 +113,7 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     newPassword.value = ''
     confirmPassword.value = ''
+    resetError.value = null
   }
 })
 
@@ -114,19 +121,18 @@ const resetPassword = async () => {
   if (!props.user || !newPassword.value || passwordMismatch.value) return
 
   isResetting.value = true
+  resetError.value = null
   try {
-    await axios.post(`${API_BASE}/api/admin/users/${props.user.id}/password`, {
-      new_password: newPassword.value,
-    }, {
-      headers: { Authorization: `Bearer ${auth.token}` }
-    })
-
-    alert('密碼已重設。新密碼已發送至用戶信箱。')
-    emit('reset')
-    close()
+    const success = await admin.resetPasswordAPI(props.user.id, newPassword.value)
+    if (success) {
+      emit('reset')
+      close()
+    } else {
+      resetError.value = admin.error || '密碼重設失敗，請稍後重試'
+    }
   } catch (error) {
     console.error('密碼重設失敗:', error)
-    alert('密碼重設失敗: ' + (error.response?.data?.detail || error.message))
+    resetError.value = error.message || '密碼重設失敗，請稍後重試'
   } finally {
     isResetting.value = false
   }
@@ -135,6 +141,7 @@ const resetPassword = async () => {
 const close = () => {
   newPassword.value = ''
   confirmPassword.value = ''
+  resetError.value = null
   emit('close')
 }
 </script>

@@ -65,6 +65,19 @@ export const useAdminStore = defineStore('admin', () => {
       return false
     }
   }
+
+  const updateUserAPI = async (userId, data) => {
+    error.value = null
+    try {
+      const updatedUser = await adminApi.updateUser(userId, data)
+      updateUserLocal(userId, updatedUser)
+      return true
+    } catch (err) {
+      error.value = err.message
+      console.error('更新用戶失敗:', err)
+      return false
+    }
+  }
   
   const resetPasswordAPI = async (userId, newPassword) => {
     error.value = null
@@ -240,6 +253,7 @@ export const useAdminStore = defineStore('admin', () => {
     updateUserLocal,
     removeUser,
     deleteUserAPI,
+    updateUserAPI,
     resetPasswordAPI,
     
     loadSchedulerJobs,
