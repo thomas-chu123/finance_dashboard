@@ -16,7 +16,7 @@
         isSidebarCollapsed ? 'w-20 lg:w-20' : 'w-60 lg:w-60'
       ]"
     >
-      <div class="flex flex-col h-full p-4">
+      <div class="flex flex-col h-full p-4 pb-24 lg:pb-4">
         <!-- Logo Section -->
         <div class="flex items-center justify-between mb-8 px-2">
           <div class="flex items-center gap-2 min-w-0" :class="!isSidebarCollapsed ? '' : 'lg:justify-center lg:w-full'">
