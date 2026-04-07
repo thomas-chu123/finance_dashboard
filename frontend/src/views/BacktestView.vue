@@ -277,7 +277,7 @@
       </div>
 
       <!-- ✅ Independent Action Card -->
-      <div class="glass-card mt-3">
+      <div v-if="!showSaved" class="glass-card mt-3">
         <div class="p-4 border-b border-[var(--border-color)]">
           <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Play class="w-4 h-4 text-brand-500" />
