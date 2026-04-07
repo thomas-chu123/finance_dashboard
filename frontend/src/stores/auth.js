@@ -116,6 +116,24 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    // 用於 OAuth 登入後設置用戶信息
+    setUser(userId, email, displayName) {
+      this.userId = userId
+      this.email = email
+      this.token = localStorage.getItem('access_token') || this.token
+      localStorage.setItem('fd_user_id', userId)
+      localStorage.setItem('fd_email', email)
+      
+      // 如果有訪問令牌，保存它
+      const accessToken = localStorage.getItem('access_token')
+      if (accessToken) {
+        this.token = accessToken
+        localStorage.setItem('fd_token', accessToken)
+      }
+      
+      console.log('User set from OAuth:', { userId, email, displayName })
+    },
+
     logout() {
       this.token = null
       this.userId = null
@@ -124,6 +142,9 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('fd_token')
       localStorage.removeItem('fd_user_id')
       localStorage.removeItem('fd_email')
+      // 同時清除 OAuth 令牌
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('google_id_token')
     },
   },
 })

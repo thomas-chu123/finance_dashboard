@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.scheduler import start_scheduler, scheduler
-from app.routers import auth, users, tracking, backtest, optimize, fundamentals, notifications, line, briefing as briefing_router, dividend as dividend_router, admin, monte_carlo
+from app.routers import auth, users, tracking, backtest, optimize, fundamentals, notifications, line, briefing as briefing_router, dividend as dividend_router, admin, monte_carlo, oauth
 from app.routers.market import router as market_router, test_router as alert_test_router
 from app.routers.optimize import router as optimize_router
 from fastapi_cache import FastAPICache
@@ -119,6 +119,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(oauth.router)
 app.include_router(users.router)
 app.include_router(tracking.router)
 app.include_router(backtest.router)

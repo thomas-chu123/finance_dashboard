@@ -294,3 +294,42 @@ class MonteCarloResponse(BaseModel):
     percentile_paths: dict
     history_years: int
     assets_used: List[str]
+
+
+# ──────────────────────────────────────────────
+# Google OAuth & Third-Party Auth
+# ──────────────────────────────────────────────
+class GoogleOAuthRequest(BaseModel):
+    """Google OAuth 令牌申請"""
+    id_token: str  # Google ID Token
+
+
+class GoogleOAuthCallback(BaseModel):
+    """Google OAuth 回調請求"""
+    code: str  # Google 授權碼
+    state: str  # CSRF 狀態令牌
+
+
+class OAuthTokenResponse(BaseModel):
+    """OAuth 令牌響應"""
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    email: str
+    display_name: Optional[str] = None
+    is_new_user: bool = False
+    expires_in: int = 604800  # 7 days
+
+
+class GoogleLoginUrlResponse(BaseModel):
+    """Google 登入 URL 響應"""
+    login_url: str
+    state: str
+    state_expires_at: str
+
+
+class OAuthErrorResponse(BaseModel):
+    """OAuth 錯誤響應"""
+    error: str
+    error_description: str
+    error_code: Optional[int] = None
