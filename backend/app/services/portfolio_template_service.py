@@ -75,8 +75,7 @@ def copy_template_to_user(user_id: str, template_id: str, portfolio_name: Option
             "user_id": user_id,
             "name": template_name,
             "portfolio_type": "template",
-            "initial_amount": 100000,
-            "description": f"From template: {template['name']}"
+            "initial_amount": 100000
         }
         
         port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
