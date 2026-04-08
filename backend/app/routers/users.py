@@ -88,7 +88,7 @@ async def get_my_profile(authorization: str = Header(default="")):
     user_id = get_user_id(authorization)
     sb = get_supabase()
     # 優化：只查詢登入必要的欄位，減少頻寬
-    fields = "id,email,display_name,is_admin,global_notify,notify_email,notify_line,line_user_id,created_at"
+    fields = "id,email,display_name,is_admin,global_notify,notify_email,notify_line,line_user_id,created_at,dashboard_quotes"
     res = sb.table("profiles").select(fields).eq("id", user_id).single().execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Profile not found")
