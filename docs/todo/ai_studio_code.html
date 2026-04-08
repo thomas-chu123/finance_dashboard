@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS - 登入</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* 品牌顏色 - 取自後台 Logo 的綠色 */
+            --primary-green: #00D084; 
+            --hover-green: #00b372;
+            --bg-gray: #f8fafc;
+            --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', "Microsoft JhengHei", sans-serif;
+            background-color: var(--bg-gray);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        /* Logo 區域 */
+        .brand-header {
+            margin-bottom: 32px;
+        }
+
+        .logo-circle {
+            width: 56px;
+            height: 56px;
+            background-color: var(--primary-green);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 16px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            /* 模擬後台 Logo 感 */
+            box-shadow: 0 4px 12px rgba(0, 208, 132, 0.2);
+        }
+
+        .brand-header h1 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 1px;
+            color: var(--primary-green);
+        }
+
+        .brand-header p {
+            margin: 4px 0 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 切換標籤 (登入/註冊) */
+        .tab-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--primary-green);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* 表單樣式 */
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 15px;
+            box-sizing: border-box;
+            transition: 0.3s;
+            background-color: #fff;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 4px rgba(0, 208, 132, 0.1);
+        }
+
+        /* 按鈕樣式 */
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-green);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(0, 208, 132, 0.2);
+        }
+
+        .btn-submit:hover {
+            background-color: var(--hover-green);
+            transform: translateY(-1px);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* 額外輔助文字 */
+        .footer-links {
+            margin-top: 20px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .footer-links a {
+            color: var(--primary-green);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="brand-header">
+        <!-- 這裡可以使用您的 Logo 圖片 -->
+        <div class="logo-circle">N</div>
+        <h1>NEXUS</h1>
+        <p>Finance Dashboard</p>
+    </div>
+
+    <div class="tab-group">
+        <button class="tab active">登入</button>
+        <button class="tab">註冊</button>
+    </div>
+
+    <form>
+        <div class="form-group">
+            <label for="email">電子郵件</label>
+            <input type="email" id="email" placeholder="example@email.com">
+        </div>
+
+        <div class="form-group">
+            <label for="password">密碼</label>
+            <input type="password" id="password" placeholder="輸入您的密碼">
+        </div>
+
+        <button type="submit" class="btn-submit">登入系統</button>
+    </form>
+
+    <div class="footer-links">
+        <a href="#">忘記密碼？</a>
+    </div>
+</div>
+
+</body>
+</html>
