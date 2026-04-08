@@ -38,10 +38,7 @@
           <input v-model="form.password" type="password" class="w-full p-3 border-[1.5px] border-[var(--border-color)] rounded-xl text-base box-border transition-all bg-[var(--input-bg)] outline-none focus:border-[#00D084] focus:shadow-[0_0_0_4px_rgba(0,208,132,0.1)] text-[var(--text-primary)]" placeholder="••••••••" required minlength="6" />
         </div>
 
-        <button type="submit" class="w-full p-3.5 bg-[#00D084] hover:bg-[#00b372] text-white rounded-xl text-base font-semibold cursor-pointer transition-all mt-2 shadow-[0_4px_15px_rgba(0,208,132,0.2)] hover:-translate-y-[1px] active:translate-y-0" :disabled="loading">
-          <Loader2 v-if="loading" class="w-5 h-5 animate-spin mr-2" />
-          {{ loading ? '處理中...' : (mode === 'login' ? '登入系統' : '註冊帳號') }}
-        </button>
+        <button type="submit" class="w-full p-3.5 bg-[#00D084] hover:bg-[#00b372] text-white rounded-xl text-base font-semibold cursor-pointer transition-all mt-2 shadow-[0_4px_15px_rgba(0,208,132,0.2)] hover:-translate-y-[1px] active:translate-y-0 flex items-center justify-center" :disabled="loading"><Loader2 v-if="loading" class="w-5 h-5 animate-spin mr-2" />{{ loading ? '處理中...' : (mode === 'login' ? '登入系統' : '註冊帳號') }}</button>
       </form>
 
       <div class="mt-5 text-[13px] text-[var(--text-secondary)]">
