@@ -288,7 +288,6 @@
 
           <!-- 開始優化 button -->
           <button
-            v-else
             :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
             :class="[
               'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
