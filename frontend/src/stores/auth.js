@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', {
     userId: localStorage.getItem('fd_user_id') || null,
     email: localStorage.getItem('fd_email') || null,
     profile: null,
+    profileLoadTime: 0, // 用於快取控制
   }),
 
   getters: {
@@ -30,15 +31,23 @@ export const useAuthStore = defineStore('auth', {
         localStorage.setItem('fd_user_id', this.userId)
         localStorage.setItem('fd_email', this.email)
         
-        // Initialize Admin API with token
-        try {
-          const { setAuthToken } = await import('../api/admin-api.js')
-          setAuthToken(this.token)
-        } catch (e) {
-          console.warn('[auth.login] Failed to initialize admin API:', e.message)
-        }
-        
-        await this.fetchProfile()
+        // 優化：延遲非關鍵初始化，並行化加載 admin API 和 profile
+        // 不阻塞路由導航
+        Promise.all([
+          // 初始化 Admin API
+          (async () => {
+            try {
+              const { setAuthToken } = await import('../api/admin-api.js')
+              setAuthToken(this.token)
+            } catch (e) {
+              console.warn('[auth.login] Failed to initialize admin API:', e.message)
+            }
+          })(),
+          // 非關鍵：後台加載個人資料
+          this.fetchProfile()
+        ]).catch(e => {
+          console.warn('[auth.login] Background tasks error:', e.message)
+        })
       } catch (error) {
         console.error('Login failed:', error.message)
         if (error.response) {
@@ -66,11 +75,21 @@ export const useAuthStore = defineStore('auth', {
         console.warn('[auth.fetchProfile] No token available, skipping profile fetch')
         return
       }
+      
+      // 優化：5 分鐘快取，避免頻繁查詢
+      const now = Date.now()
+      const CACHE_TTL = 5 * 60 * 1000 // 5 分鐘
+      if (this.profile && (now - this.profileLoadTime) < CACHE_TTL) {
+        console.debug('[auth.fetchProfile] Using cached profile (TTL: 5min)')
+        return
+      }
+      
       try {
-        console.debug('[auth.fetchProfile] Fetching from:', `${API_BASE}/api/users/me?_t=${Date.now()}`)
-        const res = await axios.get(`${API_BASE}/api/users/me?_t=${Date.now()}`, { headers: this.headers })
+        console.debug('[auth.fetchProfile] Fetching from:', `${API_BASE}/api/users/me`)
+        const res = await axios.get(`${API_BASE}/api/users/me`, { headers: this.headers })
         console.debug('[auth.fetchProfile] Profile loaded:', res.data)
         this.profile = res.data
+        this.profileLoadTime = now
       } catch (e) {
         console.error('[auth.fetchProfile] Error:', e.message, e.response?.status, e.response?.data)
       }

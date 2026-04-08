@@ -84,9 +84,12 @@ async def reset_preferences(authorization: str = Header(default="")):
 
 @router.get("/me", response_model=ProfileResponse)
 async def get_my_profile(authorization: str = Header(default="")):
+    """獲取當前用戶個人資料，優化查詢只載入必要欄位"""
     user_id = get_user_id(authorization)
     sb = get_supabase()
-    res = sb.table("profiles").select("*").eq("id", user_id).single().execute()
+    # 優化：只查詢登入必要的欄位，減少頻寬
+    fields = "id,email,display_name,is_admin,global_notify,notify_email,notify_line,line_user_id,created_at"
+    res = sb.table("profiles").select(fields).eq("id", user_id).single().execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Profile not found")
     return res.data
