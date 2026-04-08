@@ -812,8 +812,8 @@ function loadSaved(p) {
     optConfig.start_date = p.start_date
     optConfig.end_date = p.end_date
   } else {
-    // 如果沒有日期，使用默認值 (2020-01-01)
-    optConfig.start_date = '2020-01-01'
+    // 如果沒有日期，使用默認值 (2015-01-01)
+    optConfig.start_date = '2015-01-01'
     optConfig.end_date = new Date().toISOString().split('T')[0]
   }
   

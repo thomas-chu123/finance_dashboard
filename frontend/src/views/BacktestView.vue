@@ -552,7 +552,7 @@ const symbolTypes = [
 ]
 
 const btConfig = reactive({
-  start_date: '2020-01-01',
+  start_date: '2015-01-01',
   end_date: new Date().toISOString().split('T')[0],
   initial_amount: 100000,
 })
@@ -951,7 +951,7 @@ async function deleteSaved(id) {
 function loadSaved(p) {
   showSaved.value = false
   selectedItems.value = p.items.map(i => ({ ...i }))
-  btConfig.start_date = p.start_date || '2020-01-01'
+  btConfig.start_date = p.start_date || '2015-01-01'
   btConfig.end_date = p.end_date || new Date().toISOString().split('T')[0]
   btConfig.initial_amount = p.initial_amount || 100000
   results.value = p.results_json
@@ -1032,7 +1032,7 @@ onMounted(async () => {
     try {
       const preset = JSON.parse(presetStr)
       selectedItems.value = preset.items
-      btConfig.start_date = preset.start_date || '2020-01-01'
+      btConfig.start_date = preset.start_date || '2015-01-01'
       btConfig.end_date = preset.end_date || new Date().toISOString().split('T')[0]
       sessionStorage.removeItem('backtest_preset') // clean up
       
