@@ -334,14 +334,16 @@
             v-else
             :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5"
             :class="[
-              'w-full px-5 py-3 text-base font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2',
+              'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
               (runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5)
                 ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
-                : 'bg-brand-500 hover:bg-brand-600 text-white cursor-pointer'
+                : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
             ]"
             @click="runBacktest"
           >
-            <Play class="w-4 h-4" />執行回測
+            <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
+            <Play v-else class="w-4 h-4 fill-current" />
+            {{ runLoading ? '回測計算中...' : '執行回測' }}
           </button>
         </div>
       </div>
