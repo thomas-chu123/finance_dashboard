@@ -33,7 +33,7 @@
       <div class="mb-4">
         <button
           class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg transition-colors"
-          @click="showSaved = false">
+          @click="showSaved = false; results = null">
           <ArrowLeft class="w-4 h-4" />
           返回設定
         </button>
@@ -248,11 +248,9 @@
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
       <!-- ✅ Independent Action Card -->
-      <div class="glass-card mt-3">
+      <div v-if="!showSaved" class="glass-card mt-3">
         <div class="p-4 border-b border-[var(--border-color)]">
           <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <Zap class="w-4 h-4 text-brand-500" />
@@ -319,6 +317,8 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
 
     <!-- Optimization Results -->
     <div v-if="!showSaved && results" class="mt-6 space-y-6">
