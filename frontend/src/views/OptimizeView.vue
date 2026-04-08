@@ -253,7 +253,7 @@
       <div v-if="!showSaved" class="glass-card mt-3">
         <div class="p-4 border-b border-[var(--border-color)]">
           <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Zap class="w-4 h-4 text-brand-500" />
+            <Play class="w-4 h-4 text-brand-500" />
             執行操作
           </h3>
         </div>
@@ -284,21 +284,6 @@
             >
               <Save class="w-4 h-4" />儲存組合
             </button>
-          </div>
-
-          <!-- hint when < 2 assets selected -->
-          <div v-if="selectedItems.length > 0 && selectedItems.length < 2" class="text-xs text-rose-500 text-center">
-            請至少選擇 2 個資產才可進行優化
-          </div>
-
-          <!-- Error message -->
-          <div v-if="optError" class="p-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
-
-          <!-- Loading indicator -->
-          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 shadow-sm">
-            <div class="flex items-center gap-2 justify-center text-sm text-[var(--text-muted)]">
-              <Zap class="w-4 h-4 text-brand-500 animate-spin" />模型計算中...
-            </div>
           </div>
 
           <!-- 開始優化 button -->
