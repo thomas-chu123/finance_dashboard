@@ -276,7 +276,7 @@
           <!-- Selected Assets Weights Card -->
           <div class="glass-card flex flex-col" style="max-height: 60vh;">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-              <h3>已選資產 ({{ selectedItems.length }})</h3>
+              <h3>已選資產 ({{ selectedItems.length }}/10)</h3>
               <div class="text-sm" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'text-brand-600' : 'text-rose-600'">
                 總權重: {{ totalWeight.toFixed(1) }}%
               </div>
