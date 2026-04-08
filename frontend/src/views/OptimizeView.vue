@@ -306,14 +306,16 @@
             v-else
             :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
             :class="[
-              'w-full px-5 py-3 text-base font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2',
+              'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
               (runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5)
                 ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
-                : 'bg-brand-500 hover:bg-brand-600 text-white cursor-pointer'
+                : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
             ]"
             @click="runOptimization"
           >
-            <Zap class="w-4 h-4" />開始優化
+            <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
+            <Play v-else class="w-4 h-4 fill-current" />
+            {{ runLoading ? '優化計算中...' : '開始優化' }}
           </button>
         </div>
       </div>
@@ -425,7 +427,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save, Search, Plus, Target, Scale } from 'lucide-vue-next'
+import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save, Search, Plus, Target, Scale, Play } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
