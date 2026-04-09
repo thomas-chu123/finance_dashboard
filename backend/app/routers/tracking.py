@@ -7,6 +7,7 @@ from app.models import TrackingCreate, TrackingUpdate, TrackingResponse, AddFrom
 from app.database import get_supabase
 from app.routers.users import get_user_id
 from app.services.rsi_service import get_rsi_calculation_service
+from app.services.market_data import get_current_price
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/tracking", tags=["tracking"])
@@ -140,8 +141,21 @@ async def create_tracking(body: TrackingCreate, authorization: str = Header(defa
             logger.error(f"[create_tracking] 插入失敗，無返回數據: {res}")
             raise HTTPException(status_code=500, detail="Create failed - no data returned from database")
         
-        logger.info(f"✓ 新增追蹤項目: {body.symbol} (id={res.data[0].get('id')}, mode={body.trigger_mode}, user={user_id})")
-        return res.data[0]
+        # 獲取當前市場價格，立即填充到返回的數據中
+        created_item = res.data[0]
+        try:
+            current_price = await get_current_price(body.symbol, body.category)
+            if current_price is not None:
+                created_item["current_price"] = current_price
+                logger.info(f"[create_tracking] 已填充當前價格: {body.symbol} = {current_price}")
+            else:
+                logger.warning(f"[create_tracking] 無法獲取當前價格: {body.symbol}")
+        except Exception as e:
+            logger.warning(f"[create_tracking] 獲取價格失敗（非致命錯誤）: {str(e)}")
+            # 不拋出異常，繼續返回項目
+        
+        logger.info(f"✓ 新增追蹤項目: {body.symbol} (id={created_item.get('id')}, mode={body.trigger_mode}, user={user_id})")
+        return created_item
     except HTTPException:
         raise
     except Exception as e:
