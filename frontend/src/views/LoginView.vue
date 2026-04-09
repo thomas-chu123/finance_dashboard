@@ -79,6 +79,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { Activity, Loader2 } from 'lucide-vue-next'
+import axios from 'axios'
 import oauthAPI from '../api/oauth'
 
 const router = useRouter()
