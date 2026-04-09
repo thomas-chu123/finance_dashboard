@@ -148,39 +148,41 @@
         <!-- Left Column -->
         <div class="space-y-4">
           <!-- Asset Selection -->
-          <div class="glass-card flex flex-col">
-            <div class="p-4 border-b border-[var(--border-color)]">
-              <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <Target class="w-4 h-4 text-brand-500" />
-                配置資產
-              </h3>
+          <div class="premium-card mb-4 min-h-[500px]">
+            <div class="premium-header">
+              <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+                <Target class="w-5 h-5 text-brand-500" />
+              </div>
+              <h3 class="font-bold text-[var(--text-primary)]">配置資產</h3>
             </div>
-            <div class="p-4 flex-1 flex flex-col space-y-4">
-              <!-- Asset Selection UI -->
-              <div class="space-y-3">
-                <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+            <div class="p-5">
+              <div class="space-y-4">
+                <!-- Asset Selection UI -->
+                <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1 premium-tab-container">
                   <button v-for="t in symbolTypes" :key="t.value"
-                    :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                    :class="['premium-tab', symbolType === t.value ? 'active' : '']"
                     @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
                 </div>
                 
                 <div class="relative">
-                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
+                  <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" :size="16" />
                   <input v-model="symbolSearch" type="text" 
-                    class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
+                    class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]"
                     placeholder="搜尋及點選資產..." />
                 </div>
 
-                <div class="h-48 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 custom-scrollbar">
+                <div class="h-64 overflow-y-auto border border-[var(--border-color)] rounded-2xl bg-[var(--bg-sidebar)]/30 custom-scrollbar">
                   <div v-for="s in filteredSymbols.slice(0, 100)" :key="s.symbol"
-                    :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]']"
+                    :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between hover:bg-brand-500/5', isSelected(s.symbol) ? 'bg-brand-500/10' : '']"
                     @click="toggleSymbol(s)">
                     <div class="flex flex-col min-w-0">
                       <span class="font-bold text-sm text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
-                      <span class="text-[10px] text-[var(--text-secondary)] truncate">{{ s.name }}</span>
+                      <span class="text-[10px] text-[var(--text-secondary)] font-medium truncate uppercase tracking-wider">{{ s.name }}</span>
                     </div>
-                    <Plus v-if="!isSelected(s.symbol)" class="w-3 h-3 text-zinc-400" />
-                    <Check v-else class="w-3 h-3 text-brand-500" />
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center transition-colors" :class="isSelected(s.symbol) ? 'bg-brand-500 text-white' : 'bg-brand-500/20 text-brand-600 dark:bg-brand-500/30 dark:text-brand-400'">
+                      <Plus v-if="!isSelected(s.symbol)" class="w-3.5 h-3.5" />
+                      <Check v-else class="w-3.5 h-3.5" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -188,21 +190,21 @@
           </div>
 
           <!-- Simulation Parameters -->
-          <div class="glass-card flex flex-col">
-            <div class="p-4 border-b border-[var(--border-color)]">
-              <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-                <Dice5 class="w-4 h-4 text-brand-500" />
-                模擬參數設定
-              </h3>
+          <div class="premium-card">
+            <div class="premium-header">
+              <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+                <Dice5 class="w-5 h-5 text-brand-500" />
+              </div>
+              <h3 class="font-bold text-[var(--text-primary)]">模擬參數設定</h3>
             </div>
-            <div class="p-6 space-y-6 flex-1 overflow-y-auto">
+            <div class="p-6 space-y-6">
               <div class="space-y-4">
                 <div class="space-y-1.5">
                   <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 (USD/TWD)</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">$</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
                     <input v-model.number="config.initial_amount" type="number" 
-                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 pl-8 pr-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                      class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pl-8 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
                   </div>
                 </div>
 
@@ -210,11 +212,11 @@
                   <div class="space-y-1.5">
                     <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬年數</label>
                     <input v-model.number="config.years" type="number" 
-                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                      class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
                   </div>
                   <div class="space-y-1.5">
                     <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬次數</label>
-                    <select v-model.number="config.simulations" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)] h-10">
+                    <select v-model.number="config.simulations" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)] h-11">
                       <option :value="1000">1,000 次</option>
                       <option :value="5000">5,000 次</option>
                       <option :value="10000">10,000 次</option>
@@ -226,14 +228,14 @@
                   <div class="space-y-1.5">
                     <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年投入金額 (+)</label>
                     <input v-model.number="config.annual_contribution" type="number" 
-                      class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
+                      class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
                   </div>
                   <div class="space-y-1.5">
                     <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年取百分比 (%)</label>
                     <div class="relative">
                       <input v-model.number="config.annual_withdrawal" type="number" step="0.1"
-                        class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2.5 pr-8 pl-4 text-sm font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">%</span>
+                        class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pr-8 pl-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">%</span>
                     </div>
                   </div>
                 </div>
@@ -241,9 +243,9 @@
 
               <div class="pt-6 border-t border-[var(--border-color)] space-y-4">
                 <div class="flex items-center justify-between">
-                  <label class="text-sm font-medium text-[var(--text-primary)]">考慮通膨影響</label>
+                  <label class="text-sm font-bold text-[var(--text-primary)]">考慮通膨影響</label>
                   <label class="flex items-center cursor-pointer gap-2">
-                    <input type="checkbox" v-model="config.adjust_for_inflation" class="w-5 h-5 rounded accent-brand-500 cursor-pointer" />
+                    <input type="checkbox" v-model="config.adjust_for_inflation" class="w-5 h-5 rounded-md accent-brand-500 cursor-pointer" />
                   </label>
                 </div>
                 
@@ -252,16 +254,16 @@
                     <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">平均通膨率</label>
                     <div class="relative">
                       <input v-model.number="config.inflation_mean" type="number" step="0.01"
-                        class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 px-3 text-xs font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">%</span>
+                        class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]">%</span>
                     </div>
                   </div>
                   <div class="space-y-1.5">
                     <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">通膨波動度</label>
                     <div class="relative">
                       <input v-model.number="config.inflation_std" type="number" step="0.01"
-                        class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 px-3 text-xs font-bold focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" />
-                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-[10px]">%</span>
+                        class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
+                      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-[10px]">%</span>
                     </div>
                   </div>
                 </div>
@@ -274,14 +276,19 @@
         <!-- Right Column -->
         <div class="space-y-4" style="max-height:70vh; overflow-y:auto;">
           <!-- Selected Assets Weights Card -->
-          <div class="glass-card flex flex-col" style="max-height: 60vh;">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-              <h3>已選資產 ({{ selectedItems.length }})</h3>
-              <div class="text-sm" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'text-brand-600' : 'text-rose-600'">
-                總權重: {{ totalWeight.toFixed(1) }}%
+          <div class="premium-card flex flex-col h-full overflow-hidden">
+            <div class="premium-header">
+              <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+                <FolderOpen class="w-5 h-5 text-brand-500" />
+              </div>
+              <div class="flex-1 flex items-center justify-between">
+                <h3 class="font-bold text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</h3>
+                <div class="text-xs font-bold px-2 py-1 rounded-md" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
+                  總權重: {{ totalWeight.toFixed(1) }}%
+                </div>
               </div>
             </div>
-            <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+            <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
               <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
                 請從左側選擇資產
               </div>
@@ -316,14 +323,14 @@
       </div>
 
       <!-- ✅ Independent Action Card -->
-      <div class="glass-card mt-3">
-        <div class="p-4 border-b border-[var(--border-color)]">
-          <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Play class="w-4 h-4 text-brand-500" />
-            執行操作
-          </h3>
+      <div class="premium-card mt-3">
+        <div class="premium-header">
+          <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+            <Play class="w-5 h-5 text-brand-500" />
+          </div>
+          <h3 class="font-bold text-[var(--text-primary)]">執行操作</h3>
         </div>
-        <div class="p-4 flex flex-col gap-3">
+        <div class="p-5 flex flex-col gap-3">
           <!-- 平均分配 & 儲存組合 row -->
           <div class="flex gap-3">
             <button
@@ -417,9 +424,9 @@
 
     <!-- Charts Section -->
     <div v-if="results && !showSaved" class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div class="glass-card overflow-hidden">
-        <div class="p-4 border-b border-[var(--border-color)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h3 class="font-semibold text-[var(--text-primary)] text-sm">資產增長隨機路徑百分位 (Percentile Paths)</h3>
+      <div class="premium-card overflow-hidden">
+        <div class="premium-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <h3 class="font-bold text-[var(--text-primary)]">資產增長隨機路徑百分位 (Percentile Paths)</h3>
           <div class="flex flex-wrap items-center gap-3 sm:gap-4">
             <div class="flex items-center gap-1.5">
               <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>

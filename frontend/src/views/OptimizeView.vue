@@ -33,7 +33,7 @@
       <div class="mb-4">
         <button
           class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg transition-colors"
-          @click="showSaved = false">
+          @click="showSaved = false; results = null">
           <ArrowLeft class="w-4 h-4" />
           返回設定
         </button>
@@ -147,42 +147,44 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
       <!-- Left: Asset selection -->
       <div>
-        <div class="glass-card mb-2">
-          <div class="p-4 border-b border-[var(--border-color)]">
-            <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-              <Target class="w-4 h-4 text-brand-500" />
-              配置資產
-            </h3>
+        <div class="premium-card mb-4 min-h-[500px]">
+          <div class="premium-header">
+            <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+              <Target class="w-5 h-5 text-brand-500" />
+            </div>
+            <h3 class="font-bold text-[var(--text-primary)]">配置資產</h3>
           </div>
-          <div class="p-3 sm:p-4">
-            <div class="space-y-3">
+          <div class="p-5">
+            <div class="space-y-4">
               <!-- Symbol type tabs -->
-              <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+              <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1 premium-tab-container">
                 <button v-for="t in symbolTypes" :key="t.value"
-                  :class="['px-3 py-1.5 text-xs font-medium rounded-full border transition-colors cursor-pointer whitespace-nowrap', symbolType === t.value ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--input-bg)]']"
+                  :class="['premium-tab', symbolType === t.value ? 'active' : '']"
                   @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
               </div>
 
               <!-- Quick symbol search -->
               <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
+                <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" :size="16" />
                 <input v-model="symbolSearch" type="text" 
-                  class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
+                  class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]"
                   placeholder="搜尋及點選資產..." 
                   @keydown.enter="addSearchSymbol" />
               </div>
 
               <!-- Symbol list -->
-              <div class="h-48 overflow-y-auto border border-[var(--border-color)] rounded-xl bg-[var(--bg-main)]/50 custom-scrollbar">
+              <div class="h-64 overflow-y-auto border border-[var(--border-color)] rounded-2xl bg-[var(--bg-sidebar)]/30 custom-scrollbar">
                 <div v-for="s in filteredSymbols.slice(0, 100)" :key="s.symbol"
-                  :class="['px-3 py-2 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between', isSelected(s.symbol) ? 'bg-brand-500/10' : 'hover:bg-[var(--input-bg)]']"
+                  :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between hover:bg-brand-500/5', isSelected(s.symbol) ? 'bg-brand-500/10' : '']"
                   @click="toggleSymbol(s)">
                   <div class="flex flex-col min-w-0">
                     <span class="font-bold text-sm text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
-                    <span class="text-[10px] text-[var(--text-secondary)] truncate">{{ s.name }}</span>
+                    <span class="text-[10px] text-[var(--text-secondary)] font-medium truncate uppercase tracking-wider">{{ s.name }}</span>
                   </div>
-                  <Plus v-if="!isSelected(s.symbol)" class="w-3 h-3 text-zinc-400" />
-                  <Check v-else class="w-3 h-3 text-brand-500" />
+                  <div class="w-6 h-6 rounded-full flex items-center justify-center transition-colors" :class="isSelected(s.symbol) ? 'bg-brand-500 text-white' : 'bg-brand-500/20 text-brand-600 dark:bg-brand-500/30 dark:text-brand-400'">
+                    <Plus v-if="!isSelected(s.symbol)" class="w-3.5 h-3.5" />
+                    <Check v-else class="w-3.5 h-3.5" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,16 +192,16 @@
         </div>
 
       <!-- Date range -->
-        <div class="glass-card">
-          <div class="p-3 sm:p-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div class="space-y-1 mb-2 min-w-0">
-                <label class="block text-sm font-medium text-[var(--text-muted)]">回測開始日期</label>
-                <input v-model="optConfig.start_date" type="date" class="w-full max-w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+        <div class="premium-card">
+          <div class="p-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="space-y-1.5 mb-2 min-w-0">
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">最佳化分析起點</label>
+                <input v-model="optConfig.start_date" type="date" class="w-full max-w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 transition-all" />
               </div>
-              <div class="space-y-1 mb-2 min-w-0">
-                <label class="block text-sm font-medium text-[var(--text-muted)]">結束日期</label>
-                <input v-model="optConfig.end_date" type="date" class="w-full max-w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
+              <div class="space-y-1.5 mb-2 min-w-0">
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">結束日期</label>
+                <input v-model="optConfig.end_date" type="date" class="w-full max-w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 transition-all" />
               </div>
             </div>
           </div>
@@ -208,14 +210,19 @@
 
       <!-- Right: selected + weights -->
       <div>
-        <div class="glass-card mb-2 flex flex-col" style="max-height: 60vh;">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-            <h3>已選資產 ({{ selectedItems.length }})</h3>
-            <div class="text-sm" :class="totalWeight === 100 ? 'text-brand-600' : 'text-rose-600'">
-              總權重: {{ totalWeight.toFixed(1) }}%
+        <div class="premium-card flex flex-col h-full overflow-hidden">
+          <div class="premium-header">
+            <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+              <FolderOpen class="w-5 h-5 text-brand-500" />
+            </div>
+            <div class="flex-1 flex items-center justify-between">
+              <h3 class="font-bold text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</h3>
+              <div class="text-xs font-bold px-2 py-1 rounded-md" :class="totalWeight === 100 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
+                總權重: {{ totalWeight.toFixed(1) }}%
+              </div>
             </div>
           </div>
-          <div class="p-3 sm:p-4 overflow-y-auto flex-1">
+          <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
             <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
               請從左側選擇資產
             </div>
@@ -248,77 +255,64 @@
           </div>
         </div>
       </div>
+
     </div>
-  </div>
 
-      <!-- ✅ Independent Action Card -->
-      <div class="glass-card mt-3">
-        <div class="p-4 border-b border-[var(--border-color)]">
-          <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Zap class="w-4 h-4 text-brand-500" />
-            執行操作
-          </h3>
+    <!-- ✅ Independent Action Card -->
+    <div v-if="!showSaved" class="premium-card mt-3">
+      <div class="premium-header">
+        <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+          <Play class="w-5 h-5 text-brand-500" />
         </div>
-        <div class="p-4 flex flex-col gap-3">
-          <!-- 平均分配 & 儲存組合 row -->
-          <div class="flex gap-3">
-            <button
-              :disabled="selectedItems.length === 0"
-              :class="[
-                'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
-                selectedItems.length === 0
-                  ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
-                  : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
-              ]"
-              @click="selectedItems.length > 0 && equalizeWeights()"
-            >
-              <Scale class="w-4 h-4" />平均分配
-            </button>
-            <button
-              :disabled="selectedItems.length === 0"
-              :class="[
-                'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
-                selectedItems.length === 0
-                  ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
-                  : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
-              ]"
-              @click="selectedItems.length > 0 && (showSaveModal = true)"
-            >
-              <Save class="w-4 h-4" />儲存組合
-            </button>
-          </div>
-
-          <!-- hint when < 2 assets selected -->
-          <div v-if="selectedItems.length > 0 && selectedItems.length < 2" class="text-xs text-rose-500 text-center">
-            請至少選擇 2 個資產才可進行優化
-          </div>
-
-          <!-- Error message -->
-          <div v-if="optError" class="p-3 text-sm text-red-500 rounded-lg bg-red-500/10 border border-red-500/20">{{ optError }}</div>
-
-          <!-- Loading indicator -->
-          <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 shadow-sm">
-            <div class="flex items-center gap-2 justify-center text-sm text-[var(--text-muted)]">
-              <Zap class="w-4 h-4 text-brand-500 animate-spin" />模型計算中...
-            </div>
-          </div>
-
-          <!-- 開始優化 button -->
+        <h3 class="font-bold text-[var(--text-primary)]">執行操作</h3>
+      </div>
+      <div class="p-5 flex flex-col gap-3">
+        <!-- 平均分配 & 儲存組合 row -->
+        <div class="flex gap-3">
           <button
-            v-else
-            :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
+            :disabled="selectedItems.length === 0"
             :class="[
-              'w-full px-5 py-3 text-base font-medium rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2',
-              (runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5)
-                ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
-                : 'bg-brand-500 hover:bg-brand-600 text-white cursor-pointer'
+              'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
+              selectedItems.length === 0
+                ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
+                : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
             ]"
-            @click="runOptimization"
+            @click="selectedItems.length > 0 && equalizeWeights()"
           >
-            <Zap class="w-4 h-4" />開始優化
+            <Scale class="w-4 h-4" />平均分配
+          </button>
+          <button
+            :disabled="selectedItems.length === 0"
+            :class="[
+              'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
+              selectedItems.length === 0
+                ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
+                : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
+            ]"
+            @click="selectedItems.length > 0 && (showSaveModal = true)"
+          >
+            <Save class="w-4 h-4" />儲存組合
           </button>
         </div>
+
+        <!-- 開始優化 button -->
+        <button
+          :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
+          :class="[
+            'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
+            (runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5)
+              ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
+              : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
+          ]"
+          @click="runOptimization"
+        >
+          <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
+          <Play v-else class="w-4 h-4 fill-current" />
+          {{ runLoading ? '優化計算中...' : '開始優化' }}
+        </button>
       </div>
+    </div>
+  </div>
 
     <!-- Optimization Results -->
     <div v-if="!showSaved && results" class="mt-6 space-y-6">
@@ -425,7 +419,7 @@
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save, Search, Plus, Target, Scale } from 'lucide-vue-next'
+import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save, Search, Plus, Target, Scale, Play } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useBreakpoint } from '../composables/useBreakpoint'
@@ -812,8 +806,8 @@ function loadSaved(p) {
     optConfig.start_date = p.start_date
     optConfig.end_date = p.end_date
   } else {
-    // 如果沒有日期，使用默認值 (2020-01-01)
-    optConfig.start_date = '2020-01-01'
+    // 如果沒有日期，使用默認值 (2015-01-01)
+    optConfig.start_date = '2015-01-01'
     optConfig.end_date = new Date().toISOString().split('T')[0]
   }
   

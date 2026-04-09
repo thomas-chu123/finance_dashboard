@@ -299,6 +299,13 @@ pytest tests/ --cov=app --cov-report=html
 - 組件命名使用 PascalCase
 - 變數命名使用 camelCase
 
+### Git 提交政策
+
+**重要**：Copilot 修改完代碼後 **不需要主動執行 git commit**。代碼修改完成後由用戶決定是否提交。Copilot 應該只在以下情況下建立提交：
+- 用戶明確要求進行提交
+- 任務特別指示需要進行 commit
+- 需要保存中間階段結果以便追蹤進度
+
 ### Git 分支策略
 
 - **主分支**：`main`（生產環境就緒）

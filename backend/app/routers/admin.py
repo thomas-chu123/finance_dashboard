@@ -135,14 +135,13 @@ async def delete_user(
     刪除使用者帳號及相關數據（級聯刪除）。
 
     ⚠️ 此操作不可逆！將刪除：
-    - alert_logs
-    - notification_logs
     - backtest_results
     - optimization_results
     - portfolio_holdings
     - portfolios
     - tracked_indices
     - user_preferences
+    - market_briefings
     - profiles
     """
     try:
@@ -151,58 +150,107 @@ async def delete_user(
             raise HTTPException(status_code=400, detail="無法刪除自己的帳號")
 
         sb = get_supabase()
+        delete_stats = {}
 
         # 級聯刪除（按順序錯過外鍵依賴）
         try:
-            # 1. 刪除警報日誌
-            sb.table("alert_logs").delete().eq("user_id", user_id).execute()
+            # 1. 刪除回測結果
+            try:
+                result = sb.table("backtest_results").delete().eq("user_id", user_id).execute()
+                delete_stats["backtest_results"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 backtest_results 失敗: {e}")
+                delete_stats["backtest_results"] = 0
 
-            # 2. 刪除通知日誌
-            sb.table("notification_logs").delete().eq("user_id", user_id).execute()
+            # 2. 刪除優化結果
+            try:
+                result = sb.table("optimization_results").delete().eq("user_id", user_id).execute()
+                delete_stats["optimization_results"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 optimization_results 失敗: {e}")
+                delete_stats["optimization_results"] = 0
 
-            # 3. 刪除回測結果
-            sb.table("backtest_results").delete().eq("user_id", user_id).execute()
+            # 3. 刪除投資組合持倉（先獲取所有投資組合 ID）
+            try:
+                portfolios = (
+                    sb.table("portfolios")
+                    .select("id")
+                    .eq("user_id", user_id)
+                    .execute()
+                ).data or []
 
-            # 4. 刪除優化結果
-            sb.table("optimization_results").delete().eq("user_id", user_id).execute()
+                total_holdings = 0
+                for portfolio in portfolios:
+                    result = sb.table("portfolio_holdings").delete().eq("portfolio_id", portfolio["id"]).execute()
+                    total_holdings += len(result.data) if result.data else 0
+                delete_stats["portfolio_holdings"] = total_holdings
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 portfolio_holdings 失敗: {e}")
+                delete_stats["portfolio_holdings"] = 0
 
-            # 5. 刪除投資組合持倉（先獲取所有投資組合 ID）
-            portfolios = (
-                sb.table("portfolios")
-                .select("id")
-                .eq("user_id", user_id)
-                .execute()
-            ).data or []
+            # 4. 刪除投資組合
+            try:
+                result = sb.table("portfolios").delete().eq("user_id", user_id).execute()
+                delete_stats["portfolios"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 portfolios 失敗: {e}")
+                delete_stats["portfolios"] = 0
 
-            for portfolio in portfolios:
-                sb.table("portfolio_holdings").delete().eq("portfolio_id", portfolio["id"]).execute()
+            # 5. 刪除追蹤指數
+            try:
+                result = sb.table("tracked_indices").delete().eq("user_id", user_id).execute()
+                delete_stats["tracked_indices"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 tracked_indices 失敗: {e}")
+                delete_stats["tracked_indices"] = 0
 
-            # 6. 刪除投資組合
-            sb.table("portfolios").delete().eq("user_id", user_id).execute()
+            # 6. 刪除用戶偏好設置
+            try:
+                result = sb.table("user_preferences").delete().eq("user_id", user_id).execute()
+                delete_stats["user_preferences"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 user_preferences 失敗: {e}")
+                delete_stats["user_preferences"] = 0
 
-            # 7. 刪除追蹤指數
-            sb.table("tracked_indices").delete().eq("user_id", user_id).execute()
+            # 7. 刪除市場早報
+            try:
+                result = sb.table("market_briefings").delete().eq("user_id", user_id).execute()
+                delete_stats["market_briefings"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.warning(f"[Admin] 刪除 market_briefings 失敗: {e}")
+                delete_stats["market_briefings"] = 0
 
-            # 8. 刪除用戶偏好設置
-            sb.table("user_preferences").delete().eq("user_id", user_id).execute()
+            # 8. 最後刪除用戶個人檔案
+            try:
+                result = sb.table("profiles").delete().eq("id", user_id).execute()
+                delete_stats["profiles"] = len(result.data) if result.data else 0
+            except Exception as e:
+                logger.error(f"[Admin] 刪除 profiles 失敗: {e}")
+                raise HTTPException(status_code=500, detail="無法刪除使用者檔案")
 
-            # 9. 刪除用戶個人檔案
-            sb.table("profiles").delete().eq("id", user_id).execute()
-
-            logger.info(f"[Admin] 已刪除使用者及相關數據: {user_id}")
+            logger.info(f"[Admin] 已刪除使用者及相關數據: {user_id}, 統計: {delete_stats}")
+        except HTTPException:
+            raise
         except Exception as cascade_error:
             logger.error(f"[Admin] 級聯刪除失敗: {cascade_error}")
             raise
 
         # 記錄審計日誌
-        AuditService.log_action(
-            user_id=admin_id,
-            action="delete_user",
-            target_user_id=user_id,
-            changes={"deleted": True},
-        )
+        try:
+            AuditService.log_action(
+                user_id=admin_id,
+                action="delete_user",
+                target_user_id=user_id,
+                changes={"deleted": True, "deleted_counts": delete_stats},
+            )
+        except Exception as e:
+            logger.warning(f"[Admin] 審計日誌記錄失敗: {e}")
 
-        return {"message": "使用者已刪除", "user_id": user_id}
+        return {
+            "message": "使用者已刪除",
+            "user_id": user_id,
+            "deleted_counts": delete_stats
+        }
 
     except HTTPException:
         raise
