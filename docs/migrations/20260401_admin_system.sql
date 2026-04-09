@@ -6,7 +6,7 @@
 -- ===================================================================
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID,
     action TEXT NOT NULL,
     target_user_id UUID,
     changes JSONB,
@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON public.audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON public.audit_logs(action);
+
+-- 說明: user_id 不再受外鍵約束，允許記錄已刪除用戶的操作以保持完整的審計日誌
+COMMENT ON COLUMN public.audit_logs.user_id IS 
+'執行操作的用戶 ID。移除外鍵約束以允許記錄已刪除用戶的審計操作。';
 
 -- ===================================================================
 -- 2. 系統日誌表 (system_logs)

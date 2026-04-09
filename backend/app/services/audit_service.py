@@ -22,7 +22,7 @@ class AuditService:
         記錄審計日誌。
 
         Args:
-            user_id: 執行操作的使用者 ID
+            user_id: 執行操作的使用者 ID（可為 None，例如系統操作）
             action: 操作名稱（如 'delete_user', 'update_user', 'pause_job'）
             target_user_id: 目標使用者 ID（如果適用）
             changes: 變更內容（JSON）
