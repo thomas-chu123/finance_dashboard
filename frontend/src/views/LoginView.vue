@@ -135,25 +135,35 @@ onMounted(async () => {
   
   if (code && state) {
     console.log('Processing OAuth callback...')
+    console.log('Code:', code.substring(0, 30) + '...')
+    console.log('State:', state.substring(0, 30) + '...')
     loading.value = true
     try {
-      // 交換授權碼為 JWT
-      const tokenData = await oauthAPI.handleGoogleCallback(code, state)
+      // 呼叫後端的新端點進行完整的 OAuth 交換
+      // 使用 GET 請求，將參數作為查詢參數傳遞
+      const tokenData = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL || ''}/api/auth/oauth/google/complete-callback`,
+        {
+          params: { code, state }
+        }
+      )
+      
+      console.log('OAuth exchange successful:', tokenData.data)
       
       // 儲存令牌和用戶信息
-      localStorage.setItem('access_token', tokenData.access_token)
-      localStorage.setItem('user_id', tokenData.user_id)
-      localStorage.setItem('user_email', tokenData.email)
+      localStorage.setItem('access_token', tokenData.data.access_token)
+      localStorage.setItem('user_id', tokenData.data.user_id)
+      localStorage.setItem('user_email', tokenData.data.email)
       
       // 更新 auth store
-      auth.setUser(tokenData.user_id, tokenData.email, tokenData.display_name)
+      auth.setUser(tokenData.data.user_id, tokenData.data.email, tokenData.data.display_name)
       
       // 清除 URL 中的查詢參數
       router.replace({ path: '/login' })
       
       // 如果是新用戶，顯示歡迎消息
-      if (tokenData.is_new_user) {
-        alert(`歡迎 ${tokenData.display_name}！帳號建立成功！`)
+      if (tokenData.data.is_new_user) {
+        alert(`歡迎 ${tokenData.data.display_name}！帳號建立成功！`)
       }
       
       // 導航到首頁

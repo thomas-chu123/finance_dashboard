@@ -127,3 +127,64 @@ class GoogleOAuthService:
         except Exception as e:
             logger.error(f"[VERIFY_TOKEN] ❌ 驗證過程中發生錯誤: {str(e)}", exc_info=True)
             return None
+    
+    def exchange_code_for_id_token(self, code: str) -> str:
+        """
+        交換 Google 授權碼為 ID token.
+        
+        Args:
+            code: Google 授權碼
+            
+        Returns:
+            Google ID token
+            
+        Raises:
+            Exception: 如果交換失敗
+        """
+        import httpx
+        import json
+        
+        logger.info(f"[EXCHANGE_CODE] 開始交換授權碼為 ID token")
+        logger.info(f"[EXCHANGE_CODE] 授權碼: {code[:20]}...")
+        logger.info(f"[EXCHANGE_CODE] 使用 client_id: {self.client_id[:20]}...")
+        logger.info(f"[EXCHANGE_CODE] 使用 redirect_uri: {self.redirect_uri}")
+        
+        token_url = "https://oauth2.googleapis.com/token"
+        
+        payload = {
+            "code": code,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "redirect_uri": self.redirect_uri,
+            "grant_type": "authorization_code"
+        }
+        
+        logger.info(f"[EXCHANGE_CODE] 發送令牌交換請求到 {token_url}")
+        logger.info(f"[EXCHANGE_CODE] 請求 payload 鍵: {list(payload.keys())}")
+        
+        try:
+            with httpx.Client() as client:
+                response = client.post(token_url, data=payload)
+                logger.info(f"[EXCHANGE_CODE] 響應狀態碼: {response.status_code}")
+                logger.info(f"[EXCHANGE_CODE] 響應內容長度: {len(response.text)}")
+                
+                if response.status_code != 200:
+                    logger.error(f"[EXCHANGE_CODE] ❌ 令牌交換失敗: {response.status_code}")
+                    logger.error(f"[EXCHANGE_CODE] 響應內容: {response.text}")
+                    raise Exception(f"Token exchange failed with status {response.status_code}")
+                
+                response_data = response.json()
+                logger.info(f"[EXCHANGE_CODE] ✅ 令牌交換成功")
+                logger.info(f"[EXCHANGE_CODE] 響應鍵: {list(response_data.keys())}")
+                
+                id_token_value = response_data.get("id_token")
+                if not id_token_value:
+                    logger.error(f"[EXCHANGE_CODE] ❌ 響應中缺少 id_token")
+                    raise Exception("Missing id_token in response")
+                
+                logger.info(f"[EXCHANGE_CODE] ✅ 取得 ID token: {id_token_value[:30]}...")
+                return id_token_value
+            
+        except Exception as e:
+            logger.error(f"[EXCHANGE_CODE] ❌ 交換過程中發生錯誤: {str(e)}", exc_info=True)
+            raise
