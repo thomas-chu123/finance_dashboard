@@ -130,6 +130,7 @@ input[type="date"] {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   backdrop-filter: blur(4px);
+  border-radius: 12px;
   /* 多層陰影：內層柔和 + 中層投影 + 外層光環 */
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
@@ -147,6 +148,65 @@ input[type="date"] {
     0 15px 40px -8px rgba(0, 0, 0, 0.4),
     0 0 50px -8px rgba(34, 197, 94, 0.15);
   transform: translateY(-4px);
+}
+
+.premium-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dark .premium-card {
+  background-color: var(--bg-secondary);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+}
+
+.premium-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.premium-header h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.premium-tab-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+
+.premium-tab {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.premium-tab.active {
+  background-color: var(--color-brand-500);
+  border-color: var(--color-brand-500);
+  color: #ffffff;
+}
+
+.premium-tab:not(.active):hover {
+  background-color: var(--bg-sidebar);
+  border-color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .data-grid-border {
