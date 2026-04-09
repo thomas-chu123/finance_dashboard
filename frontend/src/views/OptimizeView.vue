@@ -256,59 +256,60 @@
         </div>
       </div>
 
-      <!-- ✅ Independent Action Card -->
-      <div v-if="!showSaved" class="glass-card mt-3">
-        <div class="p-4 border-b border-[var(--border-color)]">
-          <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Play class="w-4 h-4 text-brand-500" />
-            執行操作
-          </h3>
-        </div>
-        <div class="p-4 flex flex-col gap-3">
-          <!-- 平均分配 & 儲存組合 row -->
-          <div class="flex gap-3">
-            <button
-              :disabled="selectedItems.length === 0"
-              :class="[
-                'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
-                selectedItems.length === 0
-                  ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
-                  : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
-              ]"
-              @click="selectedItems.length > 0 && equalizeWeights()"
-            >
-              <Scale class="w-4 h-4" />平均分配
-            </button>
-            <button
-              :disabled="selectedItems.length === 0"
-              :class="[
-                'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
-                selectedItems.length === 0
-                  ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
-                  : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
-              ]"
-              @click="selectedItems.length > 0 && (showSaveModal = true)"
-            >
-              <Save class="w-4 h-4" />儲存組合
-            </button>
-          </div>
+    </div>
 
-          <!-- 開始優化 button -->
+    <!-- ✅ Independent Action Card -->
+    <div v-if="!showSaved" class="premium-card mt-3">
+      <div class="premium-header">
+        <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+          <Play class="w-5 h-5 text-brand-500" />
+        </div>
+        <h3 class="font-bold text-[var(--text-primary)]">執行操作</h3>
+      </div>
+      <div class="p-5 flex flex-col gap-3">
+        <!-- 平均分配 & 儲存組合 row -->
+        <div class="flex gap-3">
           <button
-            :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
+            :disabled="selectedItems.length === 0"
             :class="[
-              'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
-              (runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5)
-                ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
-                : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
+              'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
+              selectedItems.length === 0
+                ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
+                : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
             ]"
-            @click="runOptimization"
+            @click="selectedItems.length > 0 && equalizeWeights()"
           >
-            <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
-            <Play v-else class="w-4 h-4 fill-current" />
-            {{ runLoading ? '優化計算中...' : '開始優化' }}
+            <Scale class="w-4 h-4" />平均分配
+          </button>
+          <button
+            :disabled="selectedItems.length === 0"
+            :class="[
+              'flex-1 px-3 py-2 text-sm font-medium border rounded-lg transition-colors flex items-center justify-center gap-2',
+              selectedItems.length === 0
+                ? 'border-[var(--border-color)] text-zinc-400 dark:text-zinc-600 bg-[var(--input-bg)] cursor-not-allowed opacity-50'
+                : 'border-[var(--border-color)] text-muted hover:text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 dark:hover:text-brand-400 cursor-pointer'
+            ]"
+            @click="selectedItems.length > 0 && (showSaveModal = true)"
+          >
+            <Save class="w-4 h-4" />儲存組合
           </button>
         </div>
+
+        <!-- 開始優化 button -->
+        <button
+          :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
+          :class="[
+            'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
+            (runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5)
+              ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
+              : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
+          ]"
+          @click="runOptimization"
+        >
+          <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
+          <Play v-else class="w-4 h-4 fill-current" />
+          {{ runLoading ? '優化計算中...' : '開始優化' }}
+        </button>
       </div>
     </div>
   </div>

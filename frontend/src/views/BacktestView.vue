@@ -293,14 +293,14 @@
       </div>
 
       <!-- ✅ Independent Action Card -->
-      <div v-if="!showSaved" class="glass-card mt-3">
-        <div class="p-4 border-b border-[var(--border-color)]">
-          <h3 class="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-            <Play class="w-4 h-4 text-brand-500" />
-            執行操作
-          </h3>
+      <div v-if="!showSaved" class="premium-card mt-3">
+        <div class="premium-header">
+          <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
+            <Play class="w-5 h-5 text-brand-500" />
+          </div>
+          <h3 class="font-bold text-[var(--text-primary)]">執行操作</h3>
         </div>
-        <div class="p-4 flex flex-col gap-3">
+        <div class="p-5 flex flex-col gap-3">
           <!-- 平均分配 & 儲存組合 row -->
           <div class="flex gap-3">
             <button
