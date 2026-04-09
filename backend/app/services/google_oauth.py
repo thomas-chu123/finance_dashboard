@@ -2,6 +2,7 @@
 import logging
 from typing import Optional, Dict, Any
 from app.database import get_supabase
+from app.services.portfolio_template_service import init_user_default_portfolios
 import uuid
 
 logger = logging.getLogger("google_oauth")
@@ -88,6 +89,18 @@ class GoogleOAuthUserService:
             
             if insert_res.data:
                 logger.info(f"[GET_OR_CREATE_USER] ✅ 新 Google 用戶創建成功: {email} (ID: {new_user_id})")
+                
+                # 初始化預設投資組合模板
+                logger.info(f"[GET_OR_CREATE_USER] 開始初始化預設投資組合模板...")
+                try:
+                    portfolio_ids = init_user_default_portfolios(new_user_id)
+                    logger.info(f"[GET_OR_CREATE_USER] ✅ 預設投資組合模板初始化成功: {len(portfolio_ids)} 個組合已建立")
+                    for i, portfolio_id in enumerate(portfolio_ids, 1):
+                        logger.info(f"[GET_OR_CREATE_USER]   模板 {i}: {portfolio_id[:20]}...")
+                except Exception as e:
+                    logger.error(f"[GET_OR_CREATE_USER] ⚠️ 預設投資組合模板初始化失敗: {str(e)}", exc_info=True)
+                    # 不中斷流程，用戶已創建成功
+                
                 return insert_res.data[0]
             
             logger.error(f"[GET_OR_CREATE_USER] ❌ 創建用戶失敗: {email} - 無返回數據")
