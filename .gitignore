@@ -24,3 +24,4 @@ frontend/package-lock.json
 /debug/
 /plan
 tests/allure-results/*
+frontend/package-lock.json
