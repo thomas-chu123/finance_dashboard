@@ -175,7 +175,7 @@
                 <Mail :size="16" class="text-zinc-400" />
                 <span class="text-sm font-bold text-[var(--text-primary)]">Email 通知</span>
               </div>
-              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_email ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500']">
+              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_email ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-white dark:bg-white text-zinc-950 dark:text-zinc-950']">
                 {{ auth.profile?.notify_email ? '已啟用' : '停用' }}
               </span>
             </div>
@@ -184,7 +184,7 @@
                 <MessageCircle :size="16" class="text-zinc-400" />
                 <span class="text-sm font-bold text-[var(--text-primary)]">LINE 通知</span>
               </div>
-              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_line ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500']">
+              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_line ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-white dark:bg-white text-zinc-950 dark:text-zinc-950']">
                 {{ auth.profile?.notify_line ? '已啟用' : '停用' }}
               </span>
             </div>
