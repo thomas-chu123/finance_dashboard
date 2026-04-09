@@ -17,11 +17,5 @@ backend/backend.log.*
 frontend/node_modules/
 frontend/dist/
 frontend/.env.local
-frontend/package-lock.json
+package-lock.json
 
-# Project
-/temp/
-/debug/
-/plan
-tests/allure-results/*
-frontend/package-lock.json
