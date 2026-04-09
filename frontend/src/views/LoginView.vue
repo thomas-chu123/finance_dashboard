@@ -68,9 +68,15 @@
       </form>
 
       <div class="mt-5 text-[13px] text-[var(--text-secondary)]">
-        <a href="#" class="text-[#00D084] no-underline hover:underline">忘記密碼？</a>
+        <button @click="showForgotPassword = true" class="text-[#00D084] no-underline hover:underline bg-none border-none cursor-pointer p-0">忘記密碼？</button>
       </div>
     </div>
+
+    <!-- Forgot Password Modal -->
+    <ForgotPasswordModal 
+      :isOpen="showForgotPassword" 
+      @close="showForgotPassword = false"
+    />
   </div>
 </template>
 
@@ -81,6 +87,7 @@ import { useAuthStore } from '../stores/auth'
 import { Activity, Loader2 } from 'lucide-vue-next'
 import axios from 'axios'
 import oauthAPI from '../api/oauth'
+import ForgotPasswordModal from '../components/ForgotPasswordModal.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -88,6 +95,7 @@ const auth = useAuthStore()
 const mode = ref('login')
 const loading = ref(false)
 const error = ref('')
+const showForgotPassword = ref(false)
 const form = reactive({ email: '', password: '', displayName: '' })
 
 async function handleSubmit() {
