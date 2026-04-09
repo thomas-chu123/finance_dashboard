@@ -54,7 +54,7 @@ class GoogleOAuthService:
     def __init__(self):
         self.client_id = settings.google_client_id
         self.client_secret = settings.google_client_secret
-        self.redirect_uri = settings.oauth_redirect_uri
+        self.redirect_uri = settings.google_redirect_uri
         self.scopes = [
             "openid",
             "https://www.googleapis.com/auth/userinfo.email",
