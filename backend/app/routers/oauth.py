@@ -2,6 +2,7 @@
 import logging
 from datetime import timedelta
 from fastapi import APIRouter, HTTPException, Request, Header
+from fastapi.responses import RedirectResponse
 from app.models import (
     GoogleOAuthRequest,
     OAuthTokenResponse,
@@ -59,6 +60,9 @@ async def google_oauth_callback(
     Args:
         code: Google 授權碼
         state: CSRF 狀態令牌
+    
+    Returns:
+        重定向到前端 callback 頁面，附帶授權碼和狀態令牌
     """
     try:
         # ===== 1. 接收回調參數 =====
@@ -83,15 +87,14 @@ async def google_oauth_callback(
         logger.info(f"[OAUTH_CALLBACK] ✅ 狀態令牌驗證成功")
         
         logger.info(f"[OAUTH_CALLBACK] 授權成功，授權碼: {code[:10]}...")
-        logger.info(f"[OAUTH_CALLBACK] 返回授權碼到前端進行令牌交換")
+        logger.info(f"[OAUTH_CALLBACK] 重定向到前端 callback 頁面進行令牌交換")
         
-        # 返回授權碼到前端處理（前端使用 Google SDK 完成令牌交換）
-        return {
-            "code": code,
-            "status": "success",
-            "message": "Google authorization successful. Please complete token exchange on client side.",
-            "redirect_path": f"/auth/callback?code={code}&state={state}"
-        }
+        # ===== 3. 重定向到前端 callback 頁面 =====
+        # 前端將在 /login?code=...&state=... 頁面上處理令牌交換
+        callback_url = f"{settings.app_base_url}/login?code={code}&state={state}"
+        logger.info(f"[OAUTH_CALLBACK] 重定向 URL: {callback_url}")
+        
+        return RedirectResponse(url=callback_url, status_code=302)
         
     except HTTPException:
         raise
