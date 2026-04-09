@@ -31,7 +31,7 @@ class OAuthStateToken:
     
     @classmethod
     def validate(cls, state: str) -> bool:
-        """驗證狀態令牌是否有效且未過期."""
+        """驗證狀態令牌是否有效且未過期，驗證成功後刪除令牌."""
         logger.info(f"[VALIDATE_STATE] 開始驗證狀態令牌: {state[:20]}...")
         logger.info(f"[VALIDATE_STATE] 狀態存儲中的令牌數: {len(cls._state_store)}")
         
@@ -53,6 +53,30 @@ class OAuthStateToken:
         # 使用後刪除令牌
         del cls._state_store[state]
         logger.info(f"[VALIDATE_STATE] ✅ 狀態令牌驗證成功並已刪除")
+        return True
+    
+    @classmethod
+    def validate_without_delete(cls, state: str) -> bool:
+        """驗證狀態令牌是否有效且未過期，但不刪除令牌（用於第一次驗證）."""
+        logger.info(f"[VALIDATE_STATE_ONLY] 開始驗證狀態令牌 (不刪除): {state[:20]}...")
+        logger.info(f"[VALIDATE_STATE_ONLY] 狀態存儲中的令牌數: {len(cls._state_store)}")
+        
+        if state not in cls._state_store:
+            logger.warning(f"[VALIDATE_STATE_ONLY] ❌ 無效狀態令牌: {state[:10]}... (不在存儲中)")
+            return False
+        
+        token_data = cls._state_store[state]
+        logger.info(f"[VALIDATE_STATE_ONLY] ✅ 令牌在存儲中找到")
+        logger.info(f"[VALIDATE_STATE_ONLY] 創建時間: {token_data['created_at']}")
+        logger.info(f"[VALIDATE_STATE_ONLY] 過期時間: {token_data['expires_at']}")
+        logger.info(f"[VALIDATE_STATE_ONLY] 當前時間: {datetime.utcnow()}")
+        
+        if datetime.utcnow() > token_data["expires_at"]:
+            logger.warning(f"[VALIDATE_STATE_ONLY] ❌ 狀態令牌已過期: {state[:10]}...")
+            del cls._state_store[state]
+            return False
+        
+        logger.info(f"[VALIDATE_STATE_ONLY] ✅ 狀態令牌驗證成功（令牌保留以供後續使用）")
         return True
 
 

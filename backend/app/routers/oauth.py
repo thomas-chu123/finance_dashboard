@@ -78,13 +78,13 @@ async def google_oauth_callback(
         
         logger.info(f"[OAUTH_CALLBACK] ✅ 參數驗證通過")
         
-        # ===== 2. 驗證狀態令牌 (CSRF 防護) =====
+        # ===== 2. 驗證狀態令牌 (CSRF 防護) - 但不刪除，保留給前端使用 =====
         logger.info(f"[OAUTH_CALLBACK] 開始驗證狀態令牌...")
-        if not OAuthStateToken.validate(state):
+        if not OAuthStateToken.validate_without_delete(state):
             logger.error(f"[OAUTH_CALLBACK] ❌ 狀態令牌驗證失敗: {state[:10]}...")
             raise HTTPException(status_code=400, detail="無效的狀態令牌")
         
-        logger.info(f"[OAUTH_CALLBACK] ✅ 狀態令牌驗證成功")
+        logger.info(f"[OAUTH_CALLBACK] ✅ 狀態令牌驗證成功（令牌保留給前端使用）")
         
         logger.info(f"[OAUTH_CALLBACK] 授權成功，授權碼: {code[:10]}...")
         logger.info(f"[OAUTH_CALLBACK] 重定向到前端 callback 頁面進行令牌交換")
