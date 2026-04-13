@@ -107,13 +107,20 @@ async def run_backtest(
     if not twd_fx.empty:
         for sym in list(price_data.keys()):
             if get_symbol_currency(sym) == "TWD":
-                # Align price and FX
-                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().dropna()
-                if not combined.empty:
+                # Align price and FX using ffill().bfill() to preserve all trading days
+                # IMPORTANT: Do NOT use .dropna() as it removes trading days that exist in either price_data or twd_fx
+                # This causes date misalignment and reduces trading_days count, which inflates CAGR calculations
+                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().bfill()
+                combined = combined.dropna(how='all')  # Only drop rows where ALL values are NaN
+                if not combined.empty and len(combined) == len(price_data[sym]):
                     price_data[sym] = combined["price"] / combined["fx"]
-                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (aligned rows: {len(combined)})")
+                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (rows: {len(combined)})")
                 else:
-                    logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local prices.")
+                    # If alignment causes data loss, keep original TWD prices
+                    if not combined.empty and len(combined) < len(price_data[sym]):
+                        logger.warning(f"[Backtest] FX alignment for {sym} lost {len(price_data[sym]) - len(combined)} rows. Using local TWD prices.")
+                    else:
+                        logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local TWD prices.")
 
     if not price_data:
         logger.error("[Backtest] No data fetched for ANY symbol.")
