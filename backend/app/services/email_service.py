@@ -229,74 +229,106 @@ def build_alert_email(
             rsi_status_badge = ""
         
         rsi_html = f"""
-                                    <td width="50%">
-                                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">目前 RSI</div>
+                                    <td width="50%" valign="top">
+                                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">目前 RSI</div>
                                         <div style="font-size: 24px; font-weight: 700; color: {rsi_disp_color};">{current_rsi:.2f}{rsi_status_badge}</div>
                                     </td>
         """
 
+    body_style = f"margin: 0; padding: 0; font-family: 'Inter', 'Microsoft JhengHei', Helvetica, Arial, sans-serif; background-color: #f8fafc; color: {nexus_dark_green};"
+    
     body = f"""<!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
     <title>{subject}</title>
+    <!--[if mso]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
     <style>
-        body {{ margin: 0; padding: 0; font-family: "Microsoft JhengHei", Helvetica, Arial, sans-serif; background-color: #f4f7f9; color: #334155; }}
-        .wrapper {{ width: 100%; table-layout: fixed; background-color: #f4f7f9; padding-bottom: 40px; }}
-        .main {{ background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }}
-        .header {{ background-color: #ffffff; padding: 30px; text-align: center; border-bottom: 1px solid #f1f5f9; }}
-        .logo-text {{ color: {nexus_green}; font-size: 24px; font-weight: bold; letter-spacing: 2px; margin: 0; }}
-        .content {{ padding: 40px 30px; }}
-        .alert-title {{ font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 10px; line-height: 1.4; }}
-        .status-badge {{ display: inline-block; background-color: {badge_bg}; color: {badge_color}; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 25px; }}
-        .data-card {{ background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin-bottom: 30px; }}
-        .asset-name {{ font-size: 18px; font-weight: 700; color: #0f172a; }}
-        .asset-subtext {{ color: #64748b; font-size: 14px; margin-bottom: 15px; }}
-        .condition-met {{ color: {nexus_green}; font-weight: 600; font-size: 15px; padding: 10px 0; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1; margin-bottom: 20px; }}
-        .stats-table {{ width: 100%; }}
-        .stats-label {{ font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }}
-        .stats-value {{ font-size: 24px; font-weight: 700; color: #1e293b; }}
-        .button-wrapper {{ text-align: center; }}
-        .btn {{ background-color: {nexus_green}; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 10px; font-weight: 600; display: inline-block; }}
-        .footer {{ padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; line-height: 1.8; }}
-        .footer a {{ color: {nexus_green}; text-decoration: none; }}
+        :root {{ color-scheme: light; supported-color-schemes: light; }}
+        body {{ margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f8fafc; }}
+        img {{ line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: 0; height: auto; }}
+        
+        /* Dark Mode Protection */
+        @media (prefers-color-scheme: dark) {{
+            .body-wrapper {{ background-color: #f8fafc !important; }}
+            .main-content {{ background-color: #ffffff !important; color: #334155 !important; }}
+            .text-main {{ color: #334155 !important; }}
+            .text-muted {{ color: #64748b !important; }}
+            .data-card {{ background-color: #fcfdfe !important; border-color: #e2e8f0 !important; }}
+        }}
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {{
+            .main-content {{ border-radius: 0 !important; }}
+            .content-padding {{ padding: 30px 20px !important; }}
+        }}
     </style>
 </head>
-<body>
-    <div class="wrapper">
+<body style="{body_style}">
+    <div class="body-wrapper" style="background-color: #f8fafc; padding: 20px 0;">
         <center>
-            <table class="main" width="100%">
+            <table class="main-content" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin: 0 auto;">
+                <!-- Header / Logo -->
                 <tr>
-                    <td class="header">
-                        <p class="logo-text">NEXUS. FINANCE</p>
+                    <td align="center" style="padding: 40px 30px 20px;">
+                        <table border="0" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" style="background-color: {nexus_green}; width: 56px; height: 56px; border-radius: 28px; color: #ffffff; font-size: 24px; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 208, 132, 0.2);">
+                                    N
+                                </td>
+                            </tr>
+                        </table>
+                        <h1 style="margin: 16px 0 4px; font-size: 28px; color: {nexus_green}; letter-spacing: 1px;">NEXUS</h1>
+                        <p style="margin: 0; color: #64748b; font-size: 14px; font-weight: 500;">Finance Dashboard</p>
                     </td>
                 </tr>
+
+                <!-- Main Body -->
                 <tr>
-                    <td class="content">
-                        <div class="alert-title">{subject}</div>
-                        <div class="status-badge">觸發項目：{mode_desc}</div>
+                    <td class="content-padding" style="padding: 20px 40px 40px;">
+                        <div style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 12px; line-height: 1.4;">{subject}</div>
+                        <div style="display: inline-block; background-color: {badge_bg}; color: {badge_color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 24px;">
+                            觸發項目：{mode_desc}
+                        </div>
                         
-                        <p style="color: #64748b; font-size: 15px; line-height: 1.6;">您追蹤的投資標的已達到預設的觸發條件，請查看最新市場狀態：</p>
+                        <p class="text-muted" style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                            您追蹤的投資標的已達到預設的觸發條件，請查看最新市場狀態：
+                        </p>
                         
-                        <div class="data-card">
-                            <div class="asset-name">{symbol} <span style="font-weight: 400; font-size: 14px; color: #64748b;">({name})</span></div>
-                            <div class="asset-subtext">資產類型：{category.upper()}</div>
+                        <!-- Data Card -->
+                        <div class="data-card" style="background-color: #fcfdfe; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 24px; margin-bottom: 32px;">
+                            <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
+                                {symbol} <span style="font-weight: 400; font-size: 14px; color: #64748b;">({name})</span>
+                            </div>
+                            <div style="color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+                                資產類型：{category.upper()}
+                            </div>
                             
-                            <div class="condition-met">✓ 觸發條件：{trigger_condition}</div>
+                            <div style="color: {nexus_green}; font-weight: 600; font-size: 15px; padding: 12px 0; border-top: 1px dashed #e2e8f0; border-bottom: 1px dashed #e2e8f0; margin-bottom: 20px;">
+                                ✓ 觸發條件：{trigger_condition}
+                            </div>
                             
-                            <table class="stats-table">
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td width="33%">
-                                        <div class="stats-label">目前價格</div>
-                                        <div class="stats-value" style="color: {price_accent};">{current_price:.2f}</div>
+                                    <td width="50%" valign="top">
+                                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">目前價格</div>
+                                        <div style="font-size: 24px; font-weight: 700; color: {price_accent};">{current_price:.2f}</div>
                                     </td>
                                     {rsi_html}
                                 </tr>
                             </table>
                         </div>
 
-                        <div class="button-wrapper">
                             <a href="{settings.app_base_url}/tracking" class="btn">立即進入儀表板查看</a>
                         </div>
                     </td>
