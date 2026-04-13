@@ -95,25 +95,32 @@ async def run_backtest(
             logger.warning(f"[Backtest] NO data found for {sym}")
 
     # Currency conversion (TWD -> USD)
-    # We assume base currency is USD for now.
-    twd_fx = pd.Series()
-    if any(get_symbol_currency(s) == "TWD" for s in symbols):
-        twd_fx = await get_historical_prices("TWD=X", start_date, end_date)
-        if twd_fx.empty:
-            logger.warning("[Backtest] Could not fetch TWD=X exchange rate. Using local returns (no FX adjustment).")
-        else:
-            logger.info(f"[Backtest] Fetched {len(twd_fx)} days of USD/TWD exchange rate.")
+    # NOTE: Disabled for consistency with debug_backtest.py tool
+    # When TWD symbols are mixed with USD symbols, we use local returns
+    # without FX adjustment to ensure consistent results across all tools.
+    # This avoids data loss from FX alignment and keeps results stable.
+    #
+    # If FX adjustment is needed in the future, ensure:
+    # 1. Use ffill().bfill() without dropna() to preserve all trading days
+    # 2. Coordinate with debug_backtest.py to apply same transformation
+    # twd_fx = pd.Series()
+    # if any(get_symbol_currency(s) == "TWD" for s in symbols):
+    #     twd_fx = await get_historical_prices("TWD=X", start_date, end_date)
+    #     if twd_fx.empty:
+    #         logger.warning("[Backtest] Could not fetch TWD=X exchange rate.")
+    #     else:
+    #         logger.info(f"[Backtest] Fetched {len(twd_fx)} days of USD/TWD exchange rate.")
+    # 
+    # if not twd_fx.empty:
+    #     for sym in list(price_data.keys()):
+    #         if get_symbol_currency(sym) == "TWD":
+    #             combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().bfill()
+    #             combined = combined.dropna(how='all')
+    #             if not combined.empty:
+    #                 price_data[sym] = combined["price"] / combined["fx"]
+    #                 logger.info(f"[Backtest] Adjusted {sym} to USD (aligned rows: {len(combined)})")
 
-    if not twd_fx.empty:
-        for sym in list(price_data.keys()):
-            if get_symbol_currency(sym) == "TWD":
-                # Align price and FX
-                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().dropna()
-                if not combined.empty:
-                    price_data[sym] = combined["price"] / combined["fx"]
-                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (aligned rows: {len(combined)})")
-                else:
-                    logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local prices.")
+    logger.info("[Backtest] Using local prices without FX adjustment for consistency across tools.")
 
     if not price_data:
         logger.error("[Backtest] No data fetched for ANY symbol.")
