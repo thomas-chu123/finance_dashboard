@@ -173,7 +173,7 @@
               </div>
 
               <!-- Symbol list -->
-              <div class="h-64 overflow-y-auto border border-[var(--border-color)] rounded-2xl bg-[var(--bg-sidebar)]/30 custom-scrollbar">
+              <div class="h-80 overflow-y-auto border border-[var(--border-color)] rounded-2xl bg-[var(--bg-sidebar)]/30 custom-scrollbar">
                 <div v-for="s in filteredSymbols.slice(0, 100)" :key="s.symbol"
                   :class="['px-4 py-3 cursor-pointer transition-all border-b border-[var(--border-color)] last:border-0 flex items-center justify-between hover:bg-brand-500/5', isSelected(s.symbol) ? 'bg-brand-500/10' : '']"
                   @click="toggleSymbol(s)">
