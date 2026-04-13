@@ -328,16 +328,25 @@ def build_alert_email(
                                 </tr>
                             </table>
                         </div>
-
-                            <a href="{settings.app_base_url}/tracking" class="btn">立即進入儀表板查看</a>
-                        </div>
+                        <!-- CTA Button -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <a href="{settings.app_base_url}/tracking" style="background-color: {nexus_green}; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 12px; font-weight: 600; display: inline-block; font-size: 16px; box-shadow: 0 4px 15px rgba(0, 208, 132, 0.2);">
+                                        立即進入儀表板查看
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
+
+                <!-- Footer -->
                 <tr>
-                    <td class="footer">
+                    <td style="padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; background-color: #f8fafc; border-top: 1px solid #e2e8f0;" align="center">
                         此郵件為系統自動發送，請勿直接回覆。<br>
-                        想要停止此項目的通知？ <a href="{settings.backend_base_url}/api/public/stop-notification/{tracking_id}" style="color: {error_red};">點此停止通知</a><br>
-                        © 2026 NEXUS Finance Dashboard.
+                        想要停止此項目的通知？ <a href="{settings.backend_base_url}/api/public/stop-notification/{tracking_id}" style="color: {error_red}; text-decoration: none; font-weight: 600;">點此停止通知</a><br>
+                        <div style="margin-top: 8px;">© 2026 NEXUS Finance Dashboard.</div>
                     </td>
                 </tr>
             </table>

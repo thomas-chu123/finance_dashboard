@@ -129,7 +129,7 @@ def _build_dividend_email(
 
                 <!-- Footer -->
                 <tr>
-                    <td style="padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; background-color: #f8fafc; border-top: 1px solid #e2e8f0;">
+                    <td style="padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; background-color: #f8fafc; border-top: 1px solid #e2e8f0;" align="center">
                         此郵件為系統自動發送，請勿直接回覆。<br>
                         © 2026 NEXUS Finance Dashboard. All rights reserved.
                     </td>
