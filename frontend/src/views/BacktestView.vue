@@ -567,6 +567,7 @@ const symbolTypes = [
   { value: 'tw_etf', label: '台灣ETF' },
   { value: 'indices', label: '指數/原物料' },
   { value: 'crypto', label: '加密貨幣' },
+  { value: 'funds', label: '共同基金' },
 ]
 
 const btConfig = reactive({
@@ -653,6 +654,9 @@ async function loadSymbols() {
     else if (symbolType.value === 'tw_etf') availableSymbols.value = data.tw_etf || []
     else if (symbolType.value === 'crypto') {
       availableSymbols.value = (data.indices || []).filter(s => s.category === 'crypto')
+    }
+    else if (symbolType.value === 'funds') {
+      availableSymbols.value = data.funds || []
     }
     else availableSymbols.value = (data.indices || []).filter(s => s.category !== 'crypto')
   } catch (e) { console.error('Symbol load failed', e) }
