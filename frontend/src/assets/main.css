@@ -195,6 +195,8 @@ input[type="date"] {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .premium-tab.active {

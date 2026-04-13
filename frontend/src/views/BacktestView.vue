@@ -385,44 +385,44 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">CAGR 年化報酬</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">CAGR 年化報酬</div>
             <div :class="['text-xl font-bold', (results?.metrics?.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
               {{ results?.metrics?.cagr ?? '--' }}{{ results?.metrics?.cagr !== undefined ? '%' : '' }}
             </div>
           </div>
           <!-- Sharpe -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SHARPE RATIO</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">SHARPE RATIO</div>
             <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results?.metrics?.sharpe_ratio ?? '--' }}</div>
           </div>
           <!-- Sortino -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">SORTINO RATIO</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">SORTINO RATIO</div>
             <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results?.metrics?.sortino_ratio ?? '--' }}</div>
           </div>
           <!-- Beta -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">BETA</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">BETA</div>
             <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.beta ?? '--' }}</div>
           </div>
           <!-- Max Drawdown -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">MAX DRAWDOWN</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">MAX DRAWDOWN</div>
             <div class="text-xl font-bold text-brand-600">{{ results?.metrics?.max_drawdown ?? '--' }}{{ results?.metrics?.max_drawdown !== undefined ? '%' : '' }}</div>
           </div>
           <!-- Volatility -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VOLATILITY (STD)</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">VOLATILITY (STD)</div>
             <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.annual_std ?? '--' }}{{ results?.metrics?.annual_std !== undefined ? '%' : '' }}</div>
           </div>
           <!-- VaR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">VAR (95%)</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">VAR (95%)</div>
             <div class="text-xl font-bold text-orange-500">{{ results?.metrics?.var_95 ?? '--' }}{{ results?.metrics?.var_95 !== undefined ? '%' : '' }}</div>
           </div>
           <!-- Final Amount -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold">FINAL AMOUNT</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">FINAL AMOUNT</div>
             <div class="text-xl font-bold text-rose-600">${{ (results?.metrics?.final_amount ?? 0).toLocaleString() }}</div>
             <div class="text-[10px] font-medium" :class="(results?.metrics?.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
               RETURN: {{ results?.metrics?.total_return ?? '--' }}{{ results?.metrics?.total_return !== undefined ? '%' : '' }}
@@ -565,7 +565,7 @@ const loadedPortfolioType = ref(null) // ✅ 追蹤已加載的組合類型
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
-  { value: 'index', label: '指數/原物料' },
+  { value: 'indices', label: '指數/原物料' },
   { value: 'crypto', label: '加密貨幣' },
 ]
 
