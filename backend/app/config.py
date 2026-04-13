@@ -39,9 +39,16 @@ class Settings(BaseSettings):
     ollama_simple_prompt_first: bool = True
     ollama_disable_thinking: bool = True
 
+    # Google OAuth
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = "http://localhost:8000/api/auth/google/callback"
+    oauth_encryption_key: str = ""  # 32-character key for token encryption
+
     # App
     app_base_url: str = "http://localhost:5173"
     backend_base_url: str = "http://localhost:8005"
+    environment: str = "development"  # 'development' | 'staging' | 'production'
     debug: bool = False
     secret_key: str = "your-secret-key-change-in-production"
 

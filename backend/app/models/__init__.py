@@ -98,6 +98,98 @@ class TrackingUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+# ──────────────────────────────────────────────
+# Admin - User Management
+# ──────────────────────────────────────────────
+class AdminUserResponse(BaseModel):
+    """管理員查看的用戶信息"""
+    id: str
+    email: str
+    display_name: Optional[str]
+    is_admin: bool
+    created_at: str
+    last_login: Optional[str] = None
+
+
+class AdminUserUpdate(BaseModel):
+    """管理員編輯用戶的模型"""
+    display_name: Optional[str] = None
+    is_admin: Optional[bool] = None
+
+
+class AdminPasswordReset(BaseModel):
+    """管理員重設密碼"""
+    new_password: str
+
+
+# ──────────────────────────────────────────────
+# Admin - Scheduler Management
+# ──────────────────────────────────────────────
+class SchedulerJobResponse(BaseModel):
+    """Scheduler 任務信息"""
+    id: str
+    job_id: str
+    job_name: str
+    description: Optional[str]
+    schedule_cron: Optional[str]
+    is_enabled: bool
+    last_run_at: Optional[str]
+    next_run_at: Optional[str]
+    status: str
+    error_message: Optional[str]
+    created_at: str
+
+
+class SchedulerJobRunResponse(BaseModel):
+    """Scheduler 任務執行歷史"""
+    id: str
+    job_id: str
+    started_at: Optional[str]
+    completed_at: Optional[str]
+    status: str
+    duration_ms: Optional[int]
+    error_message: Optional[str]
+    created_at: str
+
+
+# ──────────────────────────────────────────────
+# Admin - Audit Logs
+# ──────────────────────────────────────────────
+class AuditLogResponse(BaseModel):
+    """審計日誌信息"""
+    id: str
+    user_id: str
+    action: str
+    target_user_id: Optional[str]
+    changes: Optional[dict]
+    ip_address: Optional[str]
+    created_at: str
+
+
+# ──────────────────────────────────────────────
+# Admin - System Stats
+# ──────────────────────────────────────────────
+class SystemStatsOverviewResponse(BaseModel):
+    """系統概覽信息"""
+    total_users_count: int
+    active_users_count: int
+    tracked_indices_count: int
+    alerts_sent_count: int
+
+
+class UserStatsResponse(BaseModel):
+    """用戶統計信息"""
+    today: int
+    week: int
+    month: int
+
+
+class AlertStatsResponse(BaseModel):
+    """警報統計信息"""
+    sent_count: int
+    failed_count: int
+
+
 class TrackingResponse(BaseModel):
     id: str
     user_id: str
@@ -144,6 +236,7 @@ class BacktestRunRequest(BaseModel):
 
 
 class BacktestSaveRequest(BaseModel):
+    id: Optional[str] = None
     name: str
     items: List[BacktestItem]
     start_date: str
@@ -156,9 +249,10 @@ class BacktestPortfolioResponse(BaseModel):
     id: str
     user_id: str
     name: str
-    start_date: str
-    end_date: str
+    start_date: Optional[str] = None  # ✅ 蒙地卡羅和優化不需要日期
+    end_date: Optional[str] = None    # ✅ 蒙地卡羅和優化不需要日期
     initial_amount: float
+    portfolio_type: Optional[str] = "backtest"  # ✅ 用於區分功能類型
     results_json: Optional[dict]
     items: Optional[List[dict]] = None
     created_at: str
@@ -174,3 +268,68 @@ class BacktestCompareRequest(BaseModel):
     start_date: str
     end_date: str
     initial_amount: float = 10000
+
+# ──────────────────────────────────────────────
+# Monte Carlo Simulation
+# ──────────────────────────────────────────────
+class MonteCarloAsset(BaseModel):
+    symbol: str
+    weight: float  # 0.0 - 1.0
+
+
+class MonteCarloRequest(BaseModel):
+    assets: List[MonteCarloAsset]
+    initial_amount: float = 100000
+    years: int = 30
+    simulations: int = 10000
+    annual_contribution: float = 0
+    annual_withdrawal: float = 0
+    inflation_mean: float = 0.03
+    inflation_std: float = 0.01
+    adjust_for_inflation: bool = True
+
+
+class MonteCarloResponse(BaseModel):
+    summary: dict
+    percentile_paths: dict
+    history_years: int
+    assets_used: List[str]
+
+
+# ──────────────────────────────────────────────
+# Google OAuth & Third-Party Auth
+# ──────────────────────────────────────────────
+class GoogleOAuthRequest(BaseModel):
+    """Google OAuth 令牌申請"""
+    id_token: str  # Google ID Token
+
+
+class GoogleOAuthCallback(BaseModel):
+    """Google OAuth 回調請求"""
+    code: str  # Google 授權碼
+    state: str  # CSRF 狀態令牌
+
+
+class OAuthTokenResponse(BaseModel):
+    """OAuth 令牌響應"""
+    access_token: str
+    token_type: str = "bearer"
+    user_id: str
+    email: str
+    display_name: Optional[str] = None
+    is_new_user: bool = False
+    expires_in: int = 604800  # 7 days
+
+
+class GoogleLoginUrlResponse(BaseModel):
+    """Google 登入 URL 響應"""
+    login_url: str
+    state: str
+    state_expires_at: str
+
+
+class OAuthErrorResponse(BaseModel):
+    """OAuth 錯誤響應"""
+    error: str
+    error_description: str
+    error_code: Optional[int] = None

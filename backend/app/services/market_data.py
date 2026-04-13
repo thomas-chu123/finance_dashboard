@@ -588,3 +588,10 @@ def get_index_list() -> list[dict]:
         {"symbol": "TWDEUR=X", "name": "新台幣/歐元", "category": "exchange"},
         {"symbol": "CNYTWD=X", "name": "人民幣/新台幣", "category": "exchange"},
     ]
+
+
+async def get_fund_list() -> list[dict]:
+    """Return tracked mutual fund symbols."""
+    return [
+        {"symbol": "0P000019VL", "name": "聯博-全球非投資等級債券基金AT股美元", "category": "funds"},
+    ]

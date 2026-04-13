@@ -16,7 +16,7 @@
         isSidebarCollapsed ? 'w-20 lg:w-20' : 'w-60 lg:w-60'
       ]"
     >
-      <div class="flex flex-col h-full p-4">
+      <div class="flex flex-col h-full p-4 pb-24 lg:pb-4">
         <!-- Logo Section -->
         <div class="flex items-center justify-between mb-8 px-2">
           <div class="flex items-center gap-2 min-w-0" :class="!isSidebarCollapsed ? '' : 'lg:justify-center lg:w-full'">
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 space-y-1">
+        <nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2">主選單</div>
           
           <router-link to="/" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="總覽" @click="handleMenuItemClick('/')">
@@ -81,6 +81,11 @@
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">投資組合最佳化</span>
           </router-link>
 
+          <router-link to="/monte-carlo" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/monte-carlo' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="蒙地卡羅模擬" @click="handleMenuItemClick('/monte-carlo')">
+            <Dice5 :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/monte-carlo' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">蒙地卡羅模擬</span>
+          </router-link>
+
           <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">系統</div>
           
           <router-link to="/users" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/users' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="使用者管理" @click="handleMenuItemClick('/users')">
@@ -102,6 +107,16 @@
             <FileQuestion :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/guide' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
             <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用說明</span>
           </router-link>
+
+          <!-- 管理者功能菜單 - 僅對管理員顯示 -->
+          <template v-if="isAdmin">
+            <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">管理者</div>
+            
+            <router-link to="/admin" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path.startsWith('/admin') ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="管理者面板" @click="handleMenuItemClick('/admin')">
+              <Shield :size="20" :class="['flex-shrink-0 transition-colors', $route.path.startsWith('/admin') ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
+              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">管理者面板</span>
+            </router-link>
+          </template>
         </nav>
 
         <div class="mt-auto pt-6 border-t border-[var(--border-color)]">
@@ -248,7 +263,12 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  FileQuestion
+  FileQuestion,
+  Shield,
+  Clock,
+  FileText,
+  BarChart3,
+  Dice5
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -262,12 +282,14 @@ const isSearchModalOpen = ref(false)
 
 const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
+const isAdmin = computed(() => auth.isAdmin)
 
 const mobileNavItems = [
   { path: '/', label: '總覽', icon: LayoutDashboard },
   { path: '/tracking', label: '追蹤', icon: TrendingUp },
   { path: '/backtest', label: '回測', icon: RefreshCcw },
   { path: '/optimize', label: '最佳化', icon: Target },
+  { path: '/monte-carlo', label: '蒙地卡羅', icon: Dice5 },
 ]
 
 // 關閉sidebar和backdrop

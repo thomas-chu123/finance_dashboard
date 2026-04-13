@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import scipy.optimize as sco
 from typing import Dict, Any
+from app.utils import sanitize_data
 
 RISK_FREE_RATE = 0.02
 TRADING_DAYS = 252
@@ -113,3 +114,4 @@ def run_optimization(prices_df: pd.DataFrame) -> Dict[str, Any]:
         },
         "asset_points": asset_points
     }
+    return sanitize_data(result)

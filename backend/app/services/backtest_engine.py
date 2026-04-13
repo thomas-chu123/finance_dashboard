@@ -6,6 +6,7 @@ import logging
 import time
 from typing import List, Dict, Any, Optional
 from app.services.market_data import get_historical_prices, get_symbol_currency
+from app.utils import sanitize_data
 
 
 RISK_FREE_RATE = 0.02  # 2% annual
@@ -118,10 +119,14 @@ async def run_backtest(
         logger.error("[Backtest] No data fetched for ANY symbol.")
         return {"error": "No data available for the selected symbols and date range."}
 
-    # Align dates: use ffill to handle holidays across different markets (e.g. TW vs US)
-    df = pd.DataFrame(price_data).ffill().dropna()
+    # Align dates: use ffill + bfill to handle holidays across different markets (e.g. TW vs US)
+    # Do NOT use dropna() as it removes symbols with any missing data at row level
+    df = pd.DataFrame(price_data).ffill().bfill()
     
-    logger.info(f"[Backtest] After alignment (ffill+dropna): {len(df)} rows")
+    # Remove rows where all values are NaN (shouldn't happen, but safe)
+    df = df.dropna(how='all')
+    
+    logger.info(f"[Backtest] After alignment (ffill+bfill): {len(df)} rows, columns: {list(df.columns)}")
     if not df.empty:
         logger.info(f"[Backtest] Date range: {df.index[0]} to {df.index[-1]}")
     
@@ -275,7 +280,7 @@ async def run_backtest(
 
 
     logger.info(f"[Backtest] Completed backtest for {len(symbols)} symbols in {time.time() - overall_start:.2f}s")
-    return {
+    result = {
         "metrics": {
             "initial_amount": round(initial_amount, 2),
             "final_amount": round(float(port_value.iloc[-1]), 2),
@@ -310,3 +315,4 @@ async def run_backtest(
             "end": str(df.index[-1].date()),
         },
     }
+    return sanitize_data(result)

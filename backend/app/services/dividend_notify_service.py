@@ -35,58 +35,108 @@ def _build_dividend_email(
     dividend_str = f"${cash_dividend:.4f} 元/股" if cash_dividend else "詳見公告"
     subject = f"【{type_label}提醒 - {days_label}】{symbol} {name}"
 
+    nexus_green = "#00D084"
+    nexus_dark_green = "#059669"
+    error_red = "#ef4444"
+
     body = f"""<!DOCTYPE html>
-<html lang="zh-TW">
-<head><meta charset="utf-8"><title>{subject}</title></head>
-<body style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background:#f9fbfb;margin:0;padding:0;color:#333;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f9fbfb;">
-    <tr>
-      <td align="center" style="padding:20px 16px 40px;">
-        <table width="600" cellpadding="0" cellspacing="0" border="0"
-               style="max-width:600px;width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#10b981,#047857);padding:30px 20px;text-align:center;">
-              <h1 style="margin:0;color:white;font-size:20px;letter-spacing:1px;">NEXUS. FINANCE</h1>
-              <div style="display:inline-block;background:rgba(255,255,255,0.2);color:white;padding:4px 12px;border-radius:20px;font-size:12px;margin-top:10px;font-weight:bold;">{type_label}提醒：{days_label}</div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:30px;">
-              <p style="font-size:15px;color:#555;margin:0 0 20px;">您追蹤的投資標的即將{type_label}：</p>
-              <table width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="background:#f8fcf9;border-radius:8px;border-left:4px solid #10b981;">
+<html lang="zh-TW" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>{subject}</title>
+    <!--[if mso]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
+    <style>
+        :root {{ color-scheme: light; supported-color-schemes: light; }}
+        body {{ margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f8fafc; font-family: 'Inter', 'Microsoft JhengHei', Helvetica, Arial, sans-serif; }}
+        
+        /* Dark Mode Protection */
+        @media (prefers-color-scheme: dark) {{
+            .body-wrapper {{ background-color: #f8fafc !important; }}
+            .main-content {{ background-color: #ffffff !important; color: #334155 !important; }}
+            .text-muted {{ color: #64748b !important; }}
+            .data-card {{ background-color: #fcfdfe !important; border-color: #e2e8f0 !important; }}
+        }}
+
+        @media only screen and (max-width: 600px) {{
+            .main-content {{ border-radius: 0 !important; }}
+            .content-padding {{ padding: 30px 20px !important; }}
+        }}
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; color: #334155;">
+    <div class="body-wrapper" style="background-color: #f8fafc; padding: 20px 0;">
+        <center>
+            <table class="main-content" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin: 0 auto;">
+                <!-- Header / Logo -->
                 <tr>
-                  <td style="padding:20px;">
-                    <div style="font-size:24px;font-weight:800;color:#047857;margin-bottom:5px;">{symbol} <span style="font-size:16px;font-weight:400;color:#666;">({name})</span></div>
-                    <div style="color:#7f8c8d;font-size:14px;margin-bottom:15px;">{type_label}日：{ex_date}（還有 {days_before} 天）</div>
-                    <div style="font-size:14px;color:#374151;background:#ecfdf5;padding:10px;border-radius:4px;">
-                      {'現金股利：' + dividend_str if ex_type in ('息', '權息') else '股票股利詳見公告'}
-                    </div>
-                  </td>
+                    <td align="center" style="padding: 40px 30px 20px;">
+                        <table border="0" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" style="background-color: {nexus_green}; width: 56px; height: 56px; border-radius: 28px; color: #ffffff; font-size: 24px; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 208, 132, 0.2);">
+                                    N
+                                </td>
+                            </tr>
+                        </table>
+                        <h1 style="margin: 16px 0 4px; font-size: 28px; color: {nexus_green}; letter-spacing: 1px;">NEXUS</h1>
+                        <p style="margin: 0; color: #64748b; font-size: 14px; font-weight: 500;">Finance Dashboard</p>
+                    </td>
                 </tr>
-              </table>
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;">
+
+                <!-- Content -->
                 <tr>
-                  <td align="center">
-                    <a href="{app_url}/dividend-calendar"
-                       style="display:inline-block;background:#10b981;color:white;padding:12px 35px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;">
-                      查看除息日曆
-                    </a>
-                  </td>
+                    <td class="content-padding" style="padding: 20px 40px 40px;">
+                        <div style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 12px; line-height: 1.4;">{subject}</div>
+                        <div style="display: inline-block; background-color: #ecfdf5; color: {nexus_dark_green}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 24px;">
+                            通知類別：{type_label}提醒
+                        </div>
+
+                        <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">您追蹤的投資標的即將進行{type_label}，請提前確認您的持股狀態：</p>
+
+                        <div class="data-card" style="background-color: #fcfdfe; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 24px; margin-bottom: 32px; border-left: 5px solid {nexus_green};">
+                            <div style="font-size: 22px; font-weight: 800; color: {nexus_dark_green}; margin-bottom: 8px;">
+                                {symbol} <span style="font-weight: 400; font-size: 16px; color: #64748b;">({name})</span>
+                            </div>
+                            <div style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                                {type_label}日：<strong style="color: #1e293b;">{ex_date}</strong>（還有 {days_before} 天）
+                            </div>
+                            
+                            <div style="font-size: 15px; color: #374151; background: #ecfdf5; padding: 12px 16px; border-radius: 12px; font-weight: 600;">
+                                {'現金股利：' + dividend_str if ex_type in ('息', '權息') else '股票股利詳見公告'}
+                            </div>
+                        </div>
+
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <a href="{app_url}/dividend-calendar" style="display: inline-block; background: {nexus_green}; color: #ffffff; padding: 14px 40px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 15px rgba(0, 208, 132, 0.2);">
+                                        查看除息日曆
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
                 </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#f9fbfb;padding:20px;text-align:center;font-size:12px;color:#95a5a6;border-top:1px solid #e5e7eb;">
-              這是一封自動發出的通知信，請勿直接回覆。<br>
-              © 2026 Nexus Finance Dashboard. All rights reserved.
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; background-color: #f8fafc; border-top: 1px solid #e2e8f0;" align="center">
+                        此郵件為系統自動發送，請勿直接回覆。<br>
+                        © 2026 NEXUS Finance Dashboard. All rights reserved.
+                    </td>
+                </tr>
+            </table>
+        </center>
+    </div>
 </body>
 </html>"""
     return subject, body

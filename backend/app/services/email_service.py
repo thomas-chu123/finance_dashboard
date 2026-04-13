@@ -1,4 +1,5 @@
 """Email notification service (adapted from medical project)."""
+from __future__ import annotations
 import traceback
 import aiosmtplib
 from email.mime.multipart import MIMEMultipart
@@ -175,7 +176,6 @@ def build_alert_email(
         price_condition_met, rsi_condition_met,
     )
 
-    # 依實際觸發情況產生 Email 標題
     price_dir = "突破" if trigger_direction == "above" else "跌破"
     if trigger_mode == "price":
         subject = f"📊 投資提醒：{name} ({symbol}) 價格已{price_dir} {trigger_price:.2f}"
@@ -195,110 +195,163 @@ def build_alert_email(
     else:
         subject = f"📊 投資提醒：{name} ({symbol}) 價格已{price_dir} {trigger_price:.2f}"
 
-    # 依實際觸發條件決定強調色：跌破/超賣用紅，突破/超買用綠，RSI 正常範圍用藍
+    # 依實際觸發條件決定強調色：使用 Nexus 綠 (#00D084) 為主，但跌破顯色略微區分
     is_bearish = (price_condition_met and trigger_direction == "below") or (
         rsi_condition_met and rsi_below is not None and current_rsi is not None and current_rsi < rsi_below
     )
-    is_bullish = (price_condition_met and trigger_direction == "above") or (
-        rsi_condition_met and rsi_above is not None and current_rsi is not None and current_rsi > rsi_above
-    )
-    accent = "#e74c3c" if is_bearish else "#10b981" if is_bullish else "#3b82f6"
-    price_accent = "#e74c3c" if trigger_direction == "below" else "#10b981"
-    alert_bgc = "#fdf2f2" if is_bearish else "#f0fdf4" if is_bullish else "#eff6ff"
-    status_badge_bg = "#e74c3c" if is_bearish else "#22c55e" if is_bullish else "#3b82f6"
+    
+    # 統一使用 NEXUS Green 作為主要 Brand Color
+    nexus_green = "#00D084"
+    nexus_dark_green = "#059669"
+    nexus_light_green = "#ecfdf5"
+    
+    error_red = "#ef4444"
+    error_light_red = "#fef2f2"
+    
+    # 動態調整狀態標籤顏色 (跌破用紅，其餘用綠)
+    badge_bg = error_light_red if is_bearish else nexus_light_green
+    badge_color = error_red if is_bearish else nexus_dark_green
+    
+    # 價格強調色
+    price_accent = error_red if (trigger_direction == "below") else nexus_green
 
-    # RSI 欄位（顯示於目前價格右側）
-    rsi_col_html = "<td></td>"
+    # RSI 欄位 logic
+    rsi_html = ""
     if current_rsi is not None:
         if rsi_below is not None and current_rsi < rsi_below:
-            rsi_disp_color = "#e74c3c"
-            rsi_status_badge = '<span style="font-size:12px;background:#fee2e2;padding:2px 6px;border-radius:4px;margin-left:4px;">超賣</span>'
+            rsi_disp_color = error_red
+            rsi_status_badge = '<span style="font-size:11px;background:#fee2e2;color:#ef4444;padding:2px 6px;border-radius:4px;margin-left:4px;vertical-align:middle;">超賣</span>'
         elif rsi_above is not None and current_rsi > rsi_above:
-            rsi_disp_color = "#10b981"
-            rsi_status_badge = '<span style="font-size:12px;background:#dcfce7;padding:2px 6px;border-radius:4px;margin-left:4px;">超買</span>'
+            rsi_disp_color = nexus_green
+            rsi_status_badge = '<span style="font-size:11px;background:#dcfce7;color:#059669;padding:2px 6px;border-radius:4px;margin-left:4px;vertical-align:middle;">超買</span>'
         else:
             rsi_disp_color = "#3b82f6"
             rsi_status_badge = ""
-        rsi_col_html = f'<td style="width:50%;vertical-align:top;"><div style="font-size:12px;color:#7f8c8d;margin-bottom:5px;">目前 RSI</div><div style="font-size:28px;font-weight:bold;color:{rsi_disp_color};">{current_rsi:.2f} {rsi_status_badge}</div></td>'
+        
+        rsi_html = f"""
+                                    <td width="50%" valign="top">
+                                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">目前 RSI</div>
+                                        <div style="font-size: 24px; font-weight: 700; color: {rsi_disp_color};">{current_rsi:.2f}{rsi_status_badge}</div>
+                                    </td>
+        """
 
+    body_style = f"margin: 0; padding: 0; font-family: 'Inter', 'Microsoft JhengHei', Helvetica, Arial, sans-serif; background-color: #f8fafc; color: {nexus_dark_green};"
+    
     body = f"""<!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{subject}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>{subject}</title>
+    <!--[if mso]>
+    <xml>
+        <o:OfficeDocumentSettings>
+            <o:AllowPNG/>
+            <o:PixelsPerInch>96</o:PixelsPerInch>
+        </o:OfficeDocumentSettings>
+    </xml>
+    <![endif]-->
+    <style>
+        :root {{ color-scheme: light; supported-color-schemes: light; }}
+        body {{ margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f8fafc; }}
+        img {{ line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; border: 0; height: auto; }}
+        
+        /* Dark Mode Protection */
+        @media (prefers-color-scheme: dark) {{
+            .body-wrapper {{ background-color: #f8fafc !important; }}
+            .main-content {{ background-color: #ffffff !important; color: #334155 !important; }}
+            .text-main {{ color: #334155 !important; }}
+            .text-muted {{ color: #64748b !important; }}
+            .data-card {{ background-color: #fcfdfe !important; border-color: #e2e8f0 !important; }}
+        }}
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {{
+            .main-content {{ border-radius: 0 !important; }}
+            .content-padding {{ padding: 30px 20px !important; }}
+        }}
+    </style>
 </head>
-<body style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;background-color:#f9fbfb;margin:0;padding:0;color:#333;">
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f9fbfb;">
-    <tr>
-      <td align="center" style="padding:20px 16px 40px;">
-
-        <!-- Outer card -->
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.05);">
-
-          <!-- Header -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#10b981,#047857);padding:30px 20px;text-align:center;">
-              <h1 style="margin:0;color:white;font-size:20px;letter-spacing:1px;">NEXUS. FINANCE</h1>
-              <div style="display:inline-block;background:{status_badge_bg};color:white;padding:4px 12px;border-radius:20px;font-size:12px;margin-top:10px;font-weight:bold;">觸發提醒：{mode_desc}</div>
-            </td>
-          </tr>
-
-          <!-- Content -->
-          <tr>
-            <td style="padding:30px;">
-              <p style="font-size:15px;color:#555;margin:0 0 20px;">您追蹤的投資標的已達到預設的觸發條件：</p>
-
-              <!-- Info card -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fcf9;border-radius:8px;border-left:4px solid #10b981;">
+<body style="{body_style}">
+    <div class="body-wrapper" style="background-color: #f8fafc; padding: 20px 0;">
+        <center>
+            <table class="main-content" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin: 0 auto;">
+                <!-- Header / Logo -->
                 <tr>
-                  <td style="padding:20px;">
-                    <div style="font-size:24px;font-weight:800;color:#047857;margin-bottom:5px;">{symbol} <span style="font-size:16px;font-weight:400;color:#666;">({name})</span></div>
-                    <div style="color:#7f8c8d;font-size:14px;margin-bottom:15px;">資產類型：{category.upper()}</div>
-                    <div style="color:{accent};font-weight:bold;font-size:14px;background:{alert_bgc};padding:10px;border-radius:4px;text-align:center;">
-                      觸發條件：{trigger_condition}
-                    </div>
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:20px;">
-                      <tr>
-                        <td style="width:50%;padding-right:10px;vertical-align:top;">
-                          <div style="font-size:12px;color:#7f8c8d;margin-bottom:5px;">目前價格</div>
-                          <div style="font-size:28px;font-weight:bold;color:{price_accent};">{current_price:.2f}</div>
-                        </td>
-                        {rsi_col_html}
-                      </tr>
-                    </table>
-                  </td>
+                    <td align="center" style="padding: 40px 30px 20px;">
+                        <table border="0" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td align="center" style="background-color: {nexus_green}; width: 56px; height: 56px; border-radius: 28px; color: #ffffff; font-size: 24px; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 208, 132, 0.2);">
+                                    N
+                                </td>
+                            </tr>
+                        </table>
+                        <h1 style="margin: 16px 0 4px; font-size: 28px; color: {nexus_green}; letter-spacing: 1px;">NEXUS</h1>
+                        <p style="margin: 0; color: #64748b; font-size: 14px; font-weight: 500;">Finance Dashboard</p>
+                    </td>
                 </tr>
-              </table>
 
-              <!-- CTA Button -->
-              <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:30px;">
+                <!-- Main Body -->
                 <tr>
-                  <td align="center">
-                    <a href="{settings.app_base_url}/tracking"
-                       style="display:inline-block;background-color:#10b981;color:white;padding:12px 35px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;">立即查看圖表</a>
-                  </td>
+                    <td class="content-padding" style="padding: 20px 40px 40px;">
+                        <div style="font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 12px; line-height: 1.4;">{subject}</div>
+                        <div style="display: inline-block; background-color: {badge_bg}; color: {badge_color}; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 24px;">
+                            觸發項目：{mode_desc}
+                        </div>
+                        
+                        <p class="text-muted" style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+                            您追蹤的投資標的已達到預設的觸發條件，請查看最新市場狀態：
+                        </p>
+                        
+                        <!-- Data Card -->
+                        <div class="data-card" style="background-color: #fcfdfe; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 24px; margin-bottom: 32px;">
+                            <div style="font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 4px;">
+                                {symbol} <span style="font-weight: 400; font-size: 14px; color: #64748b;">({name})</span>
+                            </div>
+                            <div style="color: #64748b; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+                                資產類型：{category.upper()}
+                            </div>
+                            
+                            <div style="color: {nexus_green}; font-weight: 600; font-size: 15px; padding: 12px 0; border-top: 1px dashed #e2e8f0; border-bottom: 1px dashed #e2e8f0; margin-bottom: 20px;">
+                                ✓ 觸發條件：{trigger_condition}
+                            </div>
+                            
+                            <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td width="50%" valign="top">
+                                        <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">目前價格</div>
+                                        <div style="font-size: 24px; font-weight: 700; color: {price_accent};">{current_price:.2f}</div>
+                                    </td>
+                                    {rsi_html}
+                                </tr>
+                            </table>
+                        </div>
+                        <!-- CTA Button -->
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <tr>
+                                <td align="center">
+                                    <a href="{settings.app_base_url}/tracking" style="background-color: {nexus_green}; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 12px; font-weight: 600; display: inline-block; font-size: 16px; box-shadow: 0 4px 15px rgba(0, 208, 132, 0.2);">
+                                        立即進入儀表板查看
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
                 </tr>
-              </table>
-            </td>
-          </tr>
 
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f9fbfb;padding:20px;text-align:center;font-size:12px;color:#95a5a6;border-top:1px solid #e5e7eb;">
-              這是一封自動發出的通知信，請勿直接回覆。<br><br>
-              想要停止此項目的通知？
-              <a href="{settings.backend_base_url}/api/public/stop-notification/{tracking_id}"
-                 style="color:#ef4444;text-decoration:none;font-weight:500;">點此停止通知</a><br><br>
-              © 2026 Nexus Finance Dashboard. All rights reserved.
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
-  </table>
+                <!-- Footer -->
+                <tr>
+                    <td style="padding: 30px; text-align: center; font-size: 12px; color: #94a3b8; background-color: #f8fafc; border-top: 1px solid #e2e8f0;" align="center">
+                        此郵件為系統自動發送，請勿直接回覆。<br>
+                        想要停止此項目的通知？ <a href="{settings.backend_base_url}/api/public/stop-notification/{tracking_id}" style="color: {error_red}; text-decoration: none; font-weight: 600;">點此停止通知</a><br>
+                        <div style="margin-top: 8px;">© 2026 NEXUS Finance Dashboard.</div>
+                    </td>
+                </tr>
+            </table>
+        </center>
+    </div>
 </body>
 </html>"""
     return subject, body
-

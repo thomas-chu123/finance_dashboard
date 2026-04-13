@@ -175,7 +175,7 @@
                 <Mail :size="16" class="text-zinc-400" />
                 <span class="text-sm font-bold text-[var(--text-primary)]">Email 通知</span>
               </div>
-              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_email ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500']">
+              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_email ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-white dark:bg-white text-zinc-950 dark:text-zinc-950']">
                 {{ auth.profile?.notify_email ? '已啟用' : '停用' }}
               </span>
             </div>
@@ -184,7 +184,7 @@
                 <MessageCircle :size="16" class="text-zinc-400" />
                 <span class="text-sm font-bold text-[var(--text-primary)]">LINE 通知</span>
               </div>
-              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_line ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-500']">
+              <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_line ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-white dark:bg-white text-zinc-950 dark:text-zinc-950']">
                 {{ auth.profile?.notify_line ? '已啟用' : '停用' }}
               </span>
             </div>
@@ -204,7 +204,7 @@
       <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl w-[860px] max-w-[96vw] max-h-[90vh] flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 px-6 border-b border-[var(--border-color)] shrink-0">
-          <h3 class="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><Settings :size="18" /> 自訂追蹤指數</h3>
+          <h3 class="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><Settings :size="18" /> 自訂面板指數</h3>
           <button class="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[var(--text-primary)] transition-colors" @click="showQuoteModal = false">
             <X :size="18" />
           </button>
@@ -261,7 +261,7 @@
           <!-- RIGHT: Selected list -->
           <div class="md:col-span-1 flex flex-col border border-brand-500/30 rounded-xl overflow-hidden min-h-0">
             <div class="flex items-center justify-between p-3 border-b border-[var(--border-color)] bg-brand-500/5 shrink-0">
-              <span class="font-bold text-sm text-[var(--text-primary)]">已追蹤指數</span>
+              <span class="font-bold text-sm text-[var(--text-primary)]">已顯示指數</span>
               <span class="bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ selectedQuotes.length }}</span>
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-sidebar)]/50">

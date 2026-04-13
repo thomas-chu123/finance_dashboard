@@ -5,7 +5,7 @@ from app.models import BacktestRunRequest, BacktestSaveRequest, BacktestPortfoli
 from app.database import get_supabase
 from app.routers.users import get_user_id
 from app.services.backtest_engine import run_backtest
-from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, get_index_list
+from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, get_index_list, get_fund_list
 from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
@@ -40,23 +40,27 @@ async def run_backtest_endpoint(body: BacktestRunRequest, authorization: str = H
 async def list_portfolios(authorization: str = Header(default="")):
     user_id = get_user_id(authorization)
     sb = get_supabase()
+    
+    # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
+    # ✅ 回測視圖應顯示 ALL 類型的組合（不過濾），以便跨功能加載
     portfolios = (
         sb.table("backtest_portfolios")
-        .select("*")
+        .select("*, backtest_portfolio_items(*)")  # 在一個查詢中獲取 items
         .eq("user_id", user_id)
         .order("created_at", desc=True)
         .execute()
     )
+    
+    # 將嵌套的關聯數據重新映射為 items 欄位
     result = []
     for p in (portfolios.data or []):
-        items_res = (
-            sb.table("backtest_portfolio_items")
-            .select("*")
-            .eq("portfolio_id", p["id"])
-            .execute()
-        )
-        p["items"] = items_res.data or []
+        # Supabase 回傳的結構中包含 backtest_portfolio_items 作為嵌套陣列
+        if isinstance(p.get("backtest_portfolio_items"), list):
+            p["items"] = p.pop("backtest_portfolio_items")
+        else:
+            p["items"] = []
         result.append(p)
+    
     return result
 
 
@@ -65,19 +69,28 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
     user_id = get_user_id(authorization)
     sb = get_supabase()
 
+    # ✅ 添加 portfolio_type='backtest' 以支持多功能共用表
     portfolio_data = {
         "user_id": user_id,
         "name": body.name,
         "start_date": body.start_date,
         "end_date": body.end_date,
         "initial_amount": body.initial_amount,
+        "portfolio_type": "backtest",  # ✅ 標記為回測功能
         "results_json": body.results_json,
     }
-    port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
-    if not port_res.data:
-        raise HTTPException(status_code=500, detail="Failed to save portfolio")
 
-    portfolio_id = port_res.data[0]["id"]
+    if body.id:
+        portfolio_data["id"] = body.id
+        port_res = sb.table("backtest_portfolios").upsert(portfolio_data).execute()
+        sb.table("backtest_portfolio_items").delete().eq("portfolio_id", body.id).execute()
+        portfolio_id = body.id
+    else:
+        port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
+        if not port_res.data:
+            raise HTTPException(status_code=500, detail="Failed to save portfolio")
+        portfolio_id = port_res.data[0]["id"]
+
     items_data = [
         {
             "portfolio_id": portfolio_id,
@@ -88,7 +101,16 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
         }
         for it in body.items
     ]
-    sb.table("backtest_portfolio_items").insert(items_data).execute()
+    
+    # ✅ 添加詳細的錯誤處理
+    try:
+        sb.table("backtest_portfolio_items").insert(items_data).execute()
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"[BACKTEST SAVE] Insert items failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"無法儲存組合項目: {str(e)}")
+    
     return {"message": "Portfolio saved", "portfolio_id": portfolio_id}
 
 
@@ -139,13 +161,15 @@ async def compare_portfolios(body: BacktestCompareRequest, authorization: str = 
 @router.get("/symbols")
 async def get_symbols():
     """Return available symbols for selection."""
-    tw_etfs, us_etfs = await asyncio.gather(
+    tw_etfs, us_etfs, funds = await asyncio.gather(
         fetch_tw_etf_list(),
         fetch_us_etf_list(),
+        get_fund_list(),
     )
     indices = get_index_list()
     return {
         "tw_etf": tw_etfs,
         "us_etf": us_etfs,
         "indices": indices,
+        "funds": funds,
     }
