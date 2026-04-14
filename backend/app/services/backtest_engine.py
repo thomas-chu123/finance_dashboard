@@ -221,10 +221,14 @@ async def run_backtest(
         logger.warning(f"[Backtest] Beta calculation problem: {e}")
 
     # Per-asset contribution
+    # 每個資產對投資組合的貢獻 = 該資產單獨投資的最終值 × 其權重
     asset_contributions = {}
     for i, sym in enumerate(available_symbols):
-        asset_ret = (returns[sym] * avail_weights[i])
-        contrib = float((1 + asset_ret).prod() - 1) * initial_amount
+        # 計算該資產單獨投資一整個期間的累積報酬
+        asset_cumulative = (1 + returns[sym]).cumprod()
+        asset_final_value = asset_cumulative.iloc[-1]
+        # 該資產在投資組合中的貢獻 = 初始投入 × 該資產權重 × 該資產的累積報酬
+        contrib = initial_amount * avail_weights[i] * asset_final_value
         asset_contributions[sym] = {
             "weight": round(float(avail_weights[i]) * 100, 2),
             "return_contribution": round(contrib, 2),
