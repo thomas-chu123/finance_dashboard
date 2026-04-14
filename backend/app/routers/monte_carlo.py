@@ -62,7 +62,8 @@ async def run_monte_carlo_endpoint(body: MonteCarloRequest, authorization: str =
             annual_withdrawal=body.annual_withdrawal,
             inflation_mean=body.inflation_mean,
             inflation_std=body.inflation_std,
-            adjust_for_inflation=body.adjust_for_inflation
+            adjust_for_inflation=body.adjust_for_inflation,
+            display_currency=body.display_currency
         )
         
         if "error" in result:

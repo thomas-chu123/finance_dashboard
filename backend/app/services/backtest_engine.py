@@ -68,6 +68,7 @@ async def run_backtest(
     start_date: str,
     end_date: str,
     initial_amount: float = 100000,
+    display_currency: str = "TWD",  # USD 或 TWD，預設為 TWD
 ) -> Dict[str, Any]:
     """
     Run portfolio backtest.
@@ -291,6 +292,7 @@ async def run_backtest(
         "metrics": {
             "initial_amount": round(initial_amount, 2),
             "final_amount": round(float(port_value.iloc[-1]), 2),
+            "currency": display_currency,  # 新增：顯示幣值
             "total_return": round(total_return * 100, 2),
             "cagr": round(cagr * 100, 2),
             "annual_std": round(ann_std * 100, 2),

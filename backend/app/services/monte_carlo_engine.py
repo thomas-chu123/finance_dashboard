@@ -17,7 +17,8 @@ async def run_monte_carlo_simulation(
     annual_withdrawal: float = 0,
     inflation_mean: float = 0.03,
     inflation_std: float = 0.01,
-    adjust_for_inflation: bool = True
+    adjust_for_inflation: bool = True,
+    display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
 ) -> Dict[str, Any]:
     """
     Perform a Monte Carlo simulation using the Single Year Bootstrap method.
@@ -139,6 +140,7 @@ async def run_monte_carlo_simulation(
         "initial_amount": initial_amount,
         "years": years,
         "simulations": simulations,
+        "currency": display_currency,  # 新增：顯示幣值
         "success_rate": float(success_rate),
         "median_end_balance": float(np.median(end_values)),
         "mean_end_balance": float(np.mean(end_values)),

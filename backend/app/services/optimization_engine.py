@@ -35,7 +35,7 @@ def _efficient_return(mean_returns: pd.Series, cov_matrix: pd.DataFrame, target_
                           method='SLSQP', bounds=bounds, constraints=constraints)
     return result
 
-def run_optimization(prices_df: pd.DataFrame) -> Dict[str, Any]:
+def run_optimization(prices_df: pd.DataFrame, display_currency: str = "TWD") -> Dict[str, Any]:
     """
     Run Markowitz portfolio optimization on a DataFrame of historical daily prices.
     Returns optimal weights for Max Sharpe and Min Volatility, plus points for the Efficient Frontier.
@@ -112,6 +112,7 @@ def run_optimization(prices_df: pd.DataFrame) -> Dict[str, Any]:
             "returns": [round(r, 4) for r in frontier_returns],
             "volatilities": [round(v, 4) for v in frontier_volatility]
         },
-        "asset_points": asset_points
+        "asset_points": asset_points,
+        "currency": display_currency  # 新增：顯示幣值
     }
     return sanitize_data(result)

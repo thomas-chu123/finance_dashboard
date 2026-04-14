@@ -233,6 +233,7 @@ class BacktestRunRequest(BaseModel):
     start_date: str  # YYYY-MM-DD
     end_date: str
     initial_amount: float = 100000
+    display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
 
 
 class BacktestSaveRequest(BaseModel):
@@ -242,6 +243,7 @@ class BacktestSaveRequest(BaseModel):
     start_date: str
     end_date: str
     initial_amount: float = 100000
+    display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
     results_json: Optional[dict] = None
 
 
@@ -287,6 +289,7 @@ class MonteCarloRequest(BaseModel):
     inflation_mean: float = 0.03
     inflation_std: float = 0.01
     adjust_for_inflation: bool = True
+    display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
 
 
 class MonteCarloResponse(BaseModel):

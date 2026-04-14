@@ -199,10 +199,15 @@
             </div>
             <div class="p-6 space-y-6">
               <div class="space-y-4">
+                <!-- 幣值選擇器 -->
+                <div class="mb-2">
+                  <CurrencySelector :show-hint="true" />
+                </div>
+
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 (USD/TWD)</label>
+                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 ({{ preference.displayCurrency }})</label>
                   <div class="relative">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">{{ preference.displayCurrency === 'USD' ? '$' : '¥' }}</span>
                     <input v-model.number="config.initial_amount" type="number" 
                       class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pl-8 pr-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
                   </div>
@@ -485,12 +490,15 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
+import { usePreferenceStore } from '../stores/preference'
 import { 
   Target, Search, Plus, Check, X, Dice5, Play, Scale,
   Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft, Save
 } from 'lucide-vue-next'
+import CurrencySelector from '../components/CurrencySelector.vue'
 
 const auth = useAuthStore()
+const preference = usePreferenceStore()
 
 // State
 const loading = ref(false)
@@ -604,7 +612,8 @@ async function runSimulation() {
         symbol: item.symbol,
         weight: item.weight / 100
       })),
-      ...config
+      ...config,
+      display_currency: preference.displayCurrency,
     }
     
     // Scale percentages for backend API (backend expects 0.03 for 3%)

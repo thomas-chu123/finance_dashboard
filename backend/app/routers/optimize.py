@@ -15,6 +15,7 @@ class OptimizeRequest(BaseModel):
     symbols: List[str]
     start_date: str
     end_date: str
+    display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
 
 class OptimizeItem(BaseModel):
     symbol: str
@@ -28,6 +29,7 @@ class OptimizeSaveRequest(BaseModel):
     items: List[OptimizeItem]
     start_date: str
     end_date: str
+    display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
     results_json: Optional[dict] = None
 
 @router.post("")
@@ -53,7 +55,7 @@ async def optimize_portfolio(req: OptimizeRequest):
         raise HTTPException(status_code=400, detail="此日期區間內的有效交易資料過少。")
         
     # Run Markowitz Optimization
-    results = run_optimization(df)
+    results = run_optimization(df, req.display_currency)
     if "error" in results:
         raise HTTPException(status_code=400, detail=results["error"])
 
