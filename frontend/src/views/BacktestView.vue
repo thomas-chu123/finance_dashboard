@@ -455,20 +455,22 @@
 
         <!-- Asset contributions -->
         <div class="glass-card mb-2">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度</h3><span class="text-xs text-muted font-normal">投資期末各資產的累積價值</span></div>
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度分析</h3><span class="text-xs text-muted font-normal">基於絕對收益計算貢獻度</span></div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
               <thead class="text-xs text-muted uppercase bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
-                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">權重</th><th class="px-6 py-4 font-medium">期末值 ({{ preference.displayCurrency }})</th></tr>
+                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">初始權重</th><th class="px-6 py-4 font-medium">初始投入</th><th class="px-6 py-4 font-medium">期末值</th><th class="px-6 py-4 font-medium">絕對收益</th><th class="px-6 py-4 font-medium">報酬率</th><th class="px-6 py-4 font-medium">收益貢獻%</th></tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-color)]/20">
                 <tr v-for="(contrib, symbol) in (results.asset_contributions || {})" :key="symbol">
                   <td class="px-6 py-4 fw-600 text-accent">{{ symbol }}</td>
                   <td class="px-6 py-4">{{ contrib.name }}</td>
                   <td class="px-6 py-4">{{ contrib.weight }}%</td>
-                  <td class="px-6 py-4" :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
-                    ${{ (contrib.return_contribution || 0).toLocaleString() }}
-                  </td>
+                  <td class="px-6 py-4">{{ (contrib.initial_allocation || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4 font-bold">{{ (contrib.final_value || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4 font-bold" :class="(contrib.absolute_gain || 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ (contrib.absolute_gain || 0) >= 0 ? '+' : '' }}{{ (contrib.absolute_gain || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4" :class="(contrib.asset_return_pct || 0) >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'">{{ (contrib.asset_return_pct || 0) >= 0 ? '+' : '' }}{{ (contrib.asset_return_pct || 0).toFixed(2) }}%</td>
+                  <td class="px-6 py-4 font-bold text-brand-600">{{ contrib.contribution_pct }}%</td>
                 </tr>
               </tbody>
             </table>

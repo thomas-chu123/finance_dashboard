@@ -226,7 +226,8 @@ class TestRunBacktest:
         asset_contributions = result.get("asset_contributions", {})
         
         final_amount = metrics.get("final_amount", 0)
-        contrib_sum = sum([v.get("return_contribution", 0) for v in asset_contributions.values()])
+        # 使用新的 final_value 欄位計算期末值之和
+        contrib_sum = sum([v.get("final_value", 0) for v in asset_contributions.values()])
         
         # 資產期末值加總應精確等於最終值（允許浮點誤差）
         assert abs(final_amount - contrib_sum) < 0.02, \
