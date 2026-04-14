@@ -68,6 +68,7 @@ async def run_backtest(
     start_date: str,
     end_date: str,
     initial_amount: float = 100000,
+    display_currency: str = "TWD",  # USD 或 TWD，預設為 TWD
 ) -> Dict[str, Any]:
     """
     Run portfolio backtest.
@@ -219,14 +220,21 @@ async def run_backtest(
     except Exception as e:
         logger.warning(f"[Backtest] Beta calculation problem: {e}")
 
-    # Per-asset contribution
+    # Per-asset contribution (期末值)
+    # 每個資產在投資組合中的期末值 = 初始分配 × 投資組合整體累積報酬率
+    # 這樣所有資產的期末值加總 = 投資組合最終值
     asset_contributions = {}
+    portfolio_cumulative_return = float((1 + port_returns).cumprod().iloc[-1])
+    
     for i, sym in enumerate(available_symbols):
-        asset_ret = (returns[sym] * avail_weights[i])
-        contrib = float((1 + asset_ret).prod() - 1) * initial_amount
+        # 該資產的初始分配
+        initial_allocation = initial_amount * avail_weights[i]
+        # 該資產在投資組合中的期末值 = 初始分配 × 投資組合累積報酬率
+        final_value_in_portfolio = initial_allocation * portfolio_cumulative_return
+        
         asset_contributions[sym] = {
             "weight": round(float(avail_weights[i]) * 100, 2),
-            "return_contribution": round(contrib, 2),
+            "return_contribution": round(final_value_in_portfolio, 2),
             "name": next((it["name"] for it in items if it["symbol"] == sym), sym),
         }
 
@@ -291,6 +299,7 @@ async def run_backtest(
         "metrics": {
             "initial_amount": round(initial_amount, 2),
             "final_amount": round(float(port_value.iloc[-1]), 2),
+            "currency": display_currency,  # 新增：顯示幣值
             "total_return": round(total_return * 100, 2),
             "cagr": round(cagr * 100, 2),
             "annual_std": round(ann_std * 100, 2),

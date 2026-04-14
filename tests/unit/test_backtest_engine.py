@@ -200,3 +200,34 @@ class TestRunBacktest:
             result = await run_backtest([], "2022-01-01", "2023-12-31")
         # 引擎應回傳 error 或空結果
         assert "error" in result or result == {} or not result.get("metrics")
+
+    @allure.story("資產貢獻匹配")
+    @pytest.mark.asyncio
+    async def test_asset_contributions_sum_equals_final_amount(self):
+        """資產期末值加總應等於投資組合最終值（精確匹配）."""
+        items = [
+            {"symbol": "VTI", "weight": 40.0, "name": "Vanguard Total", "category": "us_etf"},
+            {"symbol": "BND", "weight": 35.0, "name": "Vanguard Bond", "category": "us_etf"},
+            {"symbol": "VEA", "weight": 25.0, "name": "Vanguard International", "category": "us_etf"},
+        ]
+        with patch(
+            "app.services.backtest_engine.get_historical_prices",
+            side_effect=self._mock_prices,
+        ), patch(
+            "app.services.backtest_engine.get_symbol_currency",
+            return_value="USD",
+        ):
+            result = await run_backtest(
+                items, "2022-01-01", "2023-12-31", initial_amount=100000.0
+            )
+
+        assert "error" not in result
+        metrics = result.get("metrics", {})
+        asset_contributions = result.get("asset_contributions", {})
+        
+        final_amount = metrics.get("final_amount", 0)
+        contrib_sum = sum([v.get("return_contribution", 0) for v in asset_contributions.values()])
+        
+        # 資產期末值加總應精確等於最終值（允許浮點誤差）
+        assert abs(final_amount - contrib_sum) < 0.02, \
+            f"Final amount {final_amount} != sum of contributions {contrib_sum}"

@@ -28,7 +28,7 @@ async def run_backtest_endpoint(body: BacktestRunRequest, authorization: str = H
         raise HTTPException(status_code=400, detail=f"Weights must sum to 100% (got {total_weight:.1f}%)")
 
     items = [it.model_dump() for it in body.items]
-    result = await run_backtest(items, body.start_date, body.end_date, body.initial_amount)
+    result = await run_backtest(items, body.start_date, body.end_date, body.initial_amount, body.display_currency)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])

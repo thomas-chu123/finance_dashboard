@@ -311,6 +311,7 @@
                 <option value="oil">石油期貨</option>
                 <option value="us_etf">美國 ETF</option>
                 <option value="tw_etf">台灣 ETF</option>
+                <option value="funds">共同基金</option>
                 <option value="index">大盤指數</option>
                 <option value="crypto">加密貨幣</option>
                 <option value="exchange">匯率</option>
@@ -499,6 +500,7 @@ const categories = [
   { value: 'oil', label: '石油' },
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
+  { value: 'funds', label: '共同基金' },
   { value: 'index', label: '指數' },
   { value: 'exchange', label: '匯率' },
 ]
@@ -510,7 +512,7 @@ const form = reactive({
   notify_channel: 'email', notes: ''
 })
 
-const availableSymbols = ref({ tw_etf: [], us_etf: [], index: [] })
+const availableSymbols = ref({ tw_etf: [], us_etf: [], index: [], funds: [] })
 const symbolSearch = ref('')
 const showSymbolDropdown = ref(false)
 const currentPrice = ref(null)
@@ -532,6 +534,8 @@ const allSymbols = computed(() => {
     availableSymbols.value.tw_etf.forEach(s => list.push({ ...s, type: 'tw_etf' }))
   } else if (cat === 'us_etf') {
     availableSymbols.value.us_etf.forEach(s => list.push({ ...s, type: 'us_etf' }))
+  } else if (cat === 'funds') {
+    availableSymbols.value.funds.forEach(s => list.push({ ...s, type: 'funds' }))
   } else if (['index', 'vix', 'oil', 'crypto', 'exchange'].includes(cat)) {
     // Filter index list by category
     const indices = availableSymbols.value.index || []
@@ -558,13 +562,18 @@ async function fetchAvailableSymbols() {
     console.log('[TrackingView] Available symbols received:', {
       tw_etf: res.data.tw_etf?.length || 0,
       us_etf: res.data.us_etf?.length || 0,
+      funds: res.data.funds?.length || 0,
       index: res.data.index?.length || 0
     })
-    availableSymbols.value = res.data
+    // Ensure funds array always exists, even if API doesn't return it
+    availableSymbols.value = {
+      ...res.data,
+      funds: res.data.funds || []
+    }
   } catch (e) {
     console.error('[TrackingView] Failed to fetch symbols:', e.message, e.response?.status)
     // Set empty fallback
-    availableSymbols.value = { tw_etf: [], us_etf: [], index: [] }
+    availableSymbols.value = { tw_etf: [], us_etf: [], index: [], funds: [] }
   }
 }
 
@@ -640,6 +649,7 @@ function categoryBadgeInfo(cat) {
     oil: { label: '石油', class: 'bg-amber-500 text-white border border-amber-600' },
     us_etf: { label: '美股', class: 'bg-blue-500 text-white border border-blue-600' },
     tw_etf: { label: '台股', class: 'bg-purple-500 text-white border border-purple-600' },
+    funds: { label: '基金', class: 'bg-green-500 text-white border border-green-600' },
     index: { label: '大盤', class: 'bg-violet-500 text-white border border-violet-600' },
     crypto: { label: '加密', class: 'bg-brand-500 text-white border border-brand-600' },
     exchange: { label: '匯率', class: 'bg-cyan-500 text-white border border-cyan-600' }
