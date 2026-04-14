@@ -223,44 +223,41 @@ async def run_backtest(
         logger.warning(f"[Backtest] Beta calculation problem: {e}")
 
     # Per-asset contribution (絕對收益貢獻)
-    # 計算每個資產對投資組合的實際收益貢獻
+    # 計算每個資產根據自身報酬率的期末值和貢獻度
     asset_contributions = {}
     
-    # 投資組合的累積報酬率
-    port_cumulative_return = (1 + port_returns).cumprod().iloc[-1]
-    
-    # 計算每個資產的絕對收益
+    # 計算每個資產的絕對收益（基於各資產個別報酬率）
     asset_gains = {}
     total_gains = 0
     
     for i, sym in enumerate(available_symbols):
         initial_allocation = initial_amount * avail_weights[i]
-        # 該資產的初始分配 × 投資組合累積報酬率 = 該資產對期末值的貢獻
-        # 這樣確保所有資產的期末值加總 = 投資組合期末值
-        final_value = initial_allocation * port_cumulative_return
+        # 該資產的個別報酬率
+        asset_return = (1 + returns[sym]).cumprod().iloc[-1] - 1
+        # 該資產的期末值 = 初始投入 × (1 + 該資產報酬率)
+        final_value = initial_allocation * (1 + asset_return)
         # 該資產的絕對收益
         asset_gain = final_value - initial_allocation
         asset_gains[sym] = {
             "initial_allocation": initial_allocation,
             "final_value": final_value,
             "asset_gain": asset_gain,
+            "asset_return": asset_return,
         }
         total_gains += asset_gain
     
-    # 現在計算各資產的個別報酬率（用於展示）
+    # 計算貢獻度百分比並生成結果
     for i, sym in enumerate(available_symbols):
-        initial_allocation = initial_amount * avail_weights[i]
-        asset_return = (1 + returns[sym]).cumprod().iloc[-1] - 1
         gain_info = asset_gains[sym]
         
-        # 貢獻度 % = 該資產收益 ÷ 投資組合總收益
+        # 貢獻度 % = 該資產收益 ÷ 投資組合總收益 × 100
         if total_gains > 0:
             contribution_pct = (gain_info["asset_gain"] / total_gains) * 100
         elif total_gains < 0:
             # 負收益情況下，虧損多的資產貢獻度為負
             contribution_pct = (gain_info["asset_gain"] / total_gains) * 100
         else:
-            # 沒有收益也沒有虧損
+            # 沒有收益也沒有虧損，以權重為基準
             contribution_pct = float(avail_weights[i]) * 100
         
         asset_contributions[sym] = {
@@ -268,7 +265,7 @@ async def run_backtest(
             "initial_allocation": round(gain_info["initial_allocation"], 2),
             "final_value": round(gain_info["final_value"], 2),
             "absolute_gain": round(gain_info["asset_gain"], 2),
-            "asset_return_pct": round(asset_return * 100, 2),
+            "asset_return_pct": round(gain_info["asset_return"] * 100, 2),
             "contribution_pct": round(contribution_pct, 2),
             "name": next((it["name"] for it in items if it["symbol"] == sym), sym),
         }

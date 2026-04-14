@@ -201,14 +201,13 @@ class TestRunBacktest:
         # 引擎應回傳 error 或空結果
         assert "error" in result or result == {} or not result.get("metrics")
 
-    @allure.story("資產貢獻匹配")
+    @allure.story("資產貢獻度")
     @pytest.mark.asyncio
-    async def test_asset_contributions_sum_equals_final_amount(self):
-        """資產期末值加總應等於投資組合最終值（精確匹配）."""
+    async def test_asset_contributions_reflect_individual_returns(self):
+        """資產貢獻度應反映各自的報酬率，報酬率高的資產應有更高的收益貢獻度."""
         items = [
-            {"symbol": "VTI", "weight": 40.0, "name": "Vanguard Total", "category": "us_etf"},
-            {"symbol": "BND", "weight": 35.0, "name": "Vanguard Bond", "category": "us_etf"},
-            {"symbol": "VEA", "weight": 25.0, "name": "Vanguard International", "category": "us_etf"},
+            {"symbol": "VTI", "weight": 50.0, "name": "Vanguard Total", "category": "us_etf"},
+            {"symbol": "BND", "weight": 50.0, "name": "Vanguard Bond", "category": "us_etf"},
         ]
         with patch(
             "app.services.backtest_engine.get_historical_prices",
@@ -222,13 +221,29 @@ class TestRunBacktest:
             )
 
         assert "error" not in result
-        metrics = result.get("metrics", {})
         asset_contributions = result.get("asset_contributions", {})
         
-        final_amount = metrics.get("final_amount", 0)
-        # 使用新的 final_value 欄位計算期末值之和
-        contrib_sum = sum([v.get("final_value", 0) for v in asset_contributions.values()])
+        # 驗證資產貢獻度數據完整性
+        assert len(asset_contributions) == 2
+        for sym, contrib in asset_contributions.items():
+            assert "asset_return_pct" in contrib
+            assert "contribution_pct" in contrib
+            assert "absolute_gain" in contrib
+            assert "final_value" in contrib
         
-        # 資產期末值加總應精確等於最終值（允許浮點誤差）
-        assert abs(final_amount - contrib_sum) < 0.02, \
-            f"Final amount {final_amount} != sum of contributions {contrib_sum}"
+        # 驗證貢獻度加總約等於 100%（允許浮點誤差）
+        total_contribution = sum([v.get("contribution_pct", 0) for v in asset_contributions.values()])
+        assert abs(total_contribution - 100.0) < 1.0, \
+            f"Total contribution should be 100%, got {total_contribution}%"
+        
+        # 報酬率高的資產應有更高的貢獻度
+        contribs_list = list(asset_contributions.values())
+        if len(contribs_list) >= 2:
+            # 找到報酬率最高的資產
+            higher_return_asset = max(contribs_list, key=lambda x: x.get("asset_return_pct", 0))
+            lower_return_asset = min(contribs_list, key=lambda x: x.get("asset_return_pct", 0))
+            
+            # 如果報酬率不同，貢獻度應該也不同
+            if higher_return_asset.get("asset_return_pct", 0) != lower_return_asset.get("asset_return_pct", 0):
+                assert higher_return_asset.get("contribution_pct", 0) >= lower_return_asset.get("contribution_pct", 0), \
+                    "Asset with higher return should have higher contribution"
