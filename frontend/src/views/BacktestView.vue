@@ -239,7 +239,7 @@
               <div class="space-y-1.5 mt-2">
                 <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 ({{ preference.displayCurrency }})</label>
                 <div class="relative">
-                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">{{ preference.displayCurrency === 'USD' ? '$' : '¥' }}</span>
+                   <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
                    <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 pl-7 transition-all" />
                 </div>
                 <div class="text-[10px] text-[var(--text-secondary)] mt-2 italic">註：若包含台灣資產，系統將自動依歷史匯率換算。</div>
@@ -427,7 +427,7 @@
           <!-- Final Amount -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">FINAL AMOUNT</div>
-            <div class="text-xl font-bold text-rose-600">{{ preference.displayCurrency === 'USD' ? '$' : '¥' }}{{ (results?.metrics?.final_amount ?? 0).toLocaleString() }}</div>
+            <div class="text-xl font-bold text-rose-600">${{ (results?.metrics?.final_amount ?? 0).toLocaleString() }}</div>
             <div class="text-[10px] font-medium" :class="(results?.metrics?.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
               RETURN: {{ results?.metrics?.total_return ?? '--' }}{{ results?.metrics?.total_return !== undefined ? '%' : '' }}
             </div>
@@ -467,7 +467,7 @@
                   <td class="px-6 py-4">{{ contrib.name }}</td>
                   <td class="px-6 py-4">{{ contrib.weight }}%</td>
                   <td class="px-6 py-4" :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
-                    {{ preference.displayCurrency === 'USD' ? '$' : '¥' }}{{ (contrib.return_contribution || 0).toLocaleString() }}
+                    ${{ (contrib.return_contribution || 0).toLocaleString() }}
                   </td>
                 </tr>
               </tbody>
