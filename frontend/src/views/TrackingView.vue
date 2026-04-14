@@ -565,7 +565,11 @@ async function fetchAvailableSymbols() {
       funds: res.data.funds?.length || 0,
       index: res.data.index?.length || 0
     })
-    availableSymbols.value = res.data
+    // Ensure funds array always exists, even if API doesn't return it
+    availableSymbols.value = {
+      ...res.data,
+      funds: res.data.funds || []
+    }
   } catch (e) {
     console.error('[TrackingView] Failed to fetch symbols:', e.message, e.response?.status)
     // Set empty fallback
