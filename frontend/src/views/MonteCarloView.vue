@@ -65,7 +65,7 @@
             <div v-if="p.items" class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">初始金額</div>
-                <div class="fw-600 text-rose-600">${{ (p.initial_amount || 0).toLocaleString() }}</div>
+                <div class="fw-600 text-rose-600">{{ preference.displayCurrency === 'USD' ? '$' : '¥' }}{{ (p.initial_amount || 0).toLocaleString() }}</div>
               </div>
               <div>
                 <div class="text-xs text-muted">年數</div>
@@ -398,14 +398,14 @@
           <div class="glass-card p-4">
             <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">預期中位數</h4>
             <div class="text-lg font-bold text-[var(--text-primary)] truncate">
-              ${{ formatNumber(results.summary.median_end_balance) }}
+              {{ preference.displayCurrency === 'USD' ? '$' : '¥' }}{{ formatNumber(results.summary.median_end_balance) }}
             </div>
             <div class="text-[10px] text-zinc-500">第 50 百分位數</div>
           </div>
           <div class="glass-card p-4">
             <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">最悲觀情況</h4>
             <div class="text-lg font-bold text-rose-500 truncate">
-              ${{ formatNumber(results.summary.p10_end_balance) }}
+              {{ preference.displayCurrency === 'USD' ? '$' : '¥' }}{{ formatNumber(results.summary.p10_end_balance) }}
             </div>
             <div class="text-[10px] text-zinc-500">第 10 百分位數 (P10)</div>
           </div>
