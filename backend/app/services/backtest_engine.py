@@ -153,15 +153,28 @@ async def run_backtest(
     # 確保列順序與 available_symbols 一致
     returns = returns[available_symbols]
 
-    # Portfolio daily returns (weighted)
-    port_returns = (returns * avail_weights).sum(axis=1)
+    # ── Buy & Hold ──────────────────────────────────────────────────────────
+    # 每個資產各自獨立持有，不每日再平衡。
+    # 各資產價值 = 初始配置 × 累積報酬；組合總值 = Σ 各資產價值。
+    # 此方法保證：final_amount == sum(每個資產的 final_value)
+    asset_value_curves = {}   # sym -> pd.Series (每日價值)
+    for i, sym in enumerate(available_symbols):
+        initial_allocation = initial_amount * avail_weights[i]
+        asset_cumret = (1 + returns[sym]).cumprod()          # 累積報酬倍數
+        asset_value_curves[sym] = asset_cumret * initial_allocation
 
-    # Portfolio value curve
-    port_value = (1 + port_returns).cumprod() * initial_amount
+    # 組合每日總值 = 各資產每日價值加總
+    port_value_raw = pd.DataFrame(asset_value_curves).sum(axis=1)
+
+    # 從總值曲線反推每日報酬（供 Sharpe / Sortino / Beta / 年度報酬等指標使用）
+    port_returns = port_value_raw.pct_change().dropna()
+
+    # 調整 port_value_raw 的起點以符合 initial_amount（防浮點偏差）
+    port_value = port_value_raw.copy()
     port_value.index = port_value.index.strftime("%Y-%m-%d")
 
     # Drawdown series — daily drawdown from peak in %
-    cumulative = (1 + port_returns).cumprod()
+    cumulative = port_value_raw / initial_amount
     rolling_max = cumulative.cummax()
     drawdown_series_raw = ((cumulative - rolling_max) / rolling_max) * 100
     drawdown_series_raw.index = drawdown_series_raw.index.strftime("%Y-%m-%d")
@@ -171,39 +184,37 @@ async def run_backtest(
 
     # Metrics
     years = len(returns) / 252
-    total_return = float(port_value.iloc[-1] / initial_amount - 1)
+    total_return = float(port_value_raw.iloc[-1] / initial_amount - 1)
     cagr = _annualized_return(total_return, years)
     ann_std = float(port_returns.std() * np.sqrt(252))
-    max_dd = _max_drawdown(pd.Series((1 + port_returns).cumprod()))
+    max_dd = _max_drawdown(port_value_raw / initial_amount)
     sharpe = _sharpe_ratio(port_returns)
     sortino = _sortino_ratio(port_returns)
     var_95 = _var_historical(port_returns)
     cvar_95 = _cvar(port_returns)
 
-    # Annual returns
+    # Annual returns — 以年度首末總值計算
     annual_returns = {}
-    for year, grp in returns.groupby(returns.index.year):
-        yr_port = (grp * avail_weights).sum(axis=1)
-        annual_returns[str(year)] = float((1 + yr_port).prod() - 1)
+    for year, grp in port_value_raw.groupby(port_value_raw.index.year):
+        start_val = grp.iloc[0]
+        end_val = grp.iloc[-1]
+        annual_returns[str(year)] = float(end_val / start_val - 1)
 
-    # Monthly returns (for heatmap)
-    # Monthly returns (for heatmap)
-    years_list = sorted(list(returns.index.year.unique()))
+    # Monthly returns (for heatmap) — 以月度首末總值計算
+    years_list = sorted(list(port_value_raw.index.year.unique()))
     months_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    
-    # Initialize 2D array with None (null in JSON)
+
     heatmap_data = [[None for _ in range(12)] for _ in range(len(years_list))]
     year_to_idx = {y: i for i, y in enumerate(years_list)}
-    
-    for (year, month), grp in returns.groupby([returns.index.year, returns.index.month]):
-        mo_port = (grp * avail_weights).sum(axis=1)
-        mo_ret = float((1 + mo_port).prod() - 1)
-        heatmap_data[year_to_idx[year]][month-1] = round(mo_ret, 4)
-        
+
+    for (year, month), grp in port_value_raw.groupby([port_value_raw.index.year, port_value_raw.index.month]):
+        mo_ret = float(grp.iloc[-1] / grp.iloc[0] - 1)
+        heatmap_data[year_to_idx[year]][month - 1] = round(mo_ret, 4)
+
     monthly_returns = {
         "years": years_list,
         "months": months_labels,
-        "data": heatmap_data
+        "data": heatmap_data,
     }
 
     # Beta vs SPY
@@ -213,7 +224,7 @@ async def run_backtest(
             spy_series = price_data["SPY"]
         else:
             spy_series = await get_historical_prices("SPY", start_date, end_date)
-            
+
         if not spy_series.empty:
             spy_returns = spy_series.pct_change().dropna()
             aligned = port_returns.align(spy_returns, join="inner")
@@ -222,21 +233,16 @@ async def run_backtest(
     except Exception as e:
         logger.warning(f"[Backtest] Beta calculation problem: {e}")
 
-    # Per-asset contribution (絕對收益貢獻)
-    # 計算每個資產根據自身報酬率的期末值和貢獻度
+    # Per-asset contribution (絕對收益貢獻) — Buy & Hold，各自獨立持有
+    # final_amount == sum(asset final_value)，完全一致
     asset_contributions = {}
-    
-    # 計算每個資產的絕對收益（基於各資產個別報酬率）
     asset_gains = {}
     total_gains = 0
-    
+
     for i, sym in enumerate(available_symbols):
         initial_allocation = initial_amount * avail_weights[i]
-        # 該資產的個別報酬率
-        asset_return = (1 + returns[sym]).cumprod().iloc[-1] - 1
-        # 該資產的期末值 = 初始投入 × (1 + 該資產報酬率)
-        final_value = initial_allocation * (1 + asset_return)
-        # 該資產的絕對收益
+        final_value = float(asset_value_curves[sym].iloc[-1])
+        asset_return = float((1 + returns[sym]).cumprod().iloc[-1] - 1)
         asset_gain = final_value - initial_allocation
         asset_gains[sym] = {
             "initial_allocation": initial_allocation,
@@ -245,21 +251,16 @@ async def run_backtest(
             "asset_return": asset_return,
         }
         total_gains += asset_gain
-    
+
     # 計算貢獻度百分比並生成結果
     for i, sym in enumerate(available_symbols):
         gain_info = asset_gains[sym]
-        
-        # 貢獻度 % = 該資產收益 ÷ 投資組合總收益 × 100
-        if total_gains > 0:
-            contribution_pct = (gain_info["asset_gain"] / total_gains) * 100
-        elif total_gains < 0:
-            # 負收益情況下，虧損多的資產貢獻度為負
+
+        if total_gains != 0:
             contribution_pct = (gain_info["asset_gain"] / total_gains) * 100
         else:
-            # 沒有收益也沒有虧損，以權重為基準
             contribution_pct = float(avail_weights[i]) * 100
-        
+
         asset_contributions[sym] = {
             "weight": round(float(avail_weights[i]) * 100, 2),
             "initial_allocation": round(gain_info["initial_allocation"], 2),
