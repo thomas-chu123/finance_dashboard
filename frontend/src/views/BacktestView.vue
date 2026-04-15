@@ -632,45 +632,18 @@ function removeSymbol(sym) {
 
 function equalizeWeights() {
   if (!selectedItems.value.length) return
-  const w = parseFloat((100 / selectedItems.value.length).toFixed(1))
+  const baseWeight = Math.floor(100 / selectedItems.value.length)
+  const remainder = 100 % selectedItems.value.length
+  
   selectedItems.value.forEach((item, idx) => {
-    item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
+    item.weight = idx < remainder ? baseWeight + 1 : baseWeight
   })
 }
 
 function adjustWeights(symbol, newWeight) {
   const item = selectedItems.value.find(i => i.symbol === symbol)
   if (!item) return
-  
-  // 限制新權重在有效範圍內
-  newWeight = Math.max(0, Math.min(100, newWeight))
-  const oldWeight = item.weight
-  const delta = newWeight - oldWeight
-  
-  item.weight = newWeight
-  
-  // 如果變更了權重，計算調整量
-  if (delta !== 0) {
-    const otherItems = selectedItems.value.filter(i => i.symbol !== symbol)
-    if (otherItems.length > 0) {
-      const totalOtherWeight = otherItems.reduce((s, i) => s + i.weight, 0)
-      
-      // 按比例調整其他權重
-      if (totalOtherWeight > 0) {
-        const scaleFactor = (totalOtherWeight - delta) / totalOtherWeight
-        otherItems.forEach(i => {
-          i.weight = Math.round(i.weight * scaleFactor * 10) / 10 // 保留 1 位小數點
-        })
-      }
-      
-      // 最後調整確保總和 = 100%
-      const total = selectedItems.value.reduce((s, i) => s + i.weight, 0)
-      if (Math.abs(total - 100) > 0.01) {
-        const lastItem = selectedItems.value[selectedItems.value.length - 1]
-        lastItem.weight = Math.round((100 - (total - lastItem.weight)) * 10) / 10
-      }
-    }
-  }
+  item.weight = Math.max(0, Math.round(newWeight))
 }
 
 function addSearchSymbol() {

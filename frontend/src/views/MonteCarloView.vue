@@ -144,9 +144,9 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
+      <div class="flex flex-col md:flex-row gap-3" style="gap:12px; min-height: calc(100vh - 300px);">
         <!-- Left Column -->
-        <div class="space-y-4">
+        <div class="flex-1 flex flex-col space-y-4">
           <!-- Asset Selection -->
           <div class="premium-card mb-4 min-h-[500px]">
             <div class="premium-header">
@@ -279,9 +279,9 @@
         </div>
 
         <!-- Right Column -->
-        <div class="space-y-4" style="max-height:70vh; overflow-y:auto;">
+        <div class="flex-1 flex flex-col">
           <!-- Selected Assets Weights Card -->
-          <div class="premium-card flex flex-col h-full overflow-hidden">
+          <div class="premium-card flex flex-col flex-1 overflow-hidden">
             <div class="premium-header">
               <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
                 <FolderOpen class="w-5 h-5 text-brand-500" />
@@ -579,46 +579,19 @@ function removeSymbol(sym) {
 // ✅ 均勻分配權重
 function equalizeWeights() {
   if (!selectedItems.value.length) return
-  const w = parseFloat((100 / selectedItems.value.length).toFixed(1))
+  const baseWeight = Math.floor(100 / selectedItems.value.length)
+  const remainder = 100 % selectedItems.value.length
+  
   selectedItems.value.forEach((item, idx) => {
-    item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
+    item.weight = idx < remainder ? baseWeight + 1 : baseWeight
   })
 }
 
-// ✅ 調整權重，自動歸一化其他權重以保持總和 = 100%
+// ✅ 調整權重（整數百分比，無需歸一化）
 function adjustWeights(symbol, newWeight) {
   const item = selectedItems.value.find(i => i.symbol === symbol)
   if (!item) return
-  
-  // 限制新權重在有效範圍內
-  newWeight = Math.max(0, Math.min(100, newWeight))
-  const oldWeight = item.weight
-  const delta = newWeight - oldWeight
-  
-  item.weight = newWeight
-  
-  // 如果變更了權重，計算調整量
-  if (delta !== 0) {
-    const otherItems = selectedItems.value.filter(i => i.symbol !== symbol)
-    if (otherItems.length > 0) {
-      const totalOtherWeight = otherItems.reduce((s, i) => s + i.weight, 0)
-      
-      // 按比例調整其他權重
-      if (totalOtherWeight > 0) {
-        const scaleFactor = (totalOtherWeight - delta) / totalOtherWeight
-        otherItems.forEach(i => {
-          i.weight = Math.round(i.weight * scaleFactor * 10) / 10 // 保留 1 位小數點
-        })
-      }
-      
-      // 最後調整確保總和 = 100%
-      const total = selectedItems.value.reduce((s, i) => s + i.weight, 0)
-      if (Math.abs(total - 100) > 0.01) {
-        const lastItem = selectedItems.value[selectedItems.value.length - 1]
-        lastItem.weight = Math.round((100 - (total - lastItem.weight)) * 10) / 10
-      }
-    }
-  }
+  item.weight = Math.max(0, Math.round(newWeight))
 }
 
 async function loadSymbols() {
