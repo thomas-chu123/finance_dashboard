@@ -421,7 +421,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save, Search, Plus, Target, Scale, Play } from 'lucide-vue-next'
 import axios from 'axios'
@@ -455,6 +455,8 @@ const saveError = ref('')
 const loadedPortfolioId = ref(null)  // 追蹤載入的組合 ID，用於自動儲存
 const loadedPortfolioName = ref('')  // 追蹤載入的組合名稱
 const loadedPortfolioType = ref(null)  // 追蹤載入的組合類型（backtest/optimize/monte_carlo）
+const customPortfolioPerf = ref(null)  // 自定義權重組合的性能指標
+const calcPerfLoading = ref(false)  // 計算性能中的加載狀態
 
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
@@ -529,6 +531,7 @@ async function runOptimization() {
   optError.value = ''
   runLoading.value = true
   results.value = null
+  customPortfolioPerf.value = null
   
   // ✅ 驗證日期是否有效
   if (!optConfig.start_date || !optConfig.end_date) {
@@ -545,6 +548,9 @@ async function runOptimization() {
       display_currency: preference.displayCurrency,
     }, { headers: auth.headers })
     results.value = res.data.results
+    
+    // ✅ 優化完成後計算自定義組合性能（顯示目前權重在圖上的位置）
+    await calculateCustomPortfolioPerf()
     
     // ✅ 如果是從載入的組合執行，自動儲存結果
     if (loadedPortfolioId.value) {
@@ -573,6 +579,42 @@ function adjustWeights(symbol, newWeight) {
   const item = selectedItems.value.find(i => i.symbol === symbol)
   if (!item) return
   item.weight = Math.max(0, Math.round(newWeight))
+  
+  // ✅ 權重變化時計算自定義組合的性能（如果已經運行過優化）
+  if (results.value && totalWeight.value > 0) {
+    calculateCustomPortfolioPerf()
+  }
+}
+
+// ✅ 計算自定義權重組合的性能指標（用於圖表上的點）
+async function calculateCustomPortfolioPerf() {
+  if (!optConfig.start_date || !optConfig.end_date || selectedItems.value.length < 2) {
+    customPortfolioPerf.value = null
+    return
+  }
+
+  calcPerfLoading.value = true
+  try {
+    const weights = {}
+    selectedItems.value.forEach(item => {
+      weights[item.symbol] = item.weight
+    })
+
+    const res = await axios.post(`${API_BASE}/api/optimize/calculate-custom-portfolio`, {
+      symbols: selectedItems.value.map(i => i.symbol),
+      weights: weights,
+      start_date: optConfig.start_date,
+      end_date: optConfig.end_date,
+      display_currency: preference.displayCurrency,
+    }, { headers: auth.headers })
+
+    customPortfolioPerf.value = res.data.portfolio
+  } catch (e) {
+    console.error('計算組合性能失敗:', e)
+    customPortfolioPerf.value = null
+  } finally {
+    calcPerfLoading.value = false
+  }
 }
 
 function createPieOption(portfolioData) {
@@ -756,8 +798,28 @@ const efficientFrontierOption = computed(() => {
         },
         data: [minVolPoint],
         tooltip: { formatter: p => `🛡️ 最小波動點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
-      }
-    ]
+      },
+      // ✅ 自定義組合點（使用者手動調整的權重）
+      customPortfolioPerf.value ? {
+        name: '您的投資組合',
+        type: 'scatter',
+        symbolSize: 16,
+        itemStyle: { color: '#a371f7', borderColor: '#fff', borderWidth: 2 },
+        label: {
+          show: true,
+          position: 'left',
+          color: '#a371f7',
+          fontWeight: 'bold',
+          formatter: '📊 您的組合',
+          distance: 10
+        },
+        data: [[
+          (customPortfolioPerf.value.volatility).toFixed(2),
+          (customPortfolioPerf.value.return).toFixed(2)
+        ]],
+        tooltip: { formatter: p => `📊 您的投資組合<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%<br/>夏普比: ${customPortfolioPerf.value.sharpe_ratio.toFixed(4)}` }
+      } : null
+    ].filter(s => s !== null)
   }
 })
 
@@ -935,6 +997,25 @@ onMounted(async () => {
     console.error('[OptimizeView] Failed to load symbols:', error)
   }
 })
+
+// ✅ 監聽權重變化，防抖計算組合性能（僅在有結果時）
+let perfCalculationTimer = null
+watch(
+  () => selectedItems.value.map(i => i.weight).join(','),
+  () => {
+    if (!results.value || selectedItems.value.length < 2) {
+      customPortfolioPerf.value = null
+      return
+    }
+    
+    // 防抖：延遲 500ms 後計算
+    clearTimeout(perfCalculationTimer)
+    perfCalculationTimer = setTimeout(() => {
+      calculateCustomPortfolioPerf()
+    }, 500)
+  },
+  { immediate: false }
+)
 </script>
 
 <style scoped>
