@@ -211,29 +211,11 @@
         </router-link>
       </nav>
 
-      <!-- Mobile Search Modal -->
-      <Teleport to="body">
-        <div v-if="isSearchModalOpen" 
-             class="fixed inset-0 z-[60] bg-[var(--bg-main)] safe-area-top slide-up">
-          <div class="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
-            <button @click="isSearchModalOpen = false" class="p-2 text-zinc-500">
-              <ChevronLeft :size="24" />
-            </button>
-            <div class="relative flex-1">
-              <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="18" />
-              <input 
-                type="text" 
-                placeholder="搜尋名稱、代碼..." 
-                class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-3 pl-11 pr-4 text-base focus:outline-none focus:border-brand-500/50 text-[var(--text-primary)]"
-                autofocus
-              />
-            </div>
-          </div>
-          <div class="p-6 text-center text-zinc-500">
-            <p class="text-sm">輸入關鍵字開始搜尋...</p>
-          </div>
-        </div>
-      </Teleport>
+      <!-- 全局搜尋 Modal -->
+      <GlobalSearchModal 
+        ref="globalSearchModalRef"
+        @select="handleSearchSelect"
+      />
     </main>
   </div>
 </template>
@@ -244,6 +226,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import GlobalSearchModal from '../components/GlobalSearchModal.vue'
 import { 
   Globe, 
   LayoutDashboard, 
@@ -278,7 +261,7 @@ const { isMobile, isTablet, isDesktop, isLargeScreen } = useBreakpoint()
 
 const isSidebarOpen = ref(true)
 const isSidebarCollapsed = ref(false)
-const isSearchModalOpen = ref(false)
+const globalSearchModalRef = ref(null)
 
 const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
@@ -327,8 +310,13 @@ router.afterEach(() => {
   closeSidebarOnMobile()
 })
 
-function toggleSearchModal() {
-  isSearchModalOpen.value = !isSearchModalOpen.value
+/**
+ * 處理搜尋結果選擇
+ * 當使用者在搜尋中選擇一個符號時，將其添加到追蹤組合或導航到相應頁面
+ */
+async function handleSearchSelect(item) {
+  console.log('用戶選擇搜尋結果:', item)
+  // TODO: 實現選擇後的行為，例如導航到追蹤頁面或添加到投資組合
 }
 
 onMounted(async () => {
@@ -345,9 +333,20 @@ onMounted(async () => {
   } catch (error) {
     console.error('[LayoutView.onMounted] ✗ Failed to load profile:', error)
   }
-})
 
-onUnmounted(() => {
+  // 全局快捷鍵監聽 (Cmd+K / Ctrl+K)
+  function handleGlobalKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      globalSearchModalRef.value?.open()
+    }
+  }
+
+  window.addEventListener('keydown', handleGlobalKeydown)
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleGlobalKeydown)
+  })
 })
 
 
