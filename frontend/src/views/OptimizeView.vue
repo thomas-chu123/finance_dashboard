@@ -222,7 +222,7 @@
             <div class="flex-1 flex items-center justify-between">
               <h3 class="font-bold text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</h3>
               <div class="text-xs font-bold px-2 py-1 rounded-md" :class="totalWeight === 100 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
-                總權重: {{ totalWeight.toFixed(1) }}%
+                總權重: {{ totalWeight }}%
               </div>
             </div>
           </div>
@@ -242,14 +242,14 @@
                   </div>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ item.weight.toFixed(0) }}%</span>
+                  <span class="text-lg font-bold text-brand-500 dark:text-brand-400">{{ Math.round(item.weight) }}%</span>
                   <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-all rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="removeSymbol(item.symbol)">
                     <X class="w-4 h-4" />
                   </button>
                 </div>
               </div>
               <div class="w-full">
-                <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
+                <input type="range" v-model.number="item.weight" min="0" max="100" step="1" @input="adjustWeights(item.symbol, item.weight)" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
               </div>
             </div>
 
@@ -301,10 +301,10 @@
 
         <!-- 開始優化 button -->
         <button
-          :disabled="runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5"
+          :disabled="runLoading || selectedItems.length < 2 || totalWeight !== 100"
           :class="[
             'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
-            (runLoading || selectedItems.length < 2 || Math.abs(totalWeight - 100) > 0.5)
+            (runLoading || selectedItems.length < 2 || totalWeight !== 100)
               ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
               : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
           ]"
@@ -557,20 +557,22 @@ async function runOptimization() {
   }
 }
 
-// ✅ 均勻分配權重
+// ✅ 均勻分配權重（整數百分比）
 function equalizeWeights() {
   if (!selectedItems.value.length) return
-  const w = parseFloat((100 / selectedItems.value.length).toFixed(1))
+  const baseWeight = Math.floor(100 / selectedItems.value.length)
+  const remainder = 100 % selectedItems.value.length
+  
   selectedItems.value.forEach((item, idx) => {
-    item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
+    item.weight = idx < remainder ? baseWeight + 1 : baseWeight
   })
 }
 
-// ✅ 調整權重
+// ✅ 調整權重（整數百分比，無需歸一化）
 function adjustWeights(symbol, newWeight) {
   const item = selectedItems.value.find(i => i.symbol === symbol)
   if (!item) return
-  item.weight = newWeight
+  item.weight = Math.max(0, Math.round(newWeight))
 }
 
 function createPieOption(portfolioData) {

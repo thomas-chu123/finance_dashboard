@@ -257,8 +257,8 @@
               </div>
               <div class="flex-1 flex items-center justify-between">
                 <h3 class="font-bold text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</h3>
-                <div class="text-xs font-bold px-2 py-1 rounded-md" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
-                  總權重: {{ totalWeight.toFixed(1) }}%
+                <div class="text-xs font-bold px-2 py-1 rounded-md" :class="totalWeight === 100 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
+                  總權重: {{ totalWeight }}%
                 </div>
               </div>
             </div>
@@ -285,7 +285,7 @@
                   </div>
                 </div>
                 <div class="w-full">
-                  <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
+                  <input type="range" v-model.number="item.weight" min="0" max="100" step="1" @input="adjustWeights(item.symbol, item.weight)" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
                 </div>
               </div>
 
@@ -352,10 +352,10 @@
           <!-- 執行回測 button -->
           <button
             v-else
-            :disabled="runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5"
+            :disabled="runLoading || selectedItems.length === 0 || totalWeight !== 100"
             :class="[
               'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
-              (runLoading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5)
+              (runLoading || selectedItems.length === 0 || totalWeight !== 100)
                 ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
                 : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
             ]"
@@ -642,9 +642,35 @@ function adjustWeights(symbol, newWeight) {
   const item = selectedItems.value.find(i => i.symbol === symbol)
   if (!item) return
   
-  // Basic logic: just update this one. 
-  // For a better UX, we could adjust others proportionally, but let's keep it simple for now.
+  // 限制新權重在有效範圍內
+  newWeight = Math.max(0, Math.min(100, newWeight))
+  const oldWeight = item.weight
+  const delta = newWeight - oldWeight
+  
   item.weight = newWeight
+  
+  // 如果變更了權重，計算調整量
+  if (delta !== 0) {
+    const otherItems = selectedItems.value.filter(i => i.symbol !== symbol)
+    if (otherItems.length > 0) {
+      const totalOtherWeight = otherItems.reduce((s, i) => s + i.weight, 0)
+      
+      // 按比例調整其他權重
+      if (totalOtherWeight > 0) {
+        const scaleFactor = (totalOtherWeight - delta) / totalOtherWeight
+        otherItems.forEach(i => {
+          i.weight = Math.round(i.weight * scaleFactor * 10) / 10 // 保留 1 位小數點
+        })
+      }
+      
+      // 最後調整確保總和 = 100%
+      const total = selectedItems.value.reduce((s, i) => s + i.weight, 0)
+      if (Math.abs(total - 100) > 0.01) {
+        const lastItem = selectedItems.value[selectedItems.value.length - 1]
+        lastItem.weight = Math.round((100 - (total - lastItem.weight)) * 10) / 10
+      }
+    }
+  }
 }
 
 function addSearchSymbol() {
