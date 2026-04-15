@@ -470,7 +470,7 @@
                   <td class="px-6 py-4 font-bold">{{ (contrib.final_value || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
                   <td class="px-6 py-4 font-bold" :class="(contrib.absolute_gain || 0) >= 0 ? 'text-rose-600' : 'text-green-600'">{{ (contrib.absolute_gain || 0) >= 0 ? '+' : '' }}{{ (contrib.absolute_gain || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
                   <td class="px-6 py-4" :class="(contrib.asset_return_pct || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-green-600 font-bold'">{{ (contrib.asset_return_pct || 0) >= 0 ? '+' : '' }}{{ (contrib.asset_return_pct || 0).toFixed(2) }}%</td>
-                  <td class="px-6 py-4 font-bold text-brand-600">{{ contrib.contribution_pct }}%</td>
+                  <td class="px-6 py-4 font-bold" :class="(contrib.contribution_pct || 0) >= 0 ? 'text-rose-600' : 'text-green-600'">{{ (contrib.contribution_pct || 0) >= 0 ? '+' : '' }}{{ contrib.contribution_pct }}%</td>
                 </tr>
               </tbody>
             </table>
