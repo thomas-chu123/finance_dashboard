@@ -156,12 +156,13 @@
           >
             <Search :size="20" />
           </button>
-          <div class="relative max-w-md w-full hidden sm:block">
-            <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="16" />
+          <div class="relative max-w-md w-full hidden sm:block cursor-pointer" @click="toggleSearchModal">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" :size="16" />
             <input 
               type="text" 
-              placeholder="搜尋名稱、代碼或資產..." 
-              class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
+              placeholder="搜尋名稱、代碼或資產... (Cmd/Ctrl + K)" 
+              readonly
+              class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)] cursor-pointer"
             />
           </div>
         </div>
@@ -274,6 +275,11 @@ const mobileNavItems = [
   { path: '/optimize', label: '最佳化', icon: Target },
   { path: '/monte-carlo', label: '蒙地卡羅', icon: Dice5 },
 ]
+
+// 打開搜尋Modal
+function toggleSearchModal() {
+  globalSearchModalRef.value?.open()
+}
 
 // 關閉sidebar和backdrop
 function closeSidebar() {

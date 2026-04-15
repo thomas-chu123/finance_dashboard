@@ -205,7 +205,7 @@ async def search_symbols(
             "total": 3
         }
     """
-    from app.services.market_data import SYMBOL_CATALOG
+    from app.services.market_data import SYMBOL_CATALOG, fetch_tw_etf_list
     
     # 若查詢字串為空，返回空結果
     if not q or len(q.strip()) == 0:
@@ -214,8 +214,21 @@ async def search_symbols(
     q = q.strip()
     results = []
     
+    # 合併來自多個來源的符號
+    all_symbols = []
+    
+    # 1. 靜態 SYMBOL_CATALOG (全球指數、期貨等)
+    all_symbols.extend(SYMBOL_CATALOG.values())
+    
+    # 2. 台灣 ETF 列表 (動態從資料庫)
+    try:
+        tw_etfs = await fetch_tw_etf_list()
+        all_symbols.extend(tw_etfs)
+    except Exception as e:
+        logger.warning(f"Failed to fetch Taiwan ETF list: {e}")
+    
     # 遍歷所有符號，計算相似度
-    for symbol_key, symbol_data in SYMBOL_CATALOG.items():
+    for symbol_data in all_symbols:
         # 應用類別篩選
         if category and symbol_data.get("category") != category:
             continue
