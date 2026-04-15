@@ -141,22 +141,46 @@ async def get_symbol_catalog():
 def _calculate_match_score(query: str, symbol_data: dict) -> float:
     """計算查詢字串與符號數據的相似度分值。
     
-    使用加權計分：symbol > name_zh > name_en
+    優先匹配策略：
+    1. Symbol 前綴匹配 (最高權重，如 VT* 匹配 VTI)
+    2. Symbol 包含匹配 (次高權重)
+    3. 中文名稱包含匹配 (中等權重)
+    4. 英文名稱包含匹配 (較低權重)
+    5. 模糊相似度 (最低權重，防止 VT 匹配 VIX)
     """
     q_lower = query.lower()
     
-    # Symbol match (最高權重)
-    symbol_score = SequenceMatcher(None, q_lower, symbol_data.get("symbol", "").lower()).ratio()
+    # 1. Symbol 前綴匹配 (精確開頭匹配)
+    symbol = symbol_data.get("symbol", "").lower()
+    if symbol.startswith(q_lower):
+        return 0.95  # 最高分
     
-    # Chinese name match (中等權重)
-    name_zh_score = SequenceMatcher(None, q_lower, symbol_data.get("name_zh", "").lower()).ratio()
+    # 2. Symbol 包含匹配 (如 .TW 結尾)
+    if q_lower in symbol:
+        return 0.85
     
-    # English name match (較低權重)
-    name_en_score = SequenceMatcher(None, q_lower, symbol_data.get("name_en", "").lower()).ratio()
+    # 3. 中文名稱包含匹配
+    name_zh = symbol_data.get("name_zh", "").lower()
+    if q_lower in name_zh:
+        return 0.70
     
-    # 加權計分
+    # 4. 英文名稱包含匹配
+    name_en = symbol_data.get("name_en", "").lower()
+    if q_lower in name_en:
+        return 0.60
+    
+    # 5. 模糊相似度（備選方案）
+    # 只在上述精確匹配都失敗時才使用
+    symbol_score = SequenceMatcher(None, q_lower, symbol).ratio()
+    name_zh_score = SequenceMatcher(None, q_lower, name_zh).ratio()
+    name_en_score = SequenceMatcher(None, q_lower, name_en).ratio()
+    
+    # 加權計分（使用更嚴格的閾值）
     total_score = (symbol_score * 3.0) + (name_zh_score * 2.0) + (name_en_score * 1.0)
-    return total_score / 6.0  # 正規化
+    fuzzy_score = total_score / 6.0  # 正規化 (0.0 - 1.0)
+    
+    # 只有當模糊相似度較高時才返回（防止誤比對）
+    return fuzzy_score if fuzzy_score > 0.6 else 0.0
 
 
 async def _fetch_latest_price(symbol: str, category: str) -> tuple:
@@ -236,8 +260,8 @@ async def search_symbols(
         # 計算相似度分值
         score = _calculate_match_score(q, symbol_data)
         
-        # 使用相似度閾值 0.2 過濾結果（更寬鬆的閾值以提高搜尋涵蓋率）
-        if score > 0.2:
+        # 使用相似度閾值 0.3 過濾結果（精確匹配得分高於 0.6，模糊匹配也需要 > 0.3）
+        if score > 0.3:
             results.append((symbol_data, score))
     
     # 按相似度降序排序

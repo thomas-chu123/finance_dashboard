@@ -24,7 +24,7 @@
             @keydown.enter="selectCurrent"
             @keydown.escape="close"
           />
-          <kbd class="hidden sm:inline px-2 py-1 text-xs font-semibold text-zinc-600 bg-zinc-200 dark:bg-zinc-700 rounded">
+          <kbd class="hidden sm:inline px-2 py-1 text-xs font-semibold text-white bg-brand-500 rounded">
             ESC
           </kbd>
         </div>
@@ -115,9 +115,9 @@
 
         <!-- 頁腳：快捷鍵提示 -->
         <div class="px-4 py-2 bg-[var(--bg-secondary)]/50 text-xs text-zinc-500 flex justify-between border-t border-[var(--border-color)]">
-          <span><kbd class="inline-block px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-xs">↑↓</kbd> 導航</span>
-          <span><kbd class="inline-block px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-xs">Enter</kbd> 選擇</span>
-          <span><kbd class="inline-block px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-700 rounded text-zinc-700 dark:text-zinc-300 font-mono text-xs">Esc</kbd> 關閉</span>
+          <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">↑↓</kbd> 導航</span>
+          <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">Enter</kbd> 選擇</span>
+          <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">Esc</kbd> 關閉</span>
         </div>
       </div>
     </div>
