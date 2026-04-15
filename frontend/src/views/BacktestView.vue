@@ -468,8 +468,8 @@
                   <td class="px-6 py-4">{{ contrib.weight }}%</td>
                   <td class="px-6 py-4">{{ (contrib.initial_allocation || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
                   <td class="px-6 py-4 font-bold">{{ (contrib.final_value || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
-                  <td class="px-6 py-4 font-bold" :class="(contrib.absolute_gain || 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ (contrib.absolute_gain || 0) >= 0 ? '+' : '' }}{{ (contrib.absolute_gain || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
-                  <td class="px-6 py-4" :class="(contrib.asset_return_pct || 0) >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'">{{ (contrib.asset_return_pct || 0) >= 0 ? '+' : '' }}{{ (contrib.asset_return_pct || 0).toFixed(2) }}%</td>
+                  <td class="px-6 py-4 font-bold" :class="(contrib.absolute_gain || 0) >= 0 ? 'text-rose-600' : 'text-green-600'">{{ (contrib.absolute_gain || 0) >= 0 ? '+' : '' }}{{ (contrib.absolute_gain || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4" :class="(contrib.asset_return_pct || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-green-600 font-bold'">{{ (contrib.asset_return_pct || 0) >= 0 ? '+' : '' }}{{ (contrib.asset_return_pct || 0).toFixed(2) }}%</td>
                   <td class="px-6 py-4 font-bold text-brand-600">{{ contrib.contribution_pct }}%</td>
                 </tr>
               </tbody>
@@ -951,7 +951,7 @@ const monthlyReturnsHeatmapOption = computed(() => {
     yAxis: { type: 'category', data: months, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     visualMap: {
       min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 20,
-      inRange: { color: ['#3fb950', '#161b22', '#f85149'] },
+      inRange: { color: ['#3fb950', '#161b22', '#e74c3c'] },
       textStyle: { color: '#8b949e' }, formatter: v => v + '%'
     },
     tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${years[p.value[0]]} ${months[p.value[1]]}<br/>報酬：${p.value[2]}%` },
