@@ -144,11 +144,12 @@ def _calculate_match_score(query: str, symbol_data: dict) -> float:
     優先匹配策略：
     1. Symbol 前綴匹配 (最高權重，如 VT* 匹配 VTI)
     2. Symbol 包含匹配 (次高權重)
-    3. 中文名稱包含匹配 (中等權重)
-    4. 英文名稱包含匹配 (較低權重)
+    3. 中文名稱包含匹配 (高權重，支持中文搜尋)
+    4. 英文名稱包含匹配 (中等權重)
     5. 模糊相似度 (最低權重，防止 VT 匹配 VIX)
     """
     q_lower = query.lower()
+    q_original = query  # 保存原始查詢（用於中文匹配）
     
     # 1. Symbol 前綴匹配 (精確開頭匹配)
     symbol = symbol_data.get("symbol", "").lower()
@@ -159,10 +160,17 @@ def _calculate_match_score(query: str, symbol_data: dict) -> float:
     if q_lower in symbol:
         return 0.85
     
-    # 3. 中文名稱包含匹配
-    name_zh = symbol_data.get("name_zh", "").lower()
-    if q_lower in name_zh:
-        return 0.70
+    # 3. 中文名稱包含匹配（支持原始中文查詢）
+    name_zh = symbol_data.get("name_zh", "")
+    name_zh_lower = name_zh.lower()
+    
+    # 支持原始中文搜尋（如 "元大" 匹配 "元大台灣50"）
+    if q_original in name_zh:
+        return 0.80  # 精確中文包含
+    
+    # 降級到小寫比較（假設不涉及大小寫轉換的中文）
+    if q_lower in name_zh_lower:
+        return 0.75
     
     # 4. 英文名稱包含匹配
     name_en = symbol_data.get("name_en", "").lower()
@@ -172,7 +180,7 @@ def _calculate_match_score(query: str, symbol_data: dict) -> float:
     # 5. 模糊相似度（備選方案）
     # 只在上述精確匹配都失敗時才使用
     symbol_score = SequenceMatcher(None, q_lower, symbol).ratio()
-    name_zh_score = SequenceMatcher(None, q_lower, name_zh).ratio()
+    name_zh_score = SequenceMatcher(None, q_lower, name_zh_lower).ratio()
     name_en_score = SequenceMatcher(None, q_lower, name_en).ratio()
     
     # 加權計分（使用更嚴格的閾值）

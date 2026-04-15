@@ -88,10 +88,24 @@
               />
             </div>
 
+            <!-- 追蹤項目篩選搜尋框 -->
+            <div v-if="trackingStore.items.length > 0" class="px-6 py-3 border-b border-[var(--border-color)]/50">
+              <input
+                v-model="trackingSearchQuery"
+                type="text"
+                placeholder="搜尋代碼、名稱..."
+                class="w-full px-3 py-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-brand-500 transition-colors"
+              />
+            </div>
+
             <div class="overflow-x-auto">
               <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
               <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
                 尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
+              </div>
+              <div v-else-if="!filteredTrackingItems.length" class="p-4 py-12 text-left text-zinc-500">
+                <div class="text-4xl mb-4 opacity-50">🔍</div>
+                <div class="text-lg">無符合的搜尋結果</div>
               </div>
               <div v-else class="min-w-[400px] sm:min-w-[700px]">
                 <div class="grid grid-cols-4 sm:grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
@@ -102,7 +116,7 @@
                   <div class="col-span-1 hidden sm:block">RSI 指標</div>
                   <div class="col-span-1 hidden sm:block">狀態</div>
                 </div>
-                <div v-for="item in trackingStore.items" :key="item.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
+                <div v-for="item in filteredTrackingItems" :key="item.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                   <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
                   <div class="col-span-2 flex flex-col">
                     <span class="text-sm text-[var(--text-primary)] truncate pr-2">{{ item.name }}</span>
@@ -505,6 +519,20 @@ async function saveQuotes() {
 }
 
 const activeCount = computed(() => trackingStore.items.filter(i => i.is_active).length)
+
+// 追蹤列表搜尋過濾
+const trackingSearchQuery = ref('')
+const filteredTrackingItems = computed(() => {
+  if (!trackingSearchQuery.value.trim()) {
+    return trackingStore.items
+  }
+  
+  const q = trackingSearchQuery.value.toLowerCase()
+  return trackingStore.items.filter(item => 
+    item.symbol.toLowerCase().includes(q) ||
+    (item.name && item.name.toLowerCase().includes(q))
+  )
+})
 
 function formatDate(d) {
   return new Date(d).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
