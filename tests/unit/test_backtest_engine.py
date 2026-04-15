@@ -200,3 +200,50 @@ class TestRunBacktest:
             result = await run_backtest([], "2022-01-01", "2023-12-31")
         # 引擎應回傳 error 或空結果
         assert "error" in result or result == {} or not result.get("metrics")
+
+    @allure.story("資產貢獻度")
+    @pytest.mark.asyncio
+    async def test_asset_contributions_reflect_individual_returns(self):
+        """資產貢獻度應反映各自的報酬率，報酬率高的資產應有更高的收益貢獻度."""
+        items = [
+            {"symbol": "VTI", "weight": 50.0, "name": "Vanguard Total", "category": "us_etf"},
+            {"symbol": "BND", "weight": 50.0, "name": "Vanguard Bond", "category": "us_etf"},
+        ]
+        with patch(
+            "app.services.backtest_engine.get_historical_prices",
+            side_effect=self._mock_prices,
+        ), patch(
+            "app.services.backtest_engine.get_symbol_currency",
+            return_value="USD",
+        ):
+            result = await run_backtest(
+                items, "2022-01-01", "2023-12-31", initial_amount=100000.0
+            )
+
+        assert "error" not in result
+        asset_contributions = result.get("asset_contributions", {})
+        
+        # 驗證資產貢獻度數據完整性
+        assert len(asset_contributions) == 2
+        for sym, contrib in asset_contributions.items():
+            assert "asset_return_pct" in contrib
+            assert "contribution_pct" in contrib
+            assert "absolute_gain" in contrib
+            assert "final_value" in contrib
+        
+        # 驗證貢獻度加總約等於 100%（允許浮點誤差）
+        total_contribution = sum([v.get("contribution_pct", 0) for v in asset_contributions.values()])
+        assert abs(total_contribution - 100.0) < 1.0, \
+            f"Total contribution should be 100%, got {total_contribution}%"
+        
+        # 報酬率高的資產應有更高的貢獻度
+        contribs_list = list(asset_contributions.values())
+        if len(contribs_list) >= 2:
+            # 找到報酬率最高的資產
+            higher_return_asset = max(contribs_list, key=lambda x: x.get("asset_return_pct", 0))
+            lower_return_asset = min(contribs_list, key=lambda x: x.get("asset_return_pct", 0))
+            
+            # 如果報酬率不同，貢獻度應該也不同
+            if higher_return_asset.get("asset_return_pct", 0) != lower_return_asset.get("asset_return_pct", 0):
+                assert higher_return_asset.get("contribution_pct", 0) >= lower_return_asset.get("contribution_pct", 0), \
+                    "Asset with higher return should have higher contribution"

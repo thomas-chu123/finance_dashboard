@@ -194,6 +194,10 @@
       <!-- Date range -->
         <div class="premium-card">
           <div class="p-5">
+            <!-- 幣值選擇器 -->
+            <div class="mb-4">
+              <CurrencySelector :show-hint="true" />
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-1.5 mb-2 min-w-0">
                 <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">最佳化分析起點</label>
@@ -422,10 +426,13 @@ import { useRouter } from 'vue-router'
 import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, Save, Search, Plus, Target, Scale, Play } from 'lucide-vue-next'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
+import { usePreferenceStore } from '../stores/preference'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import CurrencySelector from '../components/CurrencySelector.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
+const preference = usePreferenceStore()
 const { isMobile, isTablet, isDesktop } = useBreakpoint()
 // Remove local API_BASE declaration
 
@@ -534,7 +541,8 @@ async function runOptimization() {
     const res = await axios.post(`${API_BASE}/api/optimize`, {
       symbols: selectedItems.value.map(i => i.symbol),
       start_date: optConfig.start_date,
-      end_date: optConfig.end_date
+      end_date: optConfig.end_date,
+      display_currency: preference.displayCurrency,
     }, { headers: auth.headers })
     results.value = res.data.results
     

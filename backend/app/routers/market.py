@@ -94,7 +94,7 @@ async def get_quotes_batch(metas: List[QuoteMeta]):
     return list(results)
 
 
-from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, get_index_list
+from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, get_index_list, get_fund_list
 
 @router.get("/symbols")
 async def get_available_symbols():
@@ -102,10 +102,12 @@ async def get_available_symbols():
     tw_etfs = await fetch_tw_etf_list()
     us_etfs = await fetch_us_etf_list()
     indices = get_index_list()
+    funds = await get_fund_list()
     return {
         "tw_etf": tw_etfs,
         "us_etf": us_etfs,
-        "index": indices
+        "index": indices,
+        "funds": funds
     }
 
 @router.get("/symbol-catalog")

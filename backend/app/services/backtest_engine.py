@@ -68,6 +68,7 @@ async def run_backtest(
     start_date: str,
     end_date: str,
     initial_amount: float = 100000,
+    display_currency: str = "TWD",  # USD 或 TWD，預設為 TWD
 ) -> Dict[str, Any]:
     """
     Run portfolio backtest.
@@ -107,13 +108,20 @@ async def run_backtest(
     if not twd_fx.empty:
         for sym in list(price_data.keys()):
             if get_symbol_currency(sym) == "TWD":
-                # Align price and FX
-                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().dropna()
-                if not combined.empty:
+                # Align price and FX using ffill().bfill() to preserve all trading days
+                # IMPORTANT: Do NOT use .dropna() as it removes trading days that exist in either price_data or twd_fx
+                # This causes date misalignment and reduces trading_days count, which inflates CAGR calculations
+                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().bfill()
+                combined = combined.dropna(how='all')  # Only drop rows where ALL values are NaN
+                if not combined.empty and len(combined) == len(price_data[sym]):
                     price_data[sym] = combined["price"] / combined["fx"]
-                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (aligned rows: {len(combined)})")
+                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (rows: {len(combined)})")
                 else:
-                    logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local prices.")
+                    # If alignment causes data loss, keep original TWD prices
+                    if not combined.empty and len(combined) < len(price_data[sym]):
+                        logger.warning(f"[Backtest] FX alignment for {sym} lost {len(price_data[sym]) - len(combined)} rows. Using local TWD prices.")
+                    else:
+                        logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local TWD prices.")
 
     if not price_data:
         logger.error("[Backtest] No data fetched for ANY symbol.")
@@ -142,16 +150,31 @@ async def run_backtest(
 
     # Daily returns
     returns = df.pct_change().dropna()
+    # 確保列順序與 available_symbols 一致
+    returns = returns[available_symbols]
 
-    # Portfolio daily returns (weighted)
-    port_returns = (returns * avail_weights).sum(axis=1)
+    # ── Buy & Hold ──────────────────────────────────────────────────────────
+    # 每個資產各自獨立持有，不每日再平衡。
+    # 各資產價值 = 初始配置 × 累積報酬；組合總值 = Σ 各資產價值。
+    # 此方法保證：final_amount == sum(每個資產的 final_value)
+    asset_value_curves = {}   # sym -> pd.Series (每日價值)
+    for i, sym in enumerate(available_symbols):
+        initial_allocation = initial_amount * avail_weights[i]
+        asset_cumret = (1 + returns[sym]).cumprod()          # 累積報酬倍數
+        asset_value_curves[sym] = asset_cumret * initial_allocation
 
-    # Portfolio value curve
-    port_value = (1 + port_returns).cumprod() * initial_amount
+    # 組合每日總值 = 各資產每日價值加總
+    port_value_raw = pd.DataFrame(asset_value_curves).sum(axis=1)
+
+    # 從總值曲線反推每日報酬（供 Sharpe / Sortino / Beta / 年度報酬等指標使用）
+    port_returns = port_value_raw.pct_change().dropna()
+
+    # 調整 port_value_raw 的起點以符合 initial_amount（防浮點偏差）
+    port_value = port_value_raw.copy()
     port_value.index = port_value.index.strftime("%Y-%m-%d")
 
     # Drawdown series — daily drawdown from peak in %
-    cumulative = (1 + port_returns).cumprod()
+    cumulative = port_value_raw / initial_amount
     rolling_max = cumulative.cummax()
     drawdown_series_raw = ((cumulative - rolling_max) / rolling_max) * 100
     drawdown_series_raw.index = drawdown_series_raw.index.strftime("%Y-%m-%d")
@@ -161,39 +184,37 @@ async def run_backtest(
 
     # Metrics
     years = len(returns) / 252
-    total_return = float(port_value.iloc[-1] / initial_amount - 1)
+    total_return = float(port_value_raw.iloc[-1] / initial_amount - 1)
     cagr = _annualized_return(total_return, years)
     ann_std = float(port_returns.std() * np.sqrt(252))
-    max_dd = _max_drawdown(pd.Series((1 + port_returns).cumprod()))
+    max_dd = _max_drawdown(port_value_raw / initial_amount)
     sharpe = _sharpe_ratio(port_returns)
     sortino = _sortino_ratio(port_returns)
     var_95 = _var_historical(port_returns)
     cvar_95 = _cvar(port_returns)
 
-    # Annual returns
+    # Annual returns — 以年度首末總值計算
     annual_returns = {}
-    for year, grp in returns.groupby(returns.index.year):
-        yr_port = (grp * avail_weights).sum(axis=1)
-        annual_returns[str(year)] = float((1 + yr_port).prod() - 1)
+    for year, grp in port_value_raw.groupby(port_value_raw.index.year):
+        start_val = grp.iloc[0]
+        end_val = grp.iloc[-1]
+        annual_returns[str(year)] = float(end_val / start_val - 1)
 
-    # Monthly returns (for heatmap)
-    # Monthly returns (for heatmap)
-    years_list = sorted(list(returns.index.year.unique()))
+    # Monthly returns (for heatmap) — 以月度首末總值計算
+    years_list = sorted(list(port_value_raw.index.year.unique()))
     months_labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    
-    # Initialize 2D array with None (null in JSON)
+
     heatmap_data = [[None for _ in range(12)] for _ in range(len(years_list))]
     year_to_idx = {y: i for i, y in enumerate(years_list)}
-    
-    for (year, month), grp in returns.groupby([returns.index.year, returns.index.month]):
-        mo_port = (grp * avail_weights).sum(axis=1)
-        mo_ret = float((1 + mo_port).prod() - 1)
-        heatmap_data[year_to_idx[year]][month-1] = round(mo_ret, 4)
-        
+
+    for (year, month), grp in port_value_raw.groupby([port_value_raw.index.year, port_value_raw.index.month]):
+        mo_ret = float(grp.iloc[-1] / grp.iloc[0] - 1)
+        heatmap_data[year_to_idx[year]][month - 1] = round(mo_ret, 4)
+
     monthly_returns = {
         "years": years_list,
         "months": months_labels,
-        "data": heatmap_data
+        "data": heatmap_data,
     }
 
     # Beta vs SPY
@@ -203,7 +224,7 @@ async def run_backtest(
             spy_series = price_data["SPY"]
         else:
             spy_series = await get_historical_prices("SPY", start_date, end_date)
-            
+
         if not spy_series.empty:
             spy_returns = spy_series.pct_change().dropna()
             aligned = port_returns.align(spy_returns, join="inner")
@@ -212,14 +233,41 @@ async def run_backtest(
     except Exception as e:
         logger.warning(f"[Backtest] Beta calculation problem: {e}")
 
-    # Per-asset contribution
+    # Per-asset contribution (絕對收益貢獻) — Buy & Hold，各自獨立持有
+    # final_amount == sum(asset final_value)，完全一致
     asset_contributions = {}
+    asset_gains = {}
+    total_gains = 0
+
     for i, sym in enumerate(available_symbols):
-        asset_ret = (returns[sym] * avail_weights[i])
-        contrib = float((1 + asset_ret).prod() - 1) * initial_amount
+        initial_allocation = initial_amount * avail_weights[i]
+        final_value = float(asset_value_curves[sym].iloc[-1])
+        asset_return = float((1 + returns[sym]).cumprod().iloc[-1] - 1)
+        asset_gain = final_value - initial_allocation
+        asset_gains[sym] = {
+            "initial_allocation": initial_allocation,
+            "final_value": final_value,
+            "asset_gain": asset_gain,
+            "asset_return": asset_return,
+        }
+        total_gains += asset_gain
+
+    # 計算貢獻度百分比並生成結果
+    for i, sym in enumerate(available_symbols):
+        gain_info = asset_gains[sym]
+
+        if total_gains != 0:
+            contribution_pct = (gain_info["asset_gain"] / total_gains) * 100
+        else:
+            contribution_pct = float(avail_weights[i]) * 100
+
         asset_contributions[sym] = {
             "weight": round(float(avail_weights[i]) * 100, 2),
-            "return_contribution": round(contrib, 2),
+            "initial_allocation": round(gain_info["initial_allocation"], 2),
+            "final_value": round(gain_info["final_value"], 2),
+            "absolute_gain": round(gain_info["asset_gain"], 2),
+            "asset_return_pct": round(gain_info["asset_return"] * 100, 2),
+            "contribution_pct": round(contribution_pct, 2),
             "name": next((it["name"] for it in items if it["symbol"] == sym), sym),
         }
 
@@ -284,6 +332,7 @@ async def run_backtest(
         "metrics": {
             "initial_amount": round(initial_amount, 2),
             "final_amount": round(float(port_value.iloc[-1]), 2),
+            "currency": display_currency,  # 新增：顯示幣值
             "total_return": round(total_return * 100, 2),
             "cagr": round(cagr * 100, 2),
             "annual_std": round(ann_std * 100, 2),

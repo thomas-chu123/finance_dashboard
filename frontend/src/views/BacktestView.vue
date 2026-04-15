@@ -222,6 +222,10 @@
               <h3 class="font-bold text-[var(--text-primary)]">時間範圍與金額</h3>
             </div>
             <div class="p-5">
+              <!-- 幣值選擇器 -->
+              <div class="mb-4">
+                <CurrencySelector :show-hint="true" />
+              </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1.5 mb-2 min-w-0">
                   <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">開始日期</label>
@@ -233,12 +237,12 @@
                 </div>
               </div>
               <div class="space-y-1.5 mt-2">
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 (USD)</label>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 ({{ preference.displayCurrency }})</label>
                 <div class="relative">
                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
                    <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 pl-7 transition-all" />
                 </div>
-                <div class="text-[10px] text-[var(--text-secondary)] mt-2 italic">註：若包含台灣資產，系統將自動依歷史匯率換算為美金計價。</div>
+                <div class="text-[10px] text-[var(--text-secondary)] mt-2 italic">註：若包含台灣資產，系統將自動依歷史匯率換算。</div>
               </div>
             </div>
           </div>
@@ -451,20 +455,22 @@
 
         <!-- Asset contributions -->
         <div class="glass-card mb-2">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度</h3></div>
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度分析</h3><span class="text-xs text-muted font-normal">基於絕對收益計算貢獻度</span></div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
               <thead class="text-xs text-muted uppercase bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
-                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">權重</th><th class="px-6 py-4 font-medium">報酬貢獻 (USD)</th></tr>
+                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">初始權重</th><th class="px-6 py-4 font-medium">初始投入</th><th class="px-6 py-4 font-medium">期末值</th><th class="px-6 py-4 font-medium">絕對收益</th><th class="px-6 py-4 font-medium">報酬率</th><th class="px-6 py-4 font-medium">收益貢獻%</th></tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-color)]/20">
                 <tr v-for="(contrib, symbol) in (results.asset_contributions || {})" :key="symbol">
                   <td class="px-6 py-4 fw-600 text-accent">{{ symbol }}</td>
                   <td class="px-6 py-4">{{ contrib.name }}</td>
                   <td class="px-6 py-4">{{ contrib.weight }}%</td>
-                  <td class="px-6 py-4" :class="(contrib.return_contribution || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-brand-600 font-bold'">
-                    ${{ (contrib.return_contribution || 0).toLocaleString() }}
-                  </td>
+                  <td class="px-6 py-4">{{ (contrib.initial_allocation || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4 font-bold">{{ (contrib.final_value || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4 font-bold" :class="(contrib.absolute_gain || 0) >= 0 ? 'text-rose-600' : 'text-green-600'">{{ (contrib.absolute_gain || 0) >= 0 ? '+' : '' }}{{ (contrib.absolute_gain || 0).toLocaleString('zh-TW', { maximumFractionDigits: 0 }) }}</td>
+                  <td class="px-6 py-4" :class="(contrib.asset_return_pct || 0) >= 0 ? 'text-rose-600 font-bold' : 'text-green-600 font-bold'">{{ (contrib.asset_return_pct || 0) >= 0 ? '+' : '' }}{{ (contrib.asset_return_pct || 0).toFixed(2) }}%</td>
+                  <td class="px-6 py-4 font-bold" :class="(contrib.contribution_pct || 0) >= 0 ? 'text-rose-600' : 'text-green-600'">{{ (contrib.contribution_pct || 0) >= 0 ? '+' : '' }}{{ contrib.contribution_pct }}%</td>
                 </tr>
               </tbody>
             </table>
@@ -533,12 +539,15 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
+import { usePreferenceStore } from '../stores/preference'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
+import CurrencySelector from '../components/CurrencySelector.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
+const preference = usePreferenceStore()
 const { isMobile, isTablet, isDesktop } = useBreakpoint()
 
 // Remove local API_BASE declaration
@@ -692,6 +701,7 @@ async function runBacktest() {
       start_date: btConfig.start_date,
       end_date: btConfig.end_date,
       initial_amount: btConfig.initial_amount,
+      display_currency: preference.displayCurrency,
     }, { headers: auth.headers })
     
     clearInterval(progressInterval)
@@ -712,6 +722,7 @@ async function runBacktest() {
           start_date: btConfig.start_date,
           end_date: btConfig.end_date,
           initial_amount: btConfig.initial_amount,
+          display_currency: preference.displayCurrency,
           results_json: results.value,
         }, { headers: auth.headers })
         await loadSavedPortfolios()
@@ -940,7 +951,7 @@ const monthlyReturnsHeatmapOption = computed(() => {
     yAxis: { type: 'category', data: months, axisLabel: { color: '#8b949e' }, axisLine: { lineStyle: { color: '#30363d' } }, splitArea: { show: true } },
     visualMap: {
       min: -15, max: 15, calculable: true, orient: 'horizontal', left: 'center', bottom: 20,
-      inRange: { color: ['#3fb950', '#161b22', '#f85149'] },
+      inRange: { color: ['#3fb950', '#161b22', '#e74c3c'] },
       textStyle: { color: '#8b949e' }, formatter: v => v + '%'
     },
     tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${years[p.value[0]]} ${months[p.value[1]]}<br/>報酬：${p.value[2]}%` },

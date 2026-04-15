@@ -144,6 +144,7 @@ function escapeHtml(str) {
 
 /**
  * 將 summary_text 中的編號引用 [N] 轉為可點擊超連結上標。
+ * 同時支持 Markdown 粗體 **xxxx** 轉換為 HTML <b> 標籤。
  * 格式預期：文字[1]文字[2]\n\n參考來源：\n[1] url1\n[2] url2
  */
 function renderSummary(text) {
@@ -163,8 +164,14 @@ function renderSummary(text) {
     }
   }
 
-  // 先 escape 主文 HTML，再將 [N] 插入超連結
-  const html = escapeHtml(mainText).replace(/\[(\d+)\]/g, (_, n) => {
+  // 先 escape 主文 HTML
+  let html = escapeHtml(mainText)
+
+  // 將 Markdown 粗體 **xxxx** 轉換為 HTML <b> 標籤
+  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+
+  // 再將 [N] 插入超連結
+  html = html.replace(/\[(\d+)\]/g, (_, n) => {
     const url = refMap[n]
     if (!url) return `[${n}]`
     return `<sup><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-brand-500 hover:text-brand-400">[${n}]</a></sup>`
