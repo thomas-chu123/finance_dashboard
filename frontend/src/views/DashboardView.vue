@@ -79,6 +79,15 @@
                 查看全部 <ChevronRight :size="14" />
               </router-link>
             </div>
+
+            <!-- 快速添加搜尋框 -->
+            <div class="px-6 py-3 border-b border-[var(--border-color)]/50">
+              <SymbolSearchInput 
+                placeholder="搜尋並快速添加到追蹤..."
+                @select="handleQuickAddFromSearch"
+              />
+            </div>
+
             <div class="overflow-x-auto">
               <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
               <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
@@ -315,6 +324,7 @@ import { useTrackingStore } from '../stores/tracking'
 import { useDashboardStore } from '../stores/dashboard'
 import { useDragDrop } from '../composables/useDragDrop'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import SymbolSearchInput from '../components/SymbolSearchInput.vue'
 import preferencesAPI from '../api/preferences'
 import {
   TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
@@ -377,6 +387,27 @@ async function handleQuoteDropTarget(event, toIndex) {
         console.error('Failed to save quote order:', e)
       }
     }
+  }
+}
+
+/**
+ * 從搜尋結果中快速添加到追蹤
+ * @param {Object} item - 搜尋結果項
+ */
+async function handleQuickAddFromSearch(item) {
+  try {
+    console.log('快速添加到追蹤:', item)
+    // 調用 tracking store 的 create 方法
+    await trackingStore.create({
+      symbol: item.symbol,
+      name: item.name_zh || item.name_en || item.symbol,
+      category: item.category,
+      trigger_mode: 'manual' // 默認手動模式
+    })
+    // 刷新追蹤列表
+    await trackingStore.fetchAll()
+  } catch (error) {
+    console.error('快速添加失敗:', error)
   }
 }
 
