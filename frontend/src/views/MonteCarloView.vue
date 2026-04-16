@@ -144,9 +144,9 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" style="gap:12px;">
+      <div class="flex flex-col md:flex-row gap-3" style="gap:12px; min-height: calc(100vh - 300px);">
         <!-- Left Column -->
-        <div class="space-y-4">
+        <div class="flex-1 flex flex-col space-y-4">
           <!-- Asset Selection -->
           <div class="premium-card mb-4 min-h-[500px]">
             <div class="premium-header">
@@ -279,17 +279,17 @@
         </div>
 
         <!-- Right Column -->
-        <div class="space-y-4" style="max-height:70vh; overflow-y:auto;">
+        <div class="flex-1 flex flex-col">
           <!-- Selected Assets Weights Card -->
-          <div class="premium-card flex flex-col h-full overflow-hidden">
+          <div class="premium-card flex flex-col flex-1 overflow-hidden">
             <div class="premium-header">
               <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
                 <FolderOpen class="w-5 h-5 text-brand-500" />
               </div>
               <div class="flex-1 flex items-center justify-between">
                 <h3 class="font-bold text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</h3>
-                <div class="text-xs font-bold px-2 py-1 rounded-md" :class="Math.abs(totalWeight - 100) <= 0.5 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
-                  總權重: {{ totalWeight.toFixed(1) }}%
+                <div class="text-xs font-bold px-2 py-1 rounded-md" :class="totalWeight === 100 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
+                  總權重: {{ totalWeight }}%
                 </div>
               </div>
             </div>
@@ -316,7 +316,7 @@
                   </div>
                 </div>
                 <div class="w-full">
-                  <input type="range" v-model.number="item.weight" min="0" max="100" step="0.1" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
+                  <input type="range" v-model.number="item.weight" min="0" max="100" step="1" @input="adjustWeights(item.symbol, item.weight)" class="weight-slider w-full h-1.5 bg-brand-500/20 dark:bg-brand-500/20 rounded-lg appearance-none cursor-pointer" />
                 </div>
               </div>
 
@@ -366,10 +366,10 @@
 
           <!-- 開始模擬分析 button -->
           <button
-            :disabled="loading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5"
+            :disabled="loading || selectedItems.length === 0 || totalWeight !== 100"
             :class="[
               'w-full py-3 px-4 font-bold rounded-xl transition-all flex items-center justify-center gap-2',
-              (loading || selectedItems.length === 0 || Math.abs(totalWeight - 100) > 0.5)
+              (loading || selectedItems.length === 0 || totalWeight !== 100)
                 ? 'bg-[var(--border-color)] text-zinc-400 dark:text-zinc-600 cursor-not-allowed opacity-60'
                 : 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/20 active:scale-95 cursor-pointer'
             ]"
@@ -579,10 +579,19 @@ function removeSymbol(sym) {
 // ✅ 均勻分配權重
 function equalizeWeights() {
   if (!selectedItems.value.length) return
-  const w = parseFloat((100 / selectedItems.value.length).toFixed(1))
+  const baseWeight = Math.floor(100 / selectedItems.value.length)
+  const remainder = 100 % selectedItems.value.length
+  
   selectedItems.value.forEach((item, idx) => {
-    item.weight = idx === selectedItems.value.length - 1 ? 100 - w * (selectedItems.value.length - 1) : w
+    item.weight = idx < remainder ? baseWeight + 1 : baseWeight
   })
+}
+
+// ✅ 調整權重（整數百分比，無需歸一化）
+function adjustWeights(symbol, newWeight) {
+  const item = selectedItems.value.find(i => i.symbol === symbol)
+  if (!item) return
+  item.weight = Math.max(0, Math.round(newWeight))
 }
 
 async function loadSymbols() {

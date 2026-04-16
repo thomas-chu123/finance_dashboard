@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "notebooklm-mcp": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "notebooklm-mcp-cli",
+        "notebooklm-mcp"
+      ],
+      "type": "stdio"
+    },
+    "com.notion/mcp": {
+      "url": "https://mcp.notion.com/mcp",
+      "type": "http"
+    },
+    "@supabase/mcp-server-supabase": {
+      "command": "npx",
+      "args": [
+        "@supabase/mcp-server-supabase@0.7.0",
+        "--project-ref",
+        "nwfbdgiodeubppydadkn"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${input:SUPABASE_ACCESS_TOKEN}"
+      },
+      "type": "stdio"
+    }
+  }
+}

@@ -449,3 +449,226 @@ curl -X POST http://localhost:8000/api/backtest/run \
 - 股票行情：5 分鐘
 - ETF 清單：1 天
 - 回測結果：30 分鐘
+
+---
+
+## MCP 操作指引
+
+本專案整合 4 個主要 MCP 工具，用於數據庫操作、文檔管理、版本控制和知識管理。所有操作預設使用 MCP，遵循以下規範：
+
+### 1. Supabase MCP 操作
+
+**用途**：管理 PostgreSQL 資料庫、應用遷移、查詢數據、執行 SQL 操作。
+
+**常見操作**：
+
+- **查詢表結構**：使用 `list_tables` 檢查 schema
+  ```
+  list_tables(schemas=['public'], verbose=true)
+  ```
+
+- **執行 SQL 查詢**：使用 `execute_sql` 進行數據查詢
+  ```
+  execute_sql(query='SELECT * FROM users WHERE email = ?')
+  ```
+
+- **應用遷移**：使用 `apply_migration` 進行 DDL 操作
+  ```
+  apply_migration(name='add_user_preferences', query='ALTER TABLE users ADD COLUMN preferences JSONB')
+  ```
+
+- **查詢列表**：
+  - `list_tables()` — 獲取所有表及其欄位
+  - `list_extensions()` — 查看啟用的擴展
+  - `list_migrations()` — 檢查遷移歷史
+
+- **Edge Functions**：
+  - `list_edge_functions()` — 列出所有邊緣函數
+  - `deploy_edge_function()` — 部署新的邊緣函數
+  - `get_edge_function()` — 查看邊緣函數代碼
+
+**最佳實踐**：
+- 涉及 DDL（建表、修改欄位）時使用 `apply_migration`
+- 涉及 DML（查詢、插入、更新）時使用 `execute_sql`
+- 始終檢查現有表結構後再進行修改
+- 對生產環境的遷移應謹慎測試
+
+---
+
+### 2. NotebookLM MCP 操作
+
+**用途**：為技術文檔、研究內容和知識庫建立交互式筆記本，支援多種格式的內容生成。
+
+**常見操作**：
+
+- **建立筆記本**：使用 `notebook_create` 建立新筆記本
+  ```
+  notebook_create(title='Finance Dashboard API 文檔')
+  ```
+
+- **添加來源**：使用 `source_add` 匯入文檔、代碼或 URL
+  ```
+  source_add(notebook_id='xxx', source_type='url', url='https://docs.supabase.io')
+  source_add(notebook_id='xxx', source_type='file', file_path='/docs/api.md')
+  ```
+
+- **查詢筆記本**：使用 `notebook_query` 提問
+  ```
+  notebook_query(notebook_id='xxx', query='What are the best practices for portfolio optimization?')
+  ```
+
+- **生成工作物**（Studio Artifacts）：
+  - `studio_create(artifact_type='report')` — 生成技術報告
+  - `studio_create(artifact_type='audio')` — 生成音頻摘要（播客）
+  - `studio_create(artifact_type='flashcards')` — 生成學習卡片
+  - `studio_create(artifact_type='quiz')` — 生成測驗
+
+- **筆記本管理**：
+  - `notebook_describe()` — 獲取筆記本摘要
+  - `notebook_list()` — 列出所有筆記本
+  - `notebook_rename()` — 重新命名筆記本
+  - `notebook_delete()` — 刪除筆記本
+
+**最佳實踐**：
+- 為不同主題（API、部署、架構）建立獨立筆記本
+- 添加多種來源類型以豐富上下文
+- 在查詢前添加足夠的來源以獲得準確答案
+- 使用生成的工作物進行團隊知識共享
+
+---
+
+### 3. GitHub MCP 操作
+
+**用途**：管理代碼倉庫、提交、拉取請求、問題追蹤和工作流管理。
+
+**常見操作**：
+
+- **查詢倉庫內容**：
+  ```
+  get_file_contents(owner='skynet', repo='finance_dashboard', path='backend')
+  ```
+
+- **瀏覽提交歷史**：
+  ```
+  list_commits(owner='skynet', repo='finance_dashboard', sha='main', perPage=10)
+  get_commit(owner='skynet', repo='finance_dashboard', sha='abc123')
+  ```
+
+- **查詢分支**：
+  ```
+  list_branches(owner='skynet', repo='finance_dashboard')
+  ```
+
+- **問題和 PR 管理**：
+  - `list_issues()` — 列出所有問題
+  - `issue_read(method='get')` — 獲取問題詳情
+  - `list_pull_requests()` — 列出所有 PR
+  - `pull_request_read(method='get')` — 獲取 PR 詳情
+  - `pull_request_read(method='get_diff')` — 查看 PR 變更
+
+- **代碼搜索**：
+  ```
+  search_code(query='function backtest language:python repo:finance_dashboard')
+  search_repositories(query='investment portfolio language:python stars:>100')
+  ```
+
+- **GitHub Actions**：
+  - `actions_list(method='list_workflows')` — 查看所有工作流
+  - `actions_list(method='list_workflow_runs')` — 查看工作流運行
+  - `get_job_logs(owner='skynet', repo='finance_dashboard', job_id=12345)` — 查看作業日誌
+
+**最佳實踐**：
+- 在進行大型重構前檢查提交歷史
+- 使用代碼搜索驗證命名約定和模式
+- 在合併 PR 前查看完整的 diff
+- 監控 CI/CD 工作流運行狀態
+
+---
+
+### 4. Notion MCP 操作
+
+**用途**：管理知識庫、項目文檔、任務跟蹤和團隊協作。
+
+**常見操作**：
+
+- **建立頁面和數據庫**：
+  ```
+  create_pages(
+    parent={'page_id': 'xxx'},
+    pages=[{'properties': {'title': 'Q2 Planning'}, 'content': '# Goals...'}]
+  )
+  create_database(schema='CREATE TABLE (\"Task\" TITLE, \"Status\" SELECT(...))', title='Project Tasks')
+  ```
+
+- **查詢和搜索**：
+  ```
+  notion_search(query='portfolio optimization', query_type='internal')
+  notion_fetch(id='page-uuid')
+  ```
+
+- **更新內容**：
+  ```
+  update_page(page_id='xxx', command='update_content', 
+    content_updates=[{'old_str': '...', 'new_str': '...'}])
+  update_data_source(data_source_id='yyy', statements='ADD COLUMN "Priority" SELECT(...)')
+  ```
+
+- **評論和討論**：
+  - `create_comment()` — 在頁面上發表評論
+  - `get_comments()` — 查看所有評論和討論
+
+- **頁面管理**：
+  - `move_pages()` — 移動頁面到新位置
+  - `duplicate_page()` — 複製頁面
+
+- **視圖管理**：
+  ```
+  create_view(database_id='xxx', data_source_id='yyy', name='Active Tasks', 
+    type='table', configure='FILTER "Status" = "In Progress"')
+  ```
+
+**最佳實踐**：
+- 使用數據庫追蹤項目任務和進度
+- 為不同業務線建立獨立工作區（Pages）
+- 定期存檔完成的任務和文檔
+- 使用評論功能進行團隊協作和審批
+
+---
+
+## MCP 操作工作流示例
+
+### 場景：發布新功能到生產環境
+
+1. **GitHub**：查看 PR 變更並檢查 CI/CD 狀態
+   ```
+   pull_request_read(method='get_diff', pullNumber=42)
+   actions_list(method='list_workflow_runs')
+   ```
+
+2. **Supabase**：檢查遷移是否準備好
+   ```
+   list_migrations()
+   apply_migration(name='add_feature_flags_table', query='...')
+   ```
+
+3. **Notion**：更新發布日誌和用戶文檔
+   ```
+   update_page(page_id='release-notes', command='update_content', ...)
+   create_comment(page_id='release-notes', rich_text=[...])
+   ```
+
+4. **NotebookLM**：生成用戶指南
+   ```
+   studio_create(notebook_id='user-docs', artifact_type='report')
+   ```
+
+---
+
+## MCP 安全最佳實踐
+
+- ✅ 始終在沙箱環境或開發分支進行 SQL 操作
+- ✅ 使用 GitHub 的代碼搜索驗證敏感信息不會外洩
+- ✅ 定期檢查 Notion 和 NotebookLM 的訪問控制
+- ✅ 保護 Supabase 的 service role key，僅在後端使用
+- ❌ 不要在提交信息中包含敏感數據
+- ❌ 不要在公開的 Notion 頁面上存儲憑證或密鑰

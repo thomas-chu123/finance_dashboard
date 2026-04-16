@@ -468,8 +468,11 @@ async def fetch_tw_etf_list() -> list[dict]:
                 {
                     # Normalise: ensure .TW suffix so profile saves use consistent format
                     "symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW",
-                    "name": row["name"],
-                    "category": "tw_etf"
+                    "name": row["name"],  # 相容性：用於 backtest/optimize/montecarlo
+                    "name_zh": row["name"],  # 轉換為 name_zh 欄位 (用於搜尋)
+                    "name_en": "",
+                    "category": "tw_etf",
+                    "yahoo_symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW"
                 }
                 for row in all_rows
             ]
@@ -488,8 +491,10 @@ async def fetch_tw_etf_list() -> list[dict]:
             return [
                 {
                     "symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW",
-                    "name": row["name"],
-                    "category": "tw_etf"
+                    "name_zh": row["name"],  # 轉換為 name_zh 欄位
+                    "name_en": "",
+                    "category": "tw_etf",
+                    "yahoo_symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW"
                 }
                 for row in res.data
             ]
@@ -499,10 +504,10 @@ async def fetch_tw_etf_list() -> list[dict]:
     # Last-resort minimal fallback
     logger.warning("[MarketData] Returning minimal hardcoded TW ETF fallback.")
     return [
-        {"symbol": "0050.TW", "name": "元大台灣50", "category": "tw_etf"},
-        {"symbol": "0056.TW", "name": "元大高股息", "category": "tw_etf"},
-        {"symbol": "00878", "name": "國泰永續高股息", "category": "tw_etf"},
-        {"symbol": "006208", "name": "富邦台50", "category": "tw_etf"},
+        {"symbol": "0050.TW", "name_zh": "元大台灣50", "name_en": "Yuanta Taiwan 50", "category": "tw_etf", "yahoo_symbol": "0050.TW"},
+        {"symbol": "0056.TW", "name_zh": "元大高股息", "name_en": "Yuanta High Dividend ETF", "category": "tw_etf", "yahoo_symbol": "0056.TW"},
+        {"symbol": "00878.TW", "name_zh": "國泰永續高股息", "name_en": "Cathay Sustainable High Dividend ETF", "category": "tw_etf", "yahoo_symbol": "00878.TW"},
+        {"symbol": "006208.TW", "name_zh": "富邦台50", "name_en": "Fubon Taiwan Top 50 ETF", "category": "tw_etf", "yahoo_symbol": "006208.TW"},
     ]
 
 
@@ -526,7 +531,14 @@ async def fetch_us_etf_list() -> list[dict]:
             
         if all_rows:
             return [
-                {"symbol": row["symbol"], "name": row["name"], "category": "us_etf"}
+                {
+                    "symbol": row["symbol"],
+                    "name": row["name"],  # 相容性：用於 backtest/optimize/montecarlo
+                    "name_zh": row["name"],  # 轉換為 name_zh 欄位 (用於搜尋)
+                    "name_en": row["name"],
+                    "category": "us_etf",
+                    "yahoo_symbol": row["symbol"]
+                }
                 for row in all_rows
             ]
         logger.warning("[MarketData] us_etf_list table is empty — triggering one-time sync from NASDAQ.")
@@ -542,7 +554,13 @@ async def fetch_us_etf_list() -> list[dict]:
         res = sb.table("us_etf_list").select("symbol, name").order("symbol").execute()
         if res.data:
             return [
-                {"symbol": row["symbol"], "name": row["name"], "category": "us_etf"}
+                {
+                    "symbol": row["symbol"],
+                    "name_zh": row["name"],  # 轉換為 name_zh 欄位
+                    "name_en": row["name"],
+                    "category": "us_etf",
+                    "yahoo_symbol": row["symbol"]
+                }
                 for row in res.data
             ]
     except Exception as e:
@@ -551,13 +569,13 @@ async def fetch_us_etf_list() -> list[dict]:
     # Last-resort minimal fallback
     logger.warning("[MarketData] Returning minimal hardcoded US ETF fallback.")
     return [
-        {"symbol": "SPY", "name": "SPDR S&P 500 ETF", "category": "us_etf"},
-        {"symbol": "QQQ", "name": "Invesco QQQ (Nasdaq-100)", "category": "us_etf"},
-        {"symbol": "VTI", "name": "Vanguard Total Stock Market", "category": "us_etf"},
-        {"symbol": "VOO", "name": "Vanguard S&P 500", "category": "us_etf"},
-        {"symbol": "IWM", "name": "iShares Russell 2000", "category": "us_etf"},
-        {"symbol": "GLD", "name": "SPDR Gold Shares", "category": "us_etf"},
-        {"symbol": "TLT", "name": "iShares 20+ Year Treasury Bond", "category": "us_etf"},
+        {"symbol": "SPY", "name_zh": "SPDR S&P 500 ETF", "name_en": "SPDR S&P 500 ETF", "category": "us_etf", "yahoo_symbol": "SPY"},
+        {"symbol": "QQQ", "name_zh": "Invesco QQQ", "name_en": "Invesco QQQ (Nasdaq-100)", "category": "us_etf", "yahoo_symbol": "QQQ"},
+        {"symbol": "VTI", "name_zh": "Vanguard Total Stock Market", "name_en": "Vanguard Total Stock Market", "category": "us_etf", "yahoo_symbol": "VTI"},
+        {"symbol": "VOO", "name_zh": "Vanguard S&P 500", "name_en": "Vanguard S&P 500", "category": "us_etf", "yahoo_symbol": "VOO"},
+        {"symbol": "IWM", "name_zh": "iShares Russell 2000", "name_en": "iShares Russell 2000", "category": "us_etf", "yahoo_symbol": "IWM"},
+        {"symbol": "GLD", "name_zh": "SPDR Gold Shares", "name_en": "SPDR Gold Shares", "category": "us_etf", "yahoo_symbol": "GLD"},
+        {"symbol": "TLT", "name_zh": "iShares Treasury Bond", "name_en": "iShares 20+ Year Treasury Bond", "category": "us_etf", "yahoo_symbol": "TLT"},
     ]
 
 

@@ -1,13 +1,17 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from ..services.market_data import get_historical_prices
-from ..services.optimization_engine import run_optimization
+from ..services.optimization_engine import run_optimization, _portfolio_performance
 from ..database import get_supabase
 from ..routers.users import get_user_id
 import asyncio
 import pandas as pd
+import numpy as np
 from fastapi_cache.decorator import cache
+
+TRADING_DAYS = 252
+RISK_FREE_RATE = 0.02
 
 router = APIRouter(prefix="/api/optimize", tags=["Optimize"])
 
@@ -31,6 +35,13 @@ class OptimizeSaveRequest(BaseModel):
     end_date: str
     display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
     results_json: Optional[dict] = None
+
+class PortfolioPerformanceRequest(BaseModel):
+    symbols: List[str]
+    weights: Dict[str, float]
+    start_date: str
+    end_date: str
+    display_currency: str = "TWD"
 
 @router.post("")
 @cache(expire=3600)  # Cache identical requests for 1 hour
@@ -187,3 +198,56 @@ async def delete_optimization(optimization_id: str, authorization: str = Header(
     # ✅ 從 backtest_portfolios 共用表刪除
     sb.table("backtest_portfolios").delete().eq("id", optimization_id).eq("user_id", user_id).execute()
     return {"message": "最佳化結果已刪除"}
+
+@router.post("/calculate-custom-portfolio")
+@cache(expire=3600)
+async def calculate_portfolio_performance(req: PortfolioPerformanceRequest):
+    """計算自定義權重組合的風險和報酬，用於圖表上的點位標記."""
+    if len(req.symbols) < 2:
+        raise HTTPException(status_code=400, detail="至少需要兩個以上的標的。")
+    
+    # Fetch historical data concurrently
+    tasks = [
+        get_historical_prices(symbol, req.start_date, req.end_date)
+        for symbol in req.symbols
+    ]
+    series_list = await asyncio.gather(*tasks)
+    
+    # Combine into a single DataFrame
+    df = pd.DataFrame({s.name: s for s in series_list if not s.empty})
+    df.dropna(inplace=True)
+
+    if df.empty or len(df) < 30:
+        raise HTTPException(status_code=400, detail="此日期區間內的有效交易資料過少。")
+    
+    # Calculate returns and covariance
+    returns = df.pct_change().dropna()
+    mean_returns = returns.mean() * TRADING_DAYS
+    cov_matrix = returns.cov() * TRADING_DAYS
+    
+     # Convert weights from dict to numpy array (same order as symbols, convert from % to decimal)
+    weights_array = np.array([req.weights.get(sym, 0) / 100.0 for sym in req.symbols])
+    
+    # Verify weights sum to approximately 1（允許浮點誤差）
+    weight_sum = weights_array.sum()
+    # 如果權重和偏離 1.0 超過 5%，則進行歸一化
+    if weight_sum > 0 and abs(weight_sum - 1.0) > 0.05:
+        weights_array = weights_array / weight_sum
+    elif weight_sum == 0:
+        raise HTTPException(status_code=400, detail="所有權重都為零，無法計算組合性能。")
+    
+    # Calculate portfolio performance
+    portfolio_ret, portfolio_std, portfolio_sharpe = _portfolio_performance(
+        weights_array, mean_returns, cov_matrix
+    )
+    
+    return {
+        "status": "success",
+        "portfolio": {
+            "return": round(portfolio_ret * 100, 4),
+            "volatility": round(portfolio_std * 100, 4),
+            "sharpe_ratio": round(portfolio_sharpe, 4)
+        },
+        "symbols": req.symbols,
+        "weights": req.weights
+    }

@@ -1,8 +1,11 @@
 """Market data router — live quotes and notification test."""
 import asyncio
 import logging
+import html
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
+from difflib import SequenceMatcher
+from heapq import nlargest
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_supabase
 from app.services.email_service import send_email, build_alert_email
@@ -135,6 +138,188 @@ async def get_symbol_catalog():
     """
     from app.services.market_data import SYMBOL_CATALOG
     return SYMBOL_CATALOG
+
+
+def _calculate_match_score(query: str, symbol_data: dict) -> float:
+    """計算查詢字串與符號數據的相似度分值。
+    
+    優先匹配策略：
+    1. Symbol 前綴匹配 (最高權重，如 VT* 匹配 VTI)
+    2. Symbol 包含匹配 (次高權重)
+    3. 中文名稱包含匹配 (高權重，支持中文搜尋)
+    4. 英文名稱包含匹配 (中等權重)
+    5. 模糊相似度 (最低權重，防止 VT 匹配 VIX)
+    """
+    q_lower = query.lower()
+    q_original = query  # 保存原始查詢（用於中文匹配）
+    
+    # 1. Symbol 前綴匹配 (精確開頭匹配)
+    symbol = symbol_data.get("symbol", "").lower()
+    if symbol.startswith(q_lower):
+        return 0.95  # 最高分
+    
+    # 2. Symbol 包含匹配 (如 .TW 結尾)
+    if q_lower in symbol:
+        return 0.85
+    
+    # 3. 中文名稱包含匹配（支持原始中文查詢）
+    name_zh = symbol_data.get("name_zh", "")
+    name_zh_lower = name_zh.lower()
+    
+    # 支持原始中文搜尋（如 "元大" 匹配 "元大台灣50"）
+    if q_original in name_zh:
+        return 0.80  # 精確中文包含
+    
+    # 降級到小寫比較（假設不涉及大小寫轉換的中文）
+    if q_lower in name_zh_lower:
+        return 0.75
+    
+    # 4. 英文名稱包含匹配
+    name_en = symbol_data.get("name_en", "").lower()
+    if q_lower in name_en:
+        return 0.60
+    
+    # 5. 模糊相似度（備選方案）
+    # 只在上述精確匹配都失敗時才使用
+    symbol_score = SequenceMatcher(None, q_lower, symbol).ratio()
+    name_zh_score = SequenceMatcher(None, q_lower, name_zh_lower).ratio()
+    name_en_score = SequenceMatcher(None, q_lower, name_en).ratio()
+    
+    # 加權計分（使用更嚴格的閾值）
+    total_score = (symbol_score * 3.0) + (name_zh_score * 2.0) + (name_en_score * 1.0)
+    fuzzy_score = total_score / 6.0  # 正規化 (0.0 - 1.0)
+    
+    # 只有當模糊相似度較高時才返回（防止誤比對）
+    return fuzzy_score if fuzzy_score > 0.6 else 0.0
+
+
+async def _fetch_latest_price(symbol: str, category: str) -> tuple:
+    """獲取符號的最新價格和漲跌。
+    
+    Returns:
+        (price, change_pct): 價格和漲跌百分比，若失敗則為 (None, None)
+    """
+    try:
+        from app.services.market_data import get_quote_data
+        data = await get_quote_data(symbol, category)
+        if data.get("success"):
+            return (data.get("price"), data.get("change_pct"))
+    except Exception as e:
+        logger.debug(f"Failed to fetch price for {symbol}: {e}")
+    return (None, None)
+
+
+@router.get("/search")
+async def search_symbols(
+    q: str = Query("", min_length=0),
+    category: Optional[str] = Query(None),
+    limit: int = Query(15, ge=1, le=50)
+):
+    """搜尋指數/基金/股票，支持按名稱、代碼、類別篩選。
+    
+    Args:
+        q: 搜尋關鍵字 (支持 symbol、name_zh、name_en 模糊匹配)
+        category: 篩選類別 (tw_etf, us_etf, fund, index, vix, oil, exchange, 等)
+        limit: 返回結果數量 (1-50，預設 15)
+    
+    Returns:
+        dict: {
+            "results": [
+                {
+                    "symbol": "0050.TW",
+                    "yahoo_symbol": "0050.TW",
+                    "name_zh": "元大台灣50",
+                    "name_en": "Yuanta Taiwan 50",
+                    "category": "tw_etf",
+                    "price": 156.25,
+                    "change_pct": 0.97
+                },
+                ...
+            ],
+            "total": 3
+        }
+    """
+    from app.services.market_data import SYMBOL_CATALOG, fetch_tw_etf_list, fetch_us_etf_list
+    
+    # 若查詢字串為空，返回空結果
+    if not q or len(q.strip()) == 0:
+        return {"results": [], "total": 0}
+    
+    q = q.strip()
+    results = []
+    
+    # 合併來自多個來源的符號
+    all_symbols = []
+    
+    # 1. 靜態 SYMBOL_CATALOG (全球指數、期貨等)
+    all_symbols.extend(SYMBOL_CATALOG.values())
+    
+    # 2. 並行化查詢台灣和美股 ETF 列表
+    try:
+        tw_task = fetch_tw_etf_list()
+        us_task = fetch_us_etf_list()
+        tw_result, us_result = await asyncio.gather(
+            tw_task, us_task, return_exceptions=True
+        )
+        
+        tw_etfs = tw_result if not isinstance(tw_result, Exception) else []
+        us_etfs = us_result if not isinstance(us_result, Exception) else []
+        
+        if tw_etfs:
+            all_symbols.extend(tw_etfs)
+        if us_etfs:
+            all_symbols.extend(us_etfs)
+    except Exception as e:
+        logger.warning(f"Failed to fetch ETF lists: {e}")
+    
+    # 遍歷所有符號，計算相似度
+    for symbol_data in all_symbols:
+        # 應用類別篩選
+        if category and symbol_data.get("category") != category:
+            continue
+        
+        # 計算相似度分值
+        score = _calculate_match_score(q, symbol_data)
+        
+        # 使用相似度閾值 0.3 過濾結果（精確匹配得分高於 0.6，模糊匹配也需要 > 0.3）
+        if score > 0.3:
+            results.append((symbol_data, score))
+    
+    # 按相似度降序排序，直接獲取前 3 個最相關的結果
+    results = nlargest(3, results, key=lambda x: x[1])
+    
+    # 並行獲取最新價格（使用 asyncio.gather 提高性能）
+    price_tasks = [
+        _fetch_latest_price(
+            item.get("yahoo_symbol", item.get("symbol")),
+            item.get("category", "us_etf")
+        )
+        for item, _ in results
+    ]
+    
+    price_results = await asyncio.gather(*price_tasks, return_exceptions=True)
+    
+    response_items = []
+    for (item, _), price_result in zip(results, price_results):
+        if isinstance(price_result, Exception):
+            price, change_pct = (None, None)
+        else:
+            price, change_pct = price_result
+        
+        response_items.append({
+            "symbol": item.get("symbol"),
+            "yahoo_symbol": item.get("yahoo_symbol"),
+            "name_zh": html.unescape(item.get("name_zh", "")),
+            "name_en": html.unescape(item.get("name_en", "")),
+            "category": item.get("category"),
+            "price": price,
+            "change_pct": change_pct
+        })
+    
+    return {
+        "results": response_items,
+        "total": len(response_items)
+    }
 
 # ─── Notification test endpoint ────────────────────────────────────────────────
 test_router = APIRouter(prefix="/api/tracking", tags=["test-alert"])

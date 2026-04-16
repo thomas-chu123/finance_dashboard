@@ -156,12 +156,13 @@
           >
             <Search :size="20" />
           </button>
-          <div class="relative max-w-md w-full hidden sm:block">
-            <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="16" />
+          <div class="relative max-w-md w-full hidden sm:block cursor-pointer" @click="toggleSearchModal">
+            <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" :size="16" />
             <input 
               type="text" 
-              placeholder="搜尋名稱、代碼或資產..." 
-              class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]"
+              placeholder="搜尋名稱、代碼或資產... (Cmd/Ctrl + K)" 
+              readonly
+              class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)] cursor-pointer"
             />
           </div>
         </div>
@@ -211,29 +212,11 @@
         </router-link>
       </nav>
 
-      <!-- Mobile Search Modal -->
-      <Teleport to="body">
-        <div v-if="isSearchModalOpen" 
-             class="fixed inset-0 z-[60] bg-[var(--bg-main)] safe-area-top slide-up">
-          <div class="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
-            <button @click="isSearchModalOpen = false" class="p-2 text-zinc-500">
-              <ChevronLeft :size="24" />
-            </button>
-            <div class="relative flex-1">
-              <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="18" />
-              <input 
-                type="text" 
-                placeholder="搜尋名稱、代碼..." 
-                class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-3 pl-11 pr-4 text-base focus:outline-none focus:border-brand-500/50 text-[var(--text-primary)]"
-                autofocus
-              />
-            </div>
-          </div>
-          <div class="p-6 text-center text-zinc-500">
-            <p class="text-sm">輸入關鍵字開始搜尋...</p>
-          </div>
-        </div>
-      </Teleport>
+      <!-- 全局搜尋 Modal -->
+      <GlobalSearchModal 
+        ref="globalSearchModalRef"
+        @select="handleSearchSelect"
+      />
     </main>
   </div>
 </template>
@@ -244,6 +227,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import GlobalSearchModal from '../components/GlobalSearchModal.vue'
 import { 
   Globe, 
   LayoutDashboard, 
@@ -278,7 +262,7 @@ const { isMobile, isTablet, isDesktop, isLargeScreen } = useBreakpoint()
 
 const isSidebarOpen = ref(true)
 const isSidebarCollapsed = ref(false)
-const isSearchModalOpen = ref(false)
+const globalSearchModalRef = ref(null)
 
 const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
@@ -291,6 +275,11 @@ const mobileNavItems = [
   { path: '/optimize', label: '最佳化', icon: Target },
   { path: '/monte-carlo', label: '蒙地卡羅', icon: Dice5 },
 ]
+
+// 打開搜尋Modal
+function toggleSearchModal() {
+  globalSearchModalRef.value?.open()
+}
 
 // 關閉sidebar和backdrop
 function closeSidebar() {
@@ -327,8 +316,13 @@ router.afterEach(() => {
   closeSidebarOnMobile()
 })
 
-function toggleSearchModal() {
-  isSearchModalOpen.value = !isSearchModalOpen.value
+/**
+ * 處理搜尋結果選擇
+ * 當使用者在搜尋中選擇一個符號時，將其添加到追蹤組合或導航到相應頁面
+ */
+async function handleSearchSelect(item) {
+  console.log('用戶選擇搜尋結果:', item)
+  // TODO: 實現選擇後的行為，例如導航到追蹤頁面或添加到投資組合
 }
 
 onMounted(async () => {
@@ -345,9 +339,20 @@ onMounted(async () => {
   } catch (error) {
     console.error('[LayoutView.onMounted] ✗ Failed to load profile:', error)
   }
-})
 
-onUnmounted(() => {
+  // 全局快捷鍵監聽 (Cmd+K / Ctrl+K)
+  function handleGlobalKeydown(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault()
+      globalSearchModalRef.value?.open()
+    }
+  }
+
+  window.addEventListener('keydown', handleGlobalKeydown)
+
+  onUnmounted(() => {
+    window.removeEventListener('keydown', handleGlobalKeydown)
+  })
 })
 
 
