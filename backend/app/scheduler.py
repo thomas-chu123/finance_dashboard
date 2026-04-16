@@ -282,16 +282,59 @@ async def check_prices():
 
             # 9. 記錄警報日誌（獨立 try/except，不阻斷流程）
             try:
+                # 判斷觸發原因
+                trigger_reason = None
+                rsi_threshold = None
+                trigger_details = {}
+                
+                if price_condition_met and rsi_condition_met and trigger_mode == "both":
+                    trigger_reason = "price_and_rsi"
+                    if current_rsi is not None:
+                        rsi_threshold = item.get("rsi_below") if current_rsi < 50 else item.get("rsi_above")
+                        trigger_details = {
+                            "type": trigger_reason,
+                            "price_trigger": item.get("trigger_direction", "above"),
+                            "rsi_value": round(current_rsi, 2),
+                            "rsi_below_threshold": item.get("rsi_below"),
+                            "rsi_above_threshold": item.get("rsi_above"),
+                        }
+                elif rsi_condition_met and trigger_mode in ("rsi", "either"):
+                    if current_rsi is not None and current_rsi < 30:
+                        trigger_reason = "rsi_oversold"
+                        rsi_threshold = 30
+                    elif current_rsi is not None and current_rsi > 70:
+                        trigger_reason = "rsi_overbought"
+                        rsi_threshold = 70
+                    trigger_details = {
+                        "type": trigger_reason,
+                        "rsi_value": round(current_rsi, 2),
+                        "rsi_threshold": rsi_threshold,
+                        "rsi_period": item.get("rsi_period", 14),
+                    }
+                elif price_condition_met and trigger_mode in ("price", "either"):
+                    trigger_direction = item.get("trigger_direction", "above")
+                    trigger_reason = f"price_alert_{trigger_direction}"
+                    trigger_details = {
+                        "type": trigger_reason,
+                        "trigger_price": float(item.get("trigger_price")) if item.get("trigger_price") else None,
+                        "current_price": current_price,
+                        "direction": trigger_direction,
+                    }
+                
                 sb.table("alert_logs").insert({
                     "user_id": item["user_id"],
                     "tracked_index_id": tracking_id,
                     "symbol": symbol,
                     "trigger_price": item.get("trigger_price"),
                     "current_price": current_price,
-                    "current_rsi": current_rsi,
                     "trigger_mode": trigger_mode,
                     "channel": ",".join(channel_used) if channel_used else notify_channel,
                     "status": "sent" if success else "failed",
+                    # 新增欄位
+                    "trigger_reason": trigger_reason,
+                    "trigger_details": trigger_details if trigger_details else None,
+                    "rsi_value": round(current_rsi, 2) if current_rsi is not None else None,
+                    "rsi_threshold": rsi_threshold,
                 }).execute()
             except Exception as log_err:
                 logger.error(f"[Scheduler] Failed to save alert_log for {symbol}: {log_err}")
