@@ -1,10 +1,9 @@
 <template>
   <Teleport to="body">
     <div v-if="isOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-20">
-      <!-- 背景 Backdrop -->
+      <!-- 背景 Backdrop - 移除 @click="close" 以避免中文輸入法干擾 -->
       <div 
         class="absolute inset-0 bg-black/50 backdrop-blur-sm" 
-        @click="close"
       />
       
       <!-- Modal 容器 -->
@@ -22,6 +21,8 @@
             @keydown.arrow-up="moveUp"
             @keydown.enter="selectCurrent"
             @keydown.escape="close"
+            @compositionstart="isComposing = true"
+            @compositionend="isComposing = false"
           />
           <button
             class="ml-2 px-3 py-1 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded transition-colors"
@@ -116,11 +117,13 @@
           </template>
         </div>
 
-        <!-- 頁腳：快捷鍵提示 -->
-        <div class="px-4 py-2 bg-[var(--bg-secondary)]/50 text-xs text-zinc-500 flex justify-between border-t border-[var(--border-color)]">
-          <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">↑↓</kbd> 導航</span>
-          <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">Enter</kbd> 選擇</span>
-          <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">Esc</kbd> 關閉</span>
+        <!-- 頁腳：快捷鍵提示 + 關閉按鈕 -->
+        <div class="px-4 py-2 bg-[var(--bg-secondary)]/50 text-xs text-zinc-500 flex justify-between items-center border-t border-[var(--border-color)]">
+          <div class="flex gap-2">
+            <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">↑↓</kbd> 導航</span>
+            <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">Enter</kbd> 選擇</span>
+            <span><kbd class="inline-block px-1.5 py-0.5 bg-brand-500 rounded text-white font-mono text-xs">Esc</kbd> 關閉</span>
+          </div>
         </div>
       </div>
     </div>
@@ -139,6 +142,7 @@ const isOpen = ref(false)
 const inputRef = ref(null)
 const query = ref('')
 const selectedIndex = ref(0)
+const isComposing = ref(false)
 
 /**
  * 格式化價格顯示
