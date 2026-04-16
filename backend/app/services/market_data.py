@@ -468,7 +468,8 @@ async def fetch_tw_etf_list() -> list[dict]:
                 {
                     # Normalise: ensure .TW suffix so profile saves use consistent format
                     "symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW",
-                    "name_zh": row["name"],  # 轉換為 name_zh 欄位
+                    "name": row["name"],  # 相容性：用於 backtest/optimize/montecarlo
+                    "name_zh": row["name"],  # 轉換為 name_zh 欄位 (用於搜尋)
                     "name_en": "",
                     "category": "tw_etf",
                     "yahoo_symbol": row["symbol"] if row["symbol"].endswith((".TW", ".TWO")) else row["symbol"] + ".TW"
@@ -532,7 +533,8 @@ async def fetch_us_etf_list() -> list[dict]:
             return [
                 {
                     "symbol": row["symbol"],
-                    "name_zh": row["name"],  # 轉換為 name_zh 欄位
+                    "name": row["name"],  # 相容性：用於 backtest/optimize/montecarlo
+                    "name_zh": row["name"],  # 轉換為 name_zh 欄位 (用於搜尋)
                     "name_en": row["name"],
                     "category": "us_etf",
                     "yahoo_symbol": row["symbol"]
