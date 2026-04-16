@@ -129,7 +129,7 @@ export async function searchSymbols(query, category = null, limit = 15) {
  * 建立 debounced 版本的搜尋函數
  * 自動 debounce 搜尋請求（500ms）
  */
-export const searchSymbolsDebounced = debounce(searchSymbols, 500)
+export const searchSymbolsDebounced = debounce(searchSymbols, 200)
 
 /**
  * 清空搜尋快取

@@ -237,7 +237,7 @@ async def search_symbols(
             "total": 3
         }
     """
-    from app.services.market_data import SYMBOL_CATALOG, fetch_tw_etf_list
+    from app.services.market_data import SYMBOL_CATALOG, fetch_tw_etf_list, fetch_us_etf_list
     
     # 若查詢字串為空，返回空結果
     if not q or len(q.strip()) == 0:
@@ -252,12 +252,23 @@ async def search_symbols(
     # 1. 靜態 SYMBOL_CATALOG (全球指數、期貨等)
     all_symbols.extend(SYMBOL_CATALOG.values())
     
-    # 2. 台灣 ETF 列表 (動態從資料庫)
+    # 2. 並行化查詢台灣和美股 ETF 列表
     try:
-        tw_etfs = await fetch_tw_etf_list()
-        all_symbols.extend(tw_etfs)
+        tw_task = fetch_tw_etf_list()
+        us_task = fetch_us_etf_list()
+        tw_result, us_result = await asyncio.gather(
+            tw_task, us_task, return_exceptions=True
+        )
+        
+        tw_etfs = tw_result if not isinstance(tw_result, Exception) else []
+        us_etfs = us_result if not isinstance(us_result, Exception) else []
+        
+        if tw_etfs:
+            all_symbols.extend(tw_etfs)
+        if us_etfs:
+            all_symbols.extend(us_etfs)
     except Exception as e:
-        logger.warning(f"Failed to fetch Taiwan ETF list: {e}")
+        logger.warning(f"Failed to fetch ETF lists: {e}")
     
     # 遍歷所有符號，計算相似度
     for symbol_data in all_symbols:
@@ -275,16 +286,26 @@ async def search_symbols(
     # 按相似度降序排序
     results.sort(key=lambda x: x[1], reverse=True)
     
-    # 限制返回結果數量
-    results = results[:limit]
+    # 限制返回結果數量為 5 個（只顯示最相關的結果）
+    results = results[:5]
     
-    # 並行獲取最新價格（可選，若失敗不影響搜尋結果）
-    response_items = []
-    for item, _ in results:
-        price, change_pct = await _fetch_latest_price(
+    # 並行獲取最新價格（使用 asyncio.gather 提高性能）
+    price_tasks = [
+        _fetch_latest_price(
             item.get("yahoo_symbol", item.get("symbol")),
             item.get("category", "us_etf")
         )
+        for item, _ in results
+    ]
+    
+    price_results = await asyncio.gather(*price_tasks, return_exceptions=True)
+    
+    response_items = []
+    for (item, _), price_result in zip(results, price_results):
+        if isinstance(price_result, Exception):
+            price, change_pct = (None, None)
+        else:
+            price, change_pct = price_result
         
         response_items.append({
             "symbol": item.get("symbol"),
