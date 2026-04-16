@@ -18,15 +18,18 @@
             type="text"
             placeholder="搜尋指數、基金代碼或名稱..."
             class="flex-1 ml-3 bg-transparent outline-none text-[var(--text-primary)] placeholder-zinc-500 font-medium"
-            @input="handleInput"
             @keydown.arrow-down="moveDown"
             @keydown.arrow-up="moveUp"
             @keydown.enter="selectCurrent"
             @keydown.escape="close"
           />
-          <kbd class="hidden sm:inline px-2 py-1 text-xs font-semibold text-white bg-brand-500 rounded">
-            ESC
-          </kbd>
+          <button
+            class="ml-2 px-3 py-1 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded transition-colors"
+            @click="handleSearch"
+            :disabled="!query.trim() || searchStore.isLoading"
+          >
+            搜尋
+          </button>
         </div>
         
         <!-- 類別篩選 -->
@@ -59,8 +62,8 @@
           </div>
 
           <!-- 空提示 -->
-          <div v-else-if="!query" class="p-4 text-center text-[var(--text-secondary)]">
-            <p class="text-sm">輸入關鍵字開始搜尋</p>
+          <div v-else-if="!query" class="p-8 text-center text-[var(--text-secondary)]">
+            <p class="text-sm">輸入關鍵字後按「搜尋」開始查詢</p>
             <p class="text-xs mt-2 text-zinc-500">支持符號、中文名稱或英文名稱</p>
           </div>
 
@@ -191,20 +194,19 @@ function close() {
 }
 
 /**
- * 處理輸入
+ * 處理搜尋觸發（取代實時搜尋）
+ * 只在用戶按 ENTER 或點擊搜尋按鈕時觸發
  */
-async function handleInput(e) {
-  query.value = e.target.value
-  selectedIndex.value = 0
-  
-  if (query.value.trim()) {
-    await searchStore.performSearch(
-      query.value,
-      searchStore.selectedCategory
-    )
-  } else {
-    searchStore.results = []
+async function handleSearch() {
+  if (!query.value.trim()) {
+    return
   }
+  
+  selectedIndex.value = 0
+  await searchStore.performSearch(
+    query.value,
+    searchStore.selectedCategory
+  )
 }
 
 /**

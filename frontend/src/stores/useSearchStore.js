@@ -65,14 +65,12 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   /**
-   * 更改類別篩選並重新搜尋
+   * 更改類別篩選（不自動搜尋，保留現有結果）
    * @param {string|null} category - 新的篩選類別
    */
-  const changeCategory = async (category) => {
+  const changeCategory = (category) => {
     selectedCategory.value = category
-    if (query.value.trim()) {
-      await performSearch(query.value, category)
-    }
+    // 不自動搜尋 - 保持用戶控制，由用戶決定何時搜尋
   }
 
   /**

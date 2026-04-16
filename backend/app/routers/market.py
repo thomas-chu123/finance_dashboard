@@ -1,9 +1,11 @@
 """Market data router — live quotes and notification test."""
 import asyncio
 import logging
+import html
 from datetime import datetime, timezone
 from typing import Optional, List
 from difflib import SequenceMatcher
+from heapq import nlargest
 from fastapi import APIRouter, HTTPException, Query
 from app.database import get_supabase
 from app.services.email_service import send_email, build_alert_email
@@ -283,11 +285,8 @@ async def search_symbols(
         if score > 0.3:
             results.append((symbol_data, score))
     
-    # 按相似度降序排序
-    results.sort(key=lambda x: x[1], reverse=True)
-    
-    # 限制返回結果數量為 5 個（只顯示最相關的結果）
-    results = results[:5]
+    # 按相似度降序排序，直接獲取前 3 個最相關的結果
+    results = nlargest(3, results, key=lambda x: x[1])
     
     # 並行獲取最新價格（使用 asyncio.gather 提高性能）
     price_tasks = [
@@ -310,8 +309,8 @@ async def search_symbols(
         response_items.append({
             "symbol": item.get("symbol"),
             "yahoo_symbol": item.get("yahoo_symbol"),
-            "name_zh": item.get("name_zh"),
-            "name_en": item.get("name_en"),
+            "name_zh": html.unescape(item.get("name_zh", "")),
+            "name_en": html.unescape(item.get("name_en", "")),
             "category": item.get("category"),
             "price": price,
             "change_pct": change_pct
