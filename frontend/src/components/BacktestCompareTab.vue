@@ -8,6 +8,10 @@
         <span class="font-semibold text-[var(--text-primary)]">比較設定</span>
       </div>
       <div class="p-4 space-y-4">
+        <!-- 幣值選擇器 -->
+        <div class="mb-4">
+          <CurrencySelector :show-hint="true" />
+        </div>
         <!-- 共用時間段 + 初始金額 -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="space-y-1">
@@ -233,6 +237,7 @@ import { GridComponent, TooltipComponent, LegendComponent, ToolboxComponent, Mar
 import VChart from 'vue-echarts'
 import { Scale, FolderOpen, X, Play, Loader2, BarChart3, BarChart2, TrendingUp, TrendingDown } from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
+import CurrencySelector from './CurrencySelector.vue'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, ToolboxComponent, MarkPointComponent, MarkLineComponent])
 
