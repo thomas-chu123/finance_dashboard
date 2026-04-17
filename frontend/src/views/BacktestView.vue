@@ -573,6 +573,7 @@ import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { usePreferenceStore } from '../stores/preference'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import { metricsDefinitions } from '../utils/metricsDefinitions'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 import CurrencySelector from '../components/CurrencySelector.vue'
@@ -610,57 +611,6 @@ const symbolTypes = [
   { value: 'crypto', label: '加密貨幣' },
   { value: 'funds', label: '共同基金' },
 ]
-
-const metricsDefinitions = {
-  cagr: {
-    label: 'CAGR',
-    labelZh: '年化報酬',
-    tooltip: '年化報酬率 (Compound Annual Growth Rate) = 代表投資組合在回測期間內的平均年化報酬率。高於 10% 被視為優異',
-    suffix: '%',
-  },
-  sharpe_ratio: {
-    label: 'SHARPE RATIO',
-    labelZh: '夏普比例',
-    tooltip: '夏普比例 = (年化報酬 - 無風險利率) ÷ 標準差，衡量每單位風險獲得的超額報酬。> 1 為良好，> 2 為優秀',
-    suffix: '',
-  },
-  sortino_ratio: {
-    label: 'SORTINO RATIO',
-    labelZh: '索丁諾比例',
-    tooltip: '索丁諾比例 = (年化報酬 - 無風險利率) ÷ 下方標準差，僅考慮向下風險。> 1 為良好，> 2 為優秀',
-    suffix: '',
-  },
-  beta: {
-    label: 'BETA',
-    labelZh: '貝他係數',
-    tooltip: '貝他係數 = 衡量組合相對於基準指數的波動性。Beta = 1 表示與指數同步；> 1 表示風險更高；< 1 表示風險更低',
-    suffix: '',
-  },
-  max_drawdown: {
-    label: 'MAX DRAWDOWN',
-    labelZh: '最大回撤',
-    tooltip: '最大回撤 = 從高點到低點的最大虧損百分比。反映投資組合在最差情況下的虧損程度',
-    suffix: '%',
-  },
-  annual_std: {
-    label: 'VOLATILITY (STD)',
-    labelZh: '標準差',
-    tooltip: '標準差 = 衡量投資組合報酬波動程度。值越高表示波動性越大，風險越高',
-    suffix: '%',
-  },
-  var_95: {
-    label: 'VAR (95%)',
-    labelZh: '風險值',
-    tooltip: '風險值 (Value at Risk) = 在 95% 信心水準下，單日可能的最大虧損百分比',
-    suffix: '%',
-  },
-  final_amount: {
-    label: 'FINAL AMOUNT',
-    labelZh: '最終金額',
-    tooltip: '最終金額 = 初始投資額加上投資收益的最終總額',
-    suffix: '',
-  },
-}
 
 const btConfig = reactive({
   start_date: '2015-01-01',
