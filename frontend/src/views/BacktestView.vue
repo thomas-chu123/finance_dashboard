@@ -456,7 +456,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.final_amount.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.final_amount.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.final_amount.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.final_amount.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-rose-600">${{ (results?.metrics?.final_amount ?? 0).toLocaleString() }}</div>
