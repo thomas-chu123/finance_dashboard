@@ -18,7 +18,9 @@ import {
   ToolboxComponent,
   MarkLineComponent,
 } from 'echarts/components'
+import { vTooltip } from './directives/vTooltip'
 import './assets/main.css'
+import './assets/tooltip-smart.css'
 
 use([
   CanvasRenderer,
@@ -118,4 +120,5 @@ axios.interceptors.response.use(
 )
 
 app.component('VChart', ECharts)
+app.directive('tooltip', vTooltip)
 app.mount('#app')

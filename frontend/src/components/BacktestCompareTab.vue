@@ -156,8 +156,8 @@
                   <span class="flex items-center gap-1">
                     {{ row.label }}
                     <span v-if="row.tooltip"
-                      class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none"
-                      :data-tooltip="row.tooltip">?</span>
+                      v-tooltip="row.tooltip"
+                      class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
                   </span>
                 </td>
                 <td v-for="(r, i) in successResults" :key="r.name"
@@ -600,33 +600,4 @@ const drawdownChartOption = computed(() => {
 </script>
 
 <style scoped>
-.tooltip-trigger {
-  position: relative;
-}
-.tooltip-trigger::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 8px);
-  left: auto;
-  transform: translateY(-50%);
-  background: #1f2937;
-  color: #f9fafb;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-  white-space: normal;
-  width: 220px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  z-index: 100;
-  font-family: inherit;
-}
-.tooltip-trigger:hover::after {
-  opacity: 1;
-}
 </style>

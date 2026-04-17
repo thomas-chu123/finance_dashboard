@@ -391,7 +391,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.cagr.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.cagr.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.cagr.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.cagr.labelZh }}</span>
             </div>
             <div :class="['text-xl font-bold', (results?.metrics?.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
@@ -402,7 +402,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.sharpe_ratio.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.sharpe_ratio.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.sharpe_ratio.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.sharpe_ratio.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results?.metrics?.sharpe_ratio ?? '--' }}</div>
@@ -411,7 +411,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.sortino_ratio.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.sortino_ratio.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.sortino_ratio.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.sortino_ratio.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results?.metrics?.sortino_ratio ?? '--' }}</div>
@@ -420,7 +420,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.beta.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.beta.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.beta.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.beta.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.beta ?? '--' }}</div>
@@ -429,7 +429,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.max_drawdown.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.max_drawdown.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.max_drawdown.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.max_drawdown.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-brand-600">{{ results?.metrics?.max_drawdown ?? '--' }}{{ results?.metrics?.max_drawdown !== undefined ? metricsDefinitions.max_drawdown.suffix : '' }}</div>
@@ -438,7 +438,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.annual_std.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.annual_std.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.annual_std.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.annual_std.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.annual_std ?? '--' }}{{ results?.metrics?.annual_std !== undefined ? metricsDefinitions.annual_std.suffix : '' }}</div>
@@ -447,7 +447,7 @@
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
               {{ metricsDefinitions.var_95.label }}
-              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.var_95.tooltip">?</span>
+              <span v-tooltip="metricsDefinitions.var_95.tooltip" class="inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none">?</span>
               <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.var_95.labelZh }}</span>
             </div>
             <div class="text-xl font-bold text-orange-500">{{ results?.metrics?.var_95 ?? '--' }}{{ results?.metrics?.var_95 !== undefined ? metricsDefinitions.var_95.suffix : '' }}</div>
@@ -1143,39 +1143,6 @@ onMounted(async () => {
   .metrics-grid {
     grid-template-columns: repeat(4, 1fr) !important;
   }
-}
-
-.tooltip-trigger {
-  position: relative;
-}
-
-.tooltip-trigger::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 8px);
-  left: auto;
-  transform: translateY(-50%);
-  background: #1f2937;
-  color: #f9fafb;
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-  white-space: normal;
-  width: 220px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-  z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.tooltip-trigger:hover::after {
-  opacity: 1;
-  visibility: visible;
 }
 </style>
 
