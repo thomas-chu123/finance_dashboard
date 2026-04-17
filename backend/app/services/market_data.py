@@ -211,14 +211,25 @@ async def fetch_finmind_adjusted_prices(
 async def fetch_finmind_unadjusted_prices(
     symbol: str, start_date: str, end_date: str
 ) -> pd.Series:
-    """Fetch unadjusted (actual) closing prices from FinMind API (TaiwanStockPrice)."""
+    """
+    Fetch unadjusted (raw) closing prices from FinMind API (TaiwanStockPrice - Free Tier).
+    
+    Note: This dataset returns raw close prices without dividend/split adjustments.
+    Used as backup when yfinance fails (extremely rare).
+    """
     return await _fetch_finmind_prices(symbol, start_date, end_date, dataset="TaiwanStockPrice")
 
 
 async def _fetch_finmind_prices(
     symbol: str, start_date: str, end_date: str, dataset: str
 ) -> pd.Series:
-    """內部共用：從 FinMind API 抓取指定 dataset 的收盤價。"""
+    """
+    Internal helper: Fetch closing prices from FinMind API for specified dataset.
+    
+    Datasets:
+      - TaiwanStockPriceAdj: Adjusted prices (dividends + splits) - Requires paid tier
+      - TaiwanStockPrice: Raw prices (unadjusted) - Free tier, used as backup
+    """
     token = _get_finmind_token()
     if not token:
         logger.warning("[MarketData] FinMind_API token not found in environment.")
@@ -399,22 +410,8 @@ async def get_historical_prices(
     import time
     start_time = time.time()
 
-    # Priority 1: FinMind for Taiwan stocks if token is present
-    # FinMind TaiwanStockPriceAdj 為還原價，若需要未還原價則改用 TaiwanStockPrice
-    finmind_token = _get_finmind_token()
-    if _is_taiwan_stock(symbol) and finmind_token:
-        if adjusted:
-            logger.info(f"[MarketData] Using FinMind adjusted prices for: {symbol}")
-            series = await fetch_finmind_adjusted_prices(symbol, start_date, end_date)
-        else:
-            logger.info(f"[MarketData] Using FinMind unadjusted prices for: {symbol}")
-            series = await fetch_finmind_unadjusted_prices(symbol, start_date, end_date)
-        if not series.empty:
-            duration = time.time() - start_time
-            logger.info(f"[MarketData] FinMind fetched {len(series)} days for {symbol} ({duration:.2f}s)")
-            return series
-
-    # Priority 2: yfinance (Default for US and fallback for TW)
+    # Priority 1: yfinance (Primary data source for all symbols)
+    # yfinance provides auto-adjusted prices (dividends + splits included)
     # 若符號本身無歷史數據，使用代理符號（例如 WTX& → ^TWII）
     rsi_proxy = RSI_PROXY_MAP.get(symbol.upper())
     if rsi_proxy:
@@ -454,13 +451,25 @@ async def get_historical_prices(
             lag_info = detect_stock_split_lag(symbol, hist)
             if lag_info["has_lag"]:
                 logger.warning(
-                    f"[MarketData] ALERT: Stock split lag detected for {symbol} (fallback from FinMind): {lag_info['details']}"
+                    f"[MarketData] ALERT: Stock split lag detected for {symbol} (yfinance): {lag_info['details']}"
                 )
         
         logger.info(f"[MarketData] yfinance fetched {len(hist)} days for {symbol} (adjusted={adjusted}, {duration:.2f}s)")
         return hist[price_col].rename(symbol)
     except Exception as e:
         logger.error(f"[MarketData] yfinance error for {symbol}: {e}")
+        
+        # Priority 2: FinMind TaiwanStockPrice (Backup for Taiwan stocks if yfinance fails)
+        # 使用 FinMind 免費層 TaiwanStockPrice（未調整價格）作為備份
+        finmind_token = _get_finmind_token()
+        if _is_taiwan_stock(symbol) and finmind_token:
+            logger.info(f"[MarketData] yfinance failed, attempting FinMind backup for: {symbol}")
+            series = await fetch_finmind_unadjusted_prices(symbol, start_date, end_date)
+            if not series.empty:
+                duration = time.time() - start_time
+                logger.info(f"[MarketData] FinMind (backup) fetched {len(series)} days for {symbol} ({duration:.2f}s)")
+                return series
+        
         return pd.Series(dtype=float)
 
 
