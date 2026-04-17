@@ -389,44 +389,76 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">CAGR 年化報酬</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.cagr.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.cagr.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.cagr.labelZh }}</span>
+            </div>
             <div :class="['text-xl font-bold', (results?.metrics?.cagr || 0) >= 0 ? 'text-rose-600' : 'text-brand-600']">
-              {{ results?.metrics?.cagr ?? '--' }}{{ results?.metrics?.cagr !== undefined ? '%' : '' }}
+              {{ results?.metrics?.cagr ?? '--' }}{{ results?.metrics?.cagr !== undefined ? metricsDefinitions.cagr.suffix : '' }}
             </div>
           </div>
           <!-- Sharpe -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">SHARPE RATIO</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.sharpe_ratio.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.sharpe_ratio.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.sharpe_ratio.labelZh }}</span>
+            </div>
             <div class="text-xl font-bold text-brand-500 dark:text-brand-400">{{ results?.metrics?.sharpe_ratio ?? '--' }}</div>
           </div>
           <!-- Sortino -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">SORTINO RATIO</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.sortino_ratio.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.sortino_ratio.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.sortino_ratio.labelZh }}</span>
+            </div>
             <div class="text-xl font-bold text-teal-600 dark:text-teal-400">{{ results?.metrics?.sortino_ratio ?? '--' }}</div>
           </div>
           <!-- Beta -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">BETA</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.beta.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.beta.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.beta.labelZh }}</span>
+            </div>
             <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.beta ?? '--' }}</div>
           </div>
           <!-- Max Drawdown -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">MAX DRAWDOWN</div>
-            <div class="text-xl font-bold text-brand-600">{{ results?.metrics?.max_drawdown ?? '--' }}{{ results?.metrics?.max_drawdown !== undefined ? '%' : '' }}</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.max_drawdown.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.max_drawdown.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.max_drawdown.labelZh }}</span>
+            </div>
+            <div class="text-xl font-bold text-brand-600">{{ results?.metrics?.max_drawdown ?? '--' }}{{ results?.metrics?.max_drawdown !== undefined ? metricsDefinitions.max_drawdown.suffix : '' }}</div>
           </div>
           <!-- Volatility -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">VOLATILITY (STD)</div>
-            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.annual_std ?? '--' }}{{ results?.metrics?.annual_std !== undefined ? '%' : '' }}</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.annual_std.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.annual_std.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.annual_std.labelZh }}</span>
+            </div>
+            <div class="text-xl font-bold text-[var(--text-primary)]">{{ results?.metrics?.annual_std ?? '--' }}{{ results?.metrics?.annual_std !== undefined ? metricsDefinitions.annual_std.suffix : '' }}</div>
           </div>
           <!-- VaR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">VAR (95%)</div>
-            <div class="text-xl font-bold text-orange-500">{{ results?.metrics?.var_95 ?? '--' }}{{ results?.metrics?.var_95 !== undefined ? '%' : '' }}</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.var_95.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.var_95.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.var_95.labelZh }}</span>
+            </div>
+            <div class="text-xl font-bold text-orange-500">{{ results?.metrics?.var_95 ?? '--' }}{{ results?.metrics?.var_95 !== undefined ? metricsDefinitions.var_95.suffix : '' }}</div>
           </div>
           <!-- Final Amount -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
-            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold whitespace-nowrap">FINAL AMOUNT</div>
+            <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
+              {{ metricsDefinitions.final_amount.label }}
+              <span class="tooltip-trigger inline-flex items-center justify-center w-4 h-4 rounded-full border border-zinc-400 bg-white text-[10px] text-zinc-600 cursor-help leading-none select-none" :data-tooltip="metricsDefinitions.final_amount.tooltip">?</span>
+              <span class="ml-0.5 text-[9px] text-zinc-500">{{ metricsDefinitions.final_amount.labelZh }}</span>
+            </div>
             <div class="text-xl font-bold text-rose-600">${{ (results?.metrics?.final_amount ?? 0).toLocaleString() }}</div>
             <div class="text-[10px] font-medium" :class="(results?.metrics?.total_return || 0) >= 0 ? 'text-rose-600' : 'text-brand-600'">
               RETURN: {{ results?.metrics?.total_return ?? '--' }}{{ results?.metrics?.total_return !== undefined ? '%' : '' }}
@@ -578,6 +610,57 @@ const symbolTypes = [
   { value: 'crypto', label: '加密貨幣' },
   { value: 'funds', label: '共同基金' },
 ]
+
+const metricsDefinitions = {
+  cagr: {
+    label: 'CAGR',
+    labelZh: '年化報酬',
+    tooltip: '年化報酬率 (Compound Annual Growth Rate) = 代表投資組合在回測期間內的平均年化報酬率。高於 10% 被視為優異',
+    suffix: '%',
+  },
+  sharpe_ratio: {
+    label: 'SHARPE RATIO',
+    labelZh: '夏普比例',
+    tooltip: '夏普比例 = (年化報酬 - 無風險利率) ÷ 標準差，衡量每單位風險獲得的超額報酬。> 1 為良好，> 2 為優秀',
+    suffix: '',
+  },
+  sortino_ratio: {
+    label: 'SORTINO RATIO',
+    labelZh: '索丁諾比例',
+    tooltip: '索丁諾比例 = (年化報酬 - 無風險利率) ÷ 下方標準差，僅考慮向下風險。> 1 為良好，> 2 為優秀',
+    suffix: '',
+  },
+  beta: {
+    label: 'BETA',
+    labelZh: '貝他係數',
+    tooltip: '貝他係數 = 衡量組合相對於基準指數的波動性。Beta = 1 表示與指數同步；> 1 表示風險更高；< 1 表示風險更低',
+    suffix: '',
+  },
+  max_drawdown: {
+    label: 'MAX DRAWDOWN',
+    labelZh: '最大回撤',
+    tooltip: '最大回撤 = 從高點到低點的最大虧損百分比。反映投資組合在最差情況下的虧損程度',
+    suffix: '%',
+  },
+  annual_std: {
+    label: 'VOLATILITY (STD)',
+    labelZh: '標準差',
+    tooltip: '標準差 = 衡量投資組合報酬波動程度。值越高表示波動性越大，風險越高',
+    suffix: '%',
+  },
+  var_95: {
+    label: 'VAR (95%)',
+    labelZh: '風險值',
+    tooltip: '風險值 (Value at Risk) = 在 95% 信心水準下，單日可能的最大虧損百分比',
+    suffix: '%',
+  },
+  final_amount: {
+    label: 'FINAL AMOUNT',
+    labelZh: '最終金額',
+    tooltip: '最終金額 = 初始投資額加上投資收益的最終總額',
+    suffix: '',
+  },
+}
 
 const btConfig = reactive({
   start_date: '2015-01-01',
@@ -1110,6 +1193,38 @@ onMounted(async () => {
   .metrics-grid {
     grid-template-columns: repeat(4, 1fr) !important;
   }
+}
+
+.tooltip-trigger {
+  position: relative;
+}
+
+.tooltip-trigger::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(-50%);
+  background: #1f2937;
+  color: #f9fafb;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: normal;
+  width: 220px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tooltip-trigger:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 </style>
 
