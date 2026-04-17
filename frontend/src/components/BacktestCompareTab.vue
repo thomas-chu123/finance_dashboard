@@ -607,7 +607,8 @@ const drawdownChartOption = computed(() => {
   content: attr(data-tooltip);
   position: absolute;
   top: 50%;
-  left: calc(100% + 8px);
+  right: calc(100% + 8px);
+  left: auto;
   transform: translateY(-50%);
   background: #1f2937;
   color: #f9fafb;
