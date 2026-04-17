@@ -12,7 +12,13 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger(__name__)
 
 FINMIND_API_URL = "https://api.finmindtrade.com/api/v4/data"
-FINMIND_API_TOKEN = os.getenv("FinMind_API")
+
+# Note: FINMIND_API_TOKEN 使用延遲讀取（在函數中讀取）
+# 而不是模塊級別讀取，以確保 Pydantic 環境變數已加載
+def _get_finmind_token() -> Optional[str]:
+    """延遲讀取 FinMind API token，確保環境變數已加載。"""
+    token = os.getenv("FinMind_API")
+    return token if token and token != "your_finmind_api_token" else None
 
 # Popular index symbols mapping
 SYMBOL_MAP = {
@@ -211,7 +217,8 @@ async def _fetch_finmind_prices(
     symbol: str, start_date: str, end_date: str, dataset: str
 ) -> pd.Series:
     """內部共用：從 FinMind API 抓取指定 dataset 的收盤價。"""
-    if not FINMIND_API_TOKEN:
+    token = _get_finmind_token()
+    if not token:
         logger.warning("[MarketData] FinMind_API token not found in environment.")
         return pd.Series(dtype=float)
 
@@ -221,7 +228,7 @@ async def _fetch_finmind_prices(
         "data_id": clean_sym,
         "start_date": start_date,
         "end_date": end_date,
-        "token": FINMIND_API_TOKEN,
+        "token": token,
     }
 
     try:
@@ -392,7 +399,8 @@ async def get_historical_prices(
 
     # Priority 1: FinMind for Taiwan stocks if token is present
     # FinMind TaiwanStockPriceAdj 為還原價，若需要未還原價則改用 TaiwanStockPrice
-    if _is_taiwan_stock(symbol) and FINMIND_API_TOKEN:
+    finmind_token = _get_finmind_token()
+    if _is_taiwan_stock(symbol) and finmind_token:
         if adjusted:
             logger.info(f"[MarketData] Using FinMind adjusted prices for: {symbol}")
             series = await fetch_finmind_adjusted_prices(symbol, start_date, end_date)
