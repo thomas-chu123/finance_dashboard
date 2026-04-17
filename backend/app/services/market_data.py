@@ -8,6 +8,7 @@ import asyncio
 from datetime import datetime
 from typing import Optional
 from bs4 import BeautifulSoup
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +17,9 @@ FINMIND_API_URL = "https://api.finmindtrade.com/api/v4/data"
 # Note: FINMIND_API_TOKEN 使用延遲讀取（在函數中讀取）
 # 而不是模塊級別讀取，以確保 Pydantic 環境變數已加載
 def _get_finmind_token() -> Optional[str]:
-    """延遲讀取 FinMind API token，確保環境變數已加載。"""
-    token = os.getenv("FinMind_API")
+    """延遲讀取 FinMind API token（從 Pydantic Settings），確保環境變數已加載。"""
+    settings = get_settings()
+    token = settings.finmind_api
     return token if token and token != "your_finmind_api_token" else None
 
 # Popular index symbols mapping
