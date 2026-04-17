@@ -3,15 +3,24 @@ import os
 import httpx
 import yfinance as yf
 import pandas as pd
+import numpy as np
 import asyncio
 from datetime import datetime
 from typing import Optional
 from bs4 import BeautifulSoup
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
 FINMIND_API_URL = "https://api.finmindtrade.com/api/v4/data"
-FINMIND_API_TOKEN = os.getenv("FinMind_API")
+
+# Note: FINMIND_API_TOKEN 使用延遲讀取（在函數中讀取）
+# 而不是模塊級別讀取，以確保 Pydantic 環境變數已加載
+def _get_finmind_token() -> Optional[str]:
+    """延遲讀取 FinMind API token（從 Pydantic Settings），確保環境變數已加載。"""
+    settings = get_settings()
+    token = settings.finmind_api
+    return token if token and token != "your_finmind_api_token" else None
 
 # Popular index symbols mapping
 SYMBOL_MAP = {
@@ -202,15 +211,27 @@ async def fetch_finmind_adjusted_prices(
 async def fetch_finmind_unadjusted_prices(
     symbol: str, start_date: str, end_date: str
 ) -> pd.Series:
-    """Fetch unadjusted (actual) closing prices from FinMind API (TaiwanStockPrice)."""
+    """
+    Fetch unadjusted (raw) closing prices from FinMind API (TaiwanStockPrice - Free Tier).
+    
+    Note: This dataset returns raw close prices without dividend/split adjustments.
+    Used as backup when yfinance fails (extremely rare).
+    """
     return await _fetch_finmind_prices(symbol, start_date, end_date, dataset="TaiwanStockPrice")
 
 
 async def _fetch_finmind_prices(
     symbol: str, start_date: str, end_date: str, dataset: str
 ) -> pd.Series:
-    """內部共用：從 FinMind API 抓取指定 dataset 的收盤價。"""
-    if not FINMIND_API_TOKEN:
+    """
+    Internal helper: Fetch closing prices from FinMind API for specified dataset.
+    
+    Datasets:
+      - TaiwanStockPriceAdj: Adjusted prices (dividends + splits) - Requires paid tier
+      - TaiwanStockPrice: Raw prices (unadjusted) - Free tier, used as backup
+    """
+    token = _get_finmind_token()
+    if not token:
         logger.warning("[MarketData] FinMind_API token not found in environment.")
         return pd.Series(dtype=float)
 
@@ -220,7 +241,7 @@ async def _fetch_finmind_prices(
         "data_id": clean_sym,
         "start_date": start_date,
         "end_date": end_date,
-        "token": FINMIND_API_TOKEN,
+        "token": token,
     }
 
     try:
@@ -389,21 +410,8 @@ async def get_historical_prices(
     import time
     start_time = time.time()
 
-    # Priority 1: FinMind for Taiwan stocks if token is present
-    # FinMind TaiwanStockPriceAdj 為還原價，若需要未還原價則改用 TaiwanStockPrice
-    if _is_taiwan_stock(symbol) and FINMIND_API_TOKEN:
-        if adjusted:
-            logger.info(f"[MarketData] Using FinMind adjusted prices for: {symbol}")
-            series = await fetch_finmind_adjusted_prices(symbol, start_date, end_date)
-        else:
-            logger.info(f"[MarketData] Using FinMind unadjusted prices for: {symbol}")
-            series = await fetch_finmind_unadjusted_prices(symbol, start_date, end_date)
-        if not series.empty:
-            duration = time.time() - start_time
-            logger.info(f"[MarketData] FinMind fetched {len(series)} days for {symbol} ({duration:.2f}s)")
-            return series
-
-    # Priority 2: yfinance (Default for US and fallback for TW)
+    # Priority 1: yfinance (Primary data source for all symbols)
+    # yfinance provides auto-adjusted prices (dividends + splits included)
     # 若符號本身無歷史數據，使用代理符號（例如 WTX& → ^TWII）
     rsi_proxy = RSI_PROXY_MAP.get(symbol.upper())
     if rsi_proxy:
@@ -438,11 +446,113 @@ async def get_historical_prices(
                 hist.index = hist.index.tz_convert("America/New_York").tz_localize(None)
         hist.index = hist.index.normalize()
         
+        # ⚠️ 檢測可能的拆股延遲問題（特別是台灣 ETF）
+        if adjusted and _is_taiwan_stock(symbol):
+            lag_info = detect_stock_split_lag(symbol, hist)
+            if lag_info["has_lag"]:
+                logger.warning(
+                    f"[MarketData] ALERT: Stock split lag detected for {symbol} (yfinance): {lag_info['details']}"
+                )
+        
         logger.info(f"[MarketData] yfinance fetched {len(hist)} days for {symbol} (adjusted={adjusted}, {duration:.2f}s)")
         return hist[price_col].rename(symbol)
     except Exception as e:
         logger.error(f"[MarketData] yfinance error for {symbol}: {e}")
+        
+        # Priority 2: FinMind TaiwanStockPrice (Backup for Taiwan stocks if yfinance fails)
+        # 使用 FinMind 免費層 TaiwanStockPrice（未調整價格）作為備份
+        finmind_token = _get_finmind_token()
+        if _is_taiwan_stock(symbol) and finmind_token:
+            logger.info(f"[MarketData] yfinance failed, attempting FinMind backup for: {symbol}")
+            series = await fetch_finmind_unadjusted_prices(symbol, start_date, end_date)
+            if not series.empty:
+                duration = time.time() - start_time
+                logger.info(f"[MarketData] FinMind (backup) fetched {len(series)} days for {symbol} ({duration:.2f}s)")
+                return series
+        
         return pd.Series(dtype=float)
+
+
+def detect_stock_split_lag(symbol: str, hist: pd.DataFrame) -> dict:
+    """
+    檢測 Close 和 Adj Close 是否存在異常差異，表示可能有拆股延遲問題。
+    
+    通過分析調整倍數的變化來判斷：
+    - 正常情況：比率變化小（只受股息影響）
+    - 異常情況：比率突變（表示拆股信息可能未及時更新）
+    
+    Returns:
+        {
+            "has_lag": bool,
+            "adjustment_ratio_mean": float,
+            "adjustment_ratio_std": float,
+            "last_ratio": float,
+            "details": str
+        }
+    """
+    if hist.empty or "Close" not in hist.columns or "Adj Close" not in hist.columns:
+        return {
+            "has_lag": False,
+            "adjustment_ratio_mean": 0,
+            "adjustment_ratio_std": 0,
+            "last_ratio": 0,
+            "details": "Insufficient data to detect stock split lag"
+        }
+    
+    try:
+        # 計算調整倍數（Adj Close / Close）
+        # 正常情況：倍數接近 1（或略低，因為有股息調整）
+        # 異常情況：倍數突變（表示拆股）
+        adjustment_ratio = (hist["Adj Close"] / hist["Close"]).replace([np.inf, -np.inf], np.nan).dropna()
+        
+        if len(adjustment_ratio) < 2:
+            return {
+                "has_lag": False,
+                "adjustment_ratio_mean": 0,
+                "adjustment_ratio_std": 0,
+                "last_ratio": 0,
+                "details": "Insufficient historical data"
+            }
+        
+        ratio_mean = adjustment_ratio.mean()
+        ratio_std = adjustment_ratio.std()
+        ratio_last = adjustment_ratio.iloc[-1]
+        ratio_max = adjustment_ratio.max()
+        ratio_min = adjustment_ratio.min()
+        
+        # 判定邏輯：
+        # 1. 標準差 > 0.1 表示可能有拆股變化
+        # 2. 最近比率與平均值差異 > 5% 表示最近可能有異常
+        recent_change = abs(ratio_last - ratio_mean) / ratio_mean if ratio_mean != 0 else 0
+        
+        has_lag = ratio_std > 0.1 or recent_change > 0.05
+        
+        details = (
+            f"ratio_mean={ratio_mean:.6f}, ratio_std={ratio_std:.6f}, "
+            f"ratio_range=[{ratio_min:.6f}, {ratio_max:.6f}], "
+            f"recent_ratio={ratio_last:.6f}, recent_change={recent_change:.2%}"
+        )
+        
+        if has_lag:
+            logger.warning(f"[MarketData] Stock split lag detected for {symbol}: {details}")
+        
+        return {
+            "has_lag": has_lag,
+            "adjustment_ratio_mean": ratio_mean,
+            "adjustment_ratio_std": ratio_std,
+            "last_ratio": ratio_last,
+            "details": details
+        }
+    
+    except Exception as e:
+        logger.error(f"[MarketData] Error detecting stock split lag for {symbol}: {e}")
+        return {
+            "has_lag": False,
+            "adjustment_ratio_mean": 0,
+            "adjustment_ratio_std": 0,
+            "last_ratio": 0,
+            "details": f"Error: {str(e)}"
+        }
 
 
 async def fetch_tw_etf_list() -> list[dict]:

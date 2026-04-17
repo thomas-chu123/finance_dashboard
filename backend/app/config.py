@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     ollama_simple_prompt_first: bool = True
     ollama_disable_thinking: bool = True
 
+    # FinMind API
+    finmind_api: str = ""
+
     # Google OAuth
     google_client_id: str = ""
     google_client_secret: str = ""
