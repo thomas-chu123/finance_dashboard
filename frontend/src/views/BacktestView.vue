@@ -1077,12 +1077,19 @@ async function saveBacktest() {
       end_date: btConfig.end_date,
       initial_amount: btConfig.initial_amount,
       results_json: results.value,
-    }, { headers: auth.headers })
+    }, { headers: auth.headers }).then(res => {
+      // 在成功保存後設置 currentPortfolioId 以啟用分享按鈕
+      const savedPortfolioId = res.data.portfolio_id
+      if (savedPortfolioId) {
+        currentPortfolioId.value = savedPortfolioId
+        portfolioName.value = saveName.value
+      }
+    })
     showSaveModal.value = false
     // 如果建立了新組合，重置名稱；如果覆蓋，保持不變
     if (!portfolioId) saveName.value = ''
     await loadSavedPortfolios()
-    alert('回測已儲存！')
+    alert('回測已儲存！現在可以分享此投組。')
   } catch (e) { alert('儲存失敗: ' + (e.response?.data?.detail || e.message)) }
 }
 
