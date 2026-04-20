@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.scheduler import start_scheduler, scheduler
-from app.routers import auth, users, tracking, backtest, optimize, fundamentals, notifications, line, briefing as briefing_router, dividend as dividend_router, admin, monte_carlo, oauth
+from app.routers import auth, users, tracking, backtest, optimize, fundamentals, notifications, line, briefing as briefing_router, dividend as dividend_router, admin, monte_carlo, oauth, shares as shares_router
 from app.routers.market import router as market_router, test_router as alert_test_router
 from app.routers.optimize import router as optimize_router
 from fastapi_cache import FastAPICache
@@ -82,6 +82,13 @@ async def lifespan(app: FastAPI):
         logger.warning(f"⚠️ Redis connection failed: {e}. Falling back to InMemoryBackend for caching.")
         FastAPICache.init(InMemoryBackend(), prefix="fin-cache")
 
+    # Run database migrations
+    from app.services.migrations import ensure_portfolio_shares_table
+    try:
+        await ensure_portfolio_shares_table()
+    except Exception as e:
+        logger.error(f"❌ 數據庫遷移失敗: {e}")
+    
     start_scheduler()
     yield
     if scheduler.running:
@@ -123,6 +130,7 @@ app.include_router(oauth.router)
 app.include_router(users.router)
 app.include_router(tracking.router)
 app.include_router(backtest.router)
+app.include_router(shares_router.router)
 app.include_router(optimize.router)
 app.include_router(fundamentals.router)
 app.include_router(market_router)
