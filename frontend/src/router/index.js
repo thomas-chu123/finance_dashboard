@@ -9,6 +9,12 @@ const routes = [
     meta: { requiresGuest: true },
   },
   {
+    path: '/share/:share_key',
+    name: 'PublicShare',
+    component: () => import('../views/PublicShareView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/',
     component: () => import('../views/LayoutView.vue'),
     meta: { requiresAuth: true },

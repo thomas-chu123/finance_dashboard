@@ -375,13 +375,19 @@
             回測結果 
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto">
+          <div class="flex items-center gap-3 w-full sm:w-auto flex-wrap">
             <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
               <Activity class="w-4 h-4 mr-2" />加入追蹤
             </button>
             <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
               <Save class="w-4 h-4 mr-2" />儲存回測
             </button>
+            <ShareButton 
+              v-if="currentPortfolioId && results"
+              :portfolio-id="currentPortfolioId" 
+              :portfolio-name="portfolioName"
+              @share-success="onShareSuccess"
+            />
           </div>
         </div>
 
@@ -577,6 +583,7 @@ import { metricsDefinitions } from '../utils/metricsDefinitions'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 import CurrencySelector from '../components/CurrencySelector.vue'
+import ShareButton from '../components/ShareButton.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
@@ -743,6 +750,10 @@ async function runBacktest() {
     await new Promise(r => setTimeout(r, 400))
     console.log('[DEBUG] Backtest results:', res.data)
     results.value = res.data
+    
+    // 更新分享功能的投組資訊
+    currentPortfolioId.value = currentLoadedPortfolioId.value
+    portfolioName.value = saveName.value || '回測投組'
     
     // Auto-save if it's a loaded portfolio
     if (currentLoadedPortfolioId.value && saveName.value) {
@@ -1086,6 +1097,15 @@ async function addAllToTracking() {
 async function addToTracking(items) {
   await trackingStore.addFromBacktest(items.map(i => i.symbol), items.map(i => i.name || i.symbol), items.map(i => i.category || 'us_etf'))
   alert('已加入追蹤！')
+}
+
+// 分享功能相關變數
+const currentPortfolioId = ref(null)
+const portfolioName = ref('回測投組')
+
+function onShareSuccess(shareResult) {
+  console.log('分享成功:', shareResult)
+  // 可以在這裡添加分享成功後的操作，如顯示通知、重新加載列表等
 }
 
 onMounted(async () => {
