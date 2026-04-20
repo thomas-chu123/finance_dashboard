@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException, Header, Query
 from app.database import get_supabase
+from app.config import get_settings
 from app.models import (
     PortfolioShareRequest,
     PortfolioShareResponse,
@@ -123,8 +124,9 @@ async def create_portfolio_share(
             raise HTTPException(status_code=409, detail="Share key collision (please try again)")
         raise HTTPException(status_code=500, detail="Failed to create share")
     
-    # 6. 生成分享 URL
-    share_url = f"https://finance.skynetapp.org/share/{share_key}"
+    # 6. 生成分享 URL（使用環境變數的 APP_BASE_URL）
+    settings = get_settings()
+    share_url = f"{settings.app_base_url}/share/{share_key}"
     
     return PortfolioShareResponse(
         id=share["id"],
@@ -257,10 +259,11 @@ async def list_user_shares(
         raise HTTPException(status_code=500, detail="Failed to fetch shares")
     
     # 轉換回應格式
+    settings = get_settings()
     response = []
     for share in shares:
         portfolio = share.get("backtest_portfolios", {})
-        share_url = f"https://finance.skynetapp.org/share/{share['share_key']}"
+        share_url = f"{settings.app_base_url}/share/{share['share_key']}"
         
         response.append(
             UserShareListResponse(
