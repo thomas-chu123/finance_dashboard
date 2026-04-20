@@ -164,7 +164,7 @@ SYMBOL_CATALOG = {
     },
 }
 
-TW_SUFFIXES = {".TW", ".TWO"}
+TW_SUFFIXES = {".TW", ".TWO", ".TW0"}
 
 
 def _to_yf_symbol(symbol: str) -> str:
@@ -322,11 +322,121 @@ async def scrape_yahoo_tw_futures(symbol: str) -> dict:
     }
 
 
-async def get_quote_data(symbol: str, category: str) -> dict:
-    """Fetch current price and previous close for a given symbol."""
-    if symbol == "WTX&":
-        return await scrape_yahoo_tw_futures(symbol)
+async def scrape_yahoo_tw_etf(symbol: str) -> dict:
+    """Scrape live ETF/stock price from Yahoo Finance Taiwan.
+    
+    Used for Taiwan ETF/stocks (e.g., 0050.TW, 00878.TW, 00751B.TWO) to get real-time quotes
+    instead of relying on yfinance which has stale data.
+    """
+    # 移除 .TWO, .TW0, .TW 後綴以建立 URL（按最長優先避免部分匹配）
+    clean_symbol = symbol.upper().replace(".TWO", "").replace(".TW0", "").replace(".TW", "")
+    url = f"https://tw.stock.yahoo.com/quote/{clean_symbol}"
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0"
+    }
+    
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            resp.raise_for_status()
+            
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            price = None
+            prev_close = None
+            
+            # 尋找盤中價格（通常在大字體 span 中）
+            price_spans = soup.find_all('span', class_=lambda c: c and 'Fz(32px)' in c)
+            if price_spans:
+                try:
+                    price = float(price_spans[0].text.replace(',', '').strip())
+                except (ValueError, AttributeError):
+                    pass
+            
+            # 尋找昨收價格
+            if not price:
+                # 備用方案：尋找 React 數據或其他價格容器
+                price_divs = soup.find_all('div', class_=lambda c: c and 'price' in (c or '').lower())
+                for div in price_divs:
+                    text = div.get_text(strip=True)
+                    try:
+                        if text and text.replace(',', '').replace('.', '').isdigit():
+                            price = float(text.replace(',', ''))
+                            break
+                    except (ValueError, AttributeError):
+                        pass
+            
+            # 尋找昨收
+            li_elements = soup.find_all('li', class_=lambda c: c and 'price-detail-item' in (c or ''))
+            for li in li_elements:
+                text = li.get_text(strip=True) if li else ''
+                if '昨收' in text:
+                    spans = li.find_all('span')
+                    if len(spans) >= 2:
+                        val_text = spans[1].get_text(strip=True)
+                        try:
+                            prev_close = float(val_text.replace(',', ''))
+                        except (ValueError, AttributeError):
+                            pass
+                    break
+            
+            if price is not None:
+                logger.info(f"[MarketData] Scraped {symbol}: price={price}, prev_close={prev_close}")
+                return {
+                    "symbol": symbol,
+                    "price": price,
+                    "prev_close": prev_close,
+                    "change": price - prev_close if prev_close is not None else 0.0,
+                    "success": True
+                }
+            else:
+                logger.warning(f"[MarketData] Could not find price in HTML for {symbol}")
+    except Exception as e:
+        logger.error(f"[MarketData] scrape_yahoo_tw_etf error for {symbol}: {e}")
+    
+    return {
+        "symbol": symbol,
+        "price": None,
+        "prev_close": None,
+        "change": 0.0,
+        "success": False
+    }
 
+
+
+async def get_quote_data(symbol: str, category: str) -> dict:
+    """Fetch current price and previous close for a given symbol.
+    
+    優先順序：
+    1. TAIEX / ^TWII / WTX& → 爬蟲（Yahoo Taiwan 實時）
+    2. 台灣 ETF/股票 (0050.TW, 00878.TW 等) → 爬蟲（yfinance 對台灣股票延遲太高）
+    3. 其他符號 → yfinance 或符號映射
+    """
+    upper_symbol = symbol.upper()
+    original_symbol = symbol
+    
+    # 特殊處理 TAIEX / ^TWII / WTX&：使用爬蟲而不是 yfinance（yfinance 數據過時）
+    if upper_symbol in ("TAIEX", "^TWII", "WTX&"):
+        logger.info(f"[MarketData] Using web scraper for {symbol}")
+        # Map TAIEX to ^TWII for URL
+        scrape_symbol = "^TWII" if upper_symbol in ("TAIEX", "^TWII") else symbol
+        result = await scrape_yahoo_tw_etf(scrape_symbol)
+        # 保持原始符號在結果中
+        result["symbol"] = original_symbol
+        return result
+    
+    # 台灣股票/ETF: 使用爬蟲而不是 yfinance (yfinance 對台灣股票延遲 3-5 天)
+    if _is_taiwan_stock(symbol):
+        logger.info(f"[MarketData] Using web scraper for Taiwan stock: {symbol}")
+        return await scrape_yahoo_tw_etf(symbol)
+    
+    # 檢查符號映射（用於其他非爬蟲符號）
+    if upper_symbol in SYMBOL_MAP:
+        mapped_symbol = SYMBOL_MAP[upper_symbol]
+        logger.info(f"[MarketData] Mapped {symbol} to {mapped_symbol}")
+        symbol = mapped_symbol
+    
+    # 其他全球符號使用 yfinance
     yf_symbol = _to_yf_symbol(symbol)
     ticker = yf.Ticker(yf_symbol)
     
@@ -351,9 +461,12 @@ async def get_quote_data(symbol: str, category: str) -> dict:
         logger.warning(f"[MarketData] fast_info failed for {yf_symbol}: {e}")
 
     # Method 2: history(period="5d") fallback
+    # 面板行情應使用【實際盤中價格】，而非還原價格（auto_adjust=False）
+    # 只有技術指標計算才需要還原價格
     try:
         # Use history to get the last two closed/partial bars
-        df = await asyncio.to_thread(ticker.history, period="5d")
+        # auto_adjust=False: 獲取未調整的實際收盤價（與 Yahoo Finance 網頁版相同）
+        df = await asyncio.to_thread(ticker.history, period="5d", auto_adjust=False)
         if not df.empty:
             valid_closes = df["Close"].dropna()
             if len(valid_closes) >= 2:

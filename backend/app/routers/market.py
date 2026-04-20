@@ -31,8 +31,8 @@ DEFAULT_SYMBOLS = [
 async def _fetch_quote(meta: dict) -> dict:
     symbol = meta["symbol"]
     # Infer category for get_quote_data
-    sym_upper = symbol.upper().replace(".TW", "").replace(".TWO", "")
-    if ".TW" in symbol or ".TWO" in symbol:
+    sym_upper = symbol.upper().replace(".TWO", "").replace(".TW0", "").replace(".TW", "")
+    if any(symbol.endswith(suffix) for suffix in [".TW", ".TWO", ".TW0"]):
         category = "tw_etf"
     elif sym_upper.isdigit() and 4 <= len(sym_upper) <= 6:
         # Pure numeric code stored without .TW suffix (e.g. "0050" from legacy profile)
