@@ -201,10 +201,19 @@ async def get_public_share(share_key: str):
     # 組織回應（隱藏敏感信息）
     portfolio_data = share.get("portfolio_snapshot", {})
     
+    # 添加持倉項目
+    portfolio_data["items"] = share.get("portfolio_items_snapshot", [])
+    
+    # 添加分享描述
+    portfolio_data["share_description"] = share.get("share_description")
+    
+    # 添加過期時間
+    portfolio_data["expires_at"] = share.get("expires_at")
+    
     return PublicPortfolioShareResponse(
         share_key=share["share_key"],
         portfolio=portfolio_data,
-        shared_by=None,  # 匿名分享
+        shared_by=share.get("shared_by"),
         created_at=share["created_at"],
         view_count=share.get("view_count", 0) + 1,
     )

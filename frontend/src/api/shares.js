@@ -41,7 +41,7 @@ export async function sharePortfolio(portfolioId, config) {
  */
 export async function getPublicShare(shareKey) {
   try {
-    const response = await axios.get(`${API_BASE_URL}/share/${shareKey}`)
+    const response = await axios.get(`${API_BASE_URL}/backtest/share/${shareKey}`)
     return response.data
   } catch (error) {
     throw new Error(error.response?.data?.detail || '取得分享失敗')
