@@ -8,7 +8,7 @@ const apiClient = axios.create({
 
 // 自動添加認證令牌
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('fd_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
