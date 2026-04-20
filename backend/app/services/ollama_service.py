@@ -187,7 +187,7 @@ def _build_prompt(
         f"You are a financial analyst. Create a Traditional Chinese summary for "
         f"{symbol_name} ({symbol}) for the {session_label}.\n\n"
         f"Source news:\n{news_text}\n\n"
-        "Return 120-180 Chinese characters and cover: main development, possible impact, what investors should watch. "
+        "Return 250-300 Chinese characters and cover: main development, possible impact, what investors should watch. "
         "Output plain text only in Traditional Chinese."
     )
 
@@ -205,7 +205,7 @@ def _build_retry_prompt(symbol: str, symbol_name: str, news_items: list[dict], s
         f"You are a financial analyst. Write a Traditional Chinese summary for {symbol_name} ({symbol}) "
         f"for the {session_label}.\n\n"
         f"Source news:\n{lines}\n\n"
-        "Return 120-180 Chinese characters. Include market move, likely impact, and watch points. "
+        "Return 250-300 Chinese characters. Include market move, likely impact, and watch points. "
         "Output plain text only."
     )
 
