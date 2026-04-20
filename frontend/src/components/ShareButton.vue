@@ -52,6 +52,25 @@ const showSuccessMessage = ref(false)
 const showErrorMessage = ref(false)
 const errorMessage = ref('')
 
+// 備用複製方案（用於舊瀏覽器或 API 不可用時）
+const copyToClipboardFallback = (text) => {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  textarea.style.left = '-999999px'
+  
+  document.body.appendChild(textarea)
+  textarea.select()
+  
+  const success = document.execCommand('copy')
+  document.body.removeChild(textarea)
+  
+  if (!success) {
+    throw new Error('execCommand copy failed')
+  }
+}
+
 const handleQuickShare = async () => {
   try {
     isLoading.value = true
@@ -68,7 +87,30 @@ const handleQuickShare = async () => {
 
     // 複製分享連結到剪貼簿
     if (response.share_url) {
-      await navigator.clipboard.writeText(response.share_url)
+      try {
+        // 嘗試使用現代 Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(response.share_url)
+        } else {
+          // 備用方案：使用舊式 execCommand
+          copyToClipboardFallback(response.share_url)
+        }
+      } catch (clipboardErr) {
+        console.warn('Clipboard API failed, using fallback method:', clipboardErr)
+        try {
+          copyToClipboardFallback(response.share_url)
+        } catch (fallbackErr) {
+          console.error('Fallback copy also failed:', fallbackErr)
+          // 即使複製失敗，也顯示連結已生成
+          errorMessage.value = `分享已生成，但無法自動複製連結。連結：${response.share_url}`
+          showErrorMessage.value = true
+          setTimeout(() => {
+            showErrorMessage.value = false
+          }, 5000)
+          throw new Error('無法複製連結，但分享已成功生成')
+        }
+      }
+      
       showSuccessMessage.value = true
       
       // 3 秒後隱藏成功訊息
