@@ -5,7 +5,7 @@
       @click="handleQuickShare"
       :disabled="isLoading"
       class="btn-share"
-      title="分享此投組 (一鍵複製連結)"
+      title="分享此投組"
     >
       <svg v-if="!isLoading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C9.589 12.938 10 12.077 10 11.25c0-1.657-1.343-3-3-3s-3 1.343-3 3 1.343 3 3 3c.423 0 .815-.1 1.197-.292m9.457-5.966A9.967 9.967 0 1012 20.25m4.772-4.772a9.969 9.969 0 01-5.087 2.025" />
@@ -14,7 +14,44 @@
       {{ isLoading ? '分享中...' : '分享' }}
     </button>
 
-    <!-- 簡化的分享完成提示 -->
+    <!-- 分享連結模態窗口 (用於 Safari 或 clipboard API 失敗) -->
+    <transition name="fade">
+      <div v-if="showShareModal" class="share-modal-overlay" @click="closeModal">
+        <div class="share-modal" @click.stop>
+          <div class="share-modal-header">
+            <h3>分享連結已生成</h3>
+            <button class="modal-close" @click="closeModal">&times;</button>
+          </div>
+          
+          <div class="share-modal-body">
+            <p class="share-hint">點擊下方連結複製，或手動複製：</p>
+            
+            <div class="share-link-container">
+              <input 
+                v-model="shareUrl" 
+                type="text" 
+                class="share-link-input" 
+                readonly
+                ref="linkInput"
+              />
+              <button class="btn-copy" @click="copyFromModal">
+                {{ copyButtonText }}
+              </button>
+            </div>
+            
+            <p class="share-url-display">
+              {{ shareUrl }}
+            </p>
+          </div>
+          
+          <div class="share-modal-footer">
+            <button class="btn-close" @click="closeModal">完成</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- 成功提示 -->
     <transition name="fade">
       <div v-if="showSuccessMessage" class="share-success-toast">
         ✓ 已複製分享連結到剪貼簿
@@ -51,24 +88,63 @@ const isLoading = ref(false)
 const showSuccessMessage = ref(false)
 const showErrorMessage = ref(false)
 const errorMessage = ref('')
+const showShareModal = ref(false)
+const shareUrl = ref('')
+const copyButtonText = ref('複製')
+const linkInput = ref(null)
 
-// 備用複製方案（用於舊瀏覽器或 API 不可用時）
-const copyToClipboardFallback = (text) => {
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.style.position = 'fixed'
-  textarea.style.opacity = '0'
-  textarea.style.left = '-999999px'
-  
-  document.body.appendChild(textarea)
-  textarea.select()
-  
-  const success = document.execCommand('copy')
-  document.body.removeChild(textarea)
-  
-  if (!success) {
-    throw new Error('execCommand copy failed')
+// 嘗試使用 Clipboard API 複製
+const tryClipboardCopy = async (text) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch (err) {
+      console.warn('Clipboard API failed:', err)
+      return false
+    }
   }
+  return false
+}
+
+// 備用複製方案（同步上下文）
+const tryExecCommandCopy = () => {
+  try {
+    if (linkInput.value) {
+      linkInput.value.select()
+      const success = document.execCommand('copy')
+      if (success) {
+        return true
+      }
+    }
+  } catch (err) {
+    console.error('execCommand failed:', err)
+  }
+  return false
+}
+
+// 從模態框複製
+const copyFromModal = async () => {
+  if (await tryClipboardCopy(shareUrl.value)) {
+    copyButtonText.value = '已複製 ✓'
+    setTimeout(() => {
+      copyButtonText.value = '複製'
+    }, 2000)
+  } else if (tryExecCommandCopy()) {
+    copyButtonText.value = '已複製 ✓'
+    setTimeout(() => {
+      copyButtonText.value = '複製'
+    }, 2000)
+  } else {
+    copyButtonText.value = '複製失敗'
+    setTimeout(() => {
+      copyButtonText.value = '複製'
+    }, 2000)
+  }
+}
+
+const closeModal = () => {
+  showShareModal.value = false
 }
 
 const handleQuickShare = async () => {
@@ -85,41 +161,25 @@ const handleQuickShare = async () => {
       share_description: '',
     })
 
-    // 複製分享連結到剪貼簿
+    // 嘗試複製分享連結到剪貼簿
     if (response.share_url) {
-      try {
-        // 嘗試使用現代 Clipboard API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(response.share_url)
-        } else {
-          // 備用方案：使用舊式 execCommand
-          copyToClipboardFallback(response.share_url)
-        }
-      } catch (clipboardErr) {
-        console.warn('Clipboard API failed, using fallback method:', clipboardErr)
-        try {
-          copyToClipboardFallback(response.share_url)
-        } catch (fallbackErr) {
-          console.error('Fallback copy also failed:', fallbackErr)
-          // 即使複製失敗，也顯示連結已生成
-          errorMessage.value = `分享已生成，但無法自動複製連結。連結：${response.share_url}`
-          showErrorMessage.value = true
-          setTimeout(() => {
-            showErrorMessage.value = false
-          }, 5000)
-          throw new Error('無法複製連結，但分享已成功生成')
-        }
+      shareUrl.value = response.share_url
+      
+      // 首先嘗試直接複製
+      const clipboardSuccess = await tryClipboardCopy(response.share_url)
+      
+      if (clipboardSuccess) {
+        // Clipboard API 成功
+        showSuccessMessage.value = true
+        setTimeout(() => {
+          showSuccessMessage.value = false
+        }, 3000)
+        emit('share-success', response)
+      } else {
+        // Clipboard API 失敗，顯示模態框讓用戶手動複製
+        showShareModal.value = true
+        emit('share-success', response)
       }
-      
-      showSuccessMessage.value = true
-      
-      // 3 秒後隱藏成功訊息
-      setTimeout(() => {
-        showSuccessMessage.value = false
-      }, 3000)
-
-      // 觸發成功事件
-      emit('share-success', response)
     }
   } catch (err) {
     // 解析錯誤消息
@@ -195,6 +255,152 @@ const handleQuickShare = async () => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* 模態窗口樣式 */
+.share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.share-modal {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  overflow: hidden;
+}
+
+.share-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.share-modal-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: #1f2937;
+}
+
+.share-modal-body {
+  padding: 1.5rem;
+}
+
+.share-hint {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.share-link-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.share-link-input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-family: monospace;
+  color: #1f2937;
+}
+
+.share-link-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-copy {
+  padding: 0.625rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-copy:hover {
+  background: #5568d3;
+}
+
+.btn-copy:active {
+  background: #4c5fc7;
+}
+
+.share-url-display {
+  padding: 0.875rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  word-break: break-all;
+  margin: 0;
+  font-family: monospace;
+}
+
+.share-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.btn-close {
+  padding: 0.5rem 1rem;
+  background: #e5e7eb;
+  color: #1f2937;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-close:hover {
+  background: #d1d5db;
 }
 
 .share-success-toast {
