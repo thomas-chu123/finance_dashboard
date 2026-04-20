@@ -80,7 +80,23 @@ const handleQuickShare = async () => {
       emit('share-success', response)
     }
   } catch (err) {
-    errorMessage.value = err.message || '分享失敗，請稍後重試'
+    // 解析錯誤消息
+    let message = '分享失敗，請稍後重試'
+    
+    if (err.response?.data?.detail) {
+      message = err.response.data.detail
+    } else if (err.message) {
+      message = err.message
+    }
+    
+    // 檢查常見的認證錯誤
+    if (message.includes('401') || message.includes('Not authenticated')) {
+      message = '認證失敗，請重新登入'
+    }
+    
+    console.error('Share error:', { status: err.response?.status, message, fullError: err })
+    
+    errorMessage.value = message
     showErrorMessage.value = true
 
     // 5 秒後隱藏錯誤訊息
