@@ -322,6 +322,28 @@
     <div v-if="!showSaved && results" class="mt-6 space-y-6">
       <!-- 截圖範圍（不含 button） -->
       <div id="optimize-results-chart">
+      <!-- 已選資產摘要（截圖包含，靜態只讀） -->
+      <div class="mb-5 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-brand-500/5">
+          <div class="flex items-center gap-2">
+            <FolderOpen class="w-4 h-4 text-brand-500" />
+            <span class="font-bold text-sm text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</span>
+          </div>
+          <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">總權重: {{ totalWeight }}%</span>
+        </div>
+        <div class="flex flex-wrap gap-2 p-3">
+          <div v-for="item in selectedItems" :key="item.symbol" class="flex items-center gap-2 px-3 py-2 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-lg min-w-[140px]">
+            <div class="w-8 h-8 rounded-lg bg-brand-500/10 flex items-center justify-center text-brand-500 font-extrabold text-xs uppercase flex-shrink-0">
+              {{ item.symbol.substring(0, 2) }}
+            </div>
+            <div class="min-w-0 flex-1">
+              <div class="font-bold text-xs text-[var(--text-primary)] truncate">{{ item.symbol }}</div>
+              <div class="text-[9px] text-muted truncate">{{ item.name }}</div>
+            </div>
+            <span class="text-sm font-bold text-brand-500 flex-shrink-0">{{ Math.round(item.weight) }}%</span>
+          </div>
+        </div>
+      </div>
       <h3 class="mb-2">最佳化分析結果</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
