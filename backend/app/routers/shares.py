@@ -66,6 +66,7 @@ async def upload_result_image(
             image_data=content,
             image_hash=image_hash,
             result_type=result_type,
+            user_id=user_id,
         )
 
         logger.info(f"✅ 圖像已保存: {image_hash} (類型: {result_type})")

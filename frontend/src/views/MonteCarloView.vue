@@ -382,8 +382,12 @@
         </div>
       </div>
 
-      <!-- Results Summary -->
-      <div v-if="results" id="monte-results-chart" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500 mt-6">
+    </div> <!-- Closes v-if="!showSaved" -->
+
+    <!-- Results + Charts (capture target) -->
+    <div v-if="results && !showSaved" id="monte-results-content" class="space-y-4 mt-6">
+      <!-- Summary Stats -->
+      <div class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
         <div class="glass-card bg-brand-500/10 border-brand-500/20">
           <div class="p-6 text-center">
             <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">投資成功率</h4>
@@ -425,26 +429,26 @@
           </div>
         </div>
       </div>
-    </div> <!-- Closes v-if="!showSaved" -->
 
-    <!-- Charts Section -->
-    <div v-if="results && !showSaved" class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-      <div class="premium-card overflow-hidden">
-        <div class="premium-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h3 class="font-bold text-[var(--text-primary)]">資產增長隨機路徑百分位 (Percentile Paths)</h3>
-          <div class="flex flex-wrap items-center gap-3 sm:gap-4">
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
-              <span class="text-[10px] font-bold text-[var(--text-secondary)]">P50 (中位數)</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-zinc-400"></span>
-              <span class="text-[10px] font-bold text-[var(--text-secondary)]">P10 - P90 區間</span>
+      <!-- Chart -->
+      <div class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div class="premium-card overflow-hidden">
+          <div class="premium-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h3 class="font-bold text-[var(--text-primary)]">資產增長隨機路徑百分位 (Percentile Paths)</h3>
+            <div class="flex flex-wrap items-center gap-3 sm:gap-4">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">P50 (中位數)</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-zinc-400"></span>
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">P10 - P90 區間</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="p-4 h-[300px] sm:h-[400px] md:h-[450px]">
-          <v-chart :option="pathChartOption" autoresize />
+          <div class="p-4 h-[300px] sm:h-[400px] md:h-[450px]">
+            <v-chart :option="pathChartOption" autoresize />
+          </div>
         </div>
       </div>
     </div>
@@ -454,16 +458,19 @@
       {{ error }}
     </div>
 
-    <!-- Save button -->
+    <!-- 底部操作按鈕 -->
     <div v-if="results && !showSaved" class="flex gap-3 mt-8 justify-center mb-4">
-      <ShareImageButton
-        result-type="monte_carlo"
-        capture-selector="#monte-results-chart"
-        @share-success="onImageShareSuccess"
-      />
-      <button class="flex items-center justify-center px-6 py-3 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+      <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking" :disabled="!selectedItems.length">
+        <Target class="w-4 h-4 mr-2" />加入追蹤
+      </button>
+      <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
         <Save class="w-4 h-4 mr-2" />儲存模擬結果
       </button>
+      <ShareImageButton
+        result-type="monte_carlo"
+        capture-selector="#monte-results-content"
+        @share-success="onImageShareSuccess"
+      />
     </div>
 
     <!-- Save modal -->
@@ -496,6 +503,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { usePreferenceStore } from '../stores/preference'
+import { useTrackingStore } from '../stores/tracking'
 import { 
   Target, Search, Plus, Check, X, Dice5, Play, Scale,
   Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft, Save
@@ -505,6 +513,7 @@ import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
 const preference = usePreferenceStore()
+const trackingStore = useTrackingStore()
 
 // State
 const loading = ref(false)
@@ -914,6 +923,14 @@ onMounted(() => {
 
 function onImageShareSuccess(shareResult) {
   console.log('圖形分享成功:', shareResult)
+}
+
+async function addAllToTracking() {
+  const symbols = selectedItems.value.map(i => i.symbol)
+  const names = selectedItems.value.map(i => i.name || i.symbol)
+  const categories = selectedItems.value.map(i => i.category || 'us_etf')
+  await trackingStore.addFromBacktest(symbols, names, categories)
+  alert(`已將 ${symbols.length} 個資產加入追蹤！`)
 }
 </script>
 

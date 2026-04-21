@@ -369,28 +369,14 @@
       </div>
 
       <!-- Results -->
-      <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6" id="backtest-results-chart">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+      <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6">
+        <!-- 截圖範圍（不含操作 buttons） -->
+        <div id="backtest-results-content">
+        <div class="flex items-center mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
-          <div class="flex items-center gap-3 w-full sm:w-auto flex-wrap">
-            <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
-              <Activity class="w-4 h-4 mr-2" />加入追蹤
-            </button>
-            <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
-              <Save class="w-4 h-4 mr-2" />儲存回測
-            </button>
-            <ShareImageButton
-              v-if="results"
-              result-type="backtest"
-              :result-id="currentPortfolioId"
-              capture-selector="#backtest-results-chart"
-              @share-success="onImageShareSuccess"
-            />
-
-          </div>
         </div>
 
         <!-- Metrics -->
@@ -547,6 +533,24 @@
           <div class="p-4 sm:p-6" style="height:320px;">
             <v-chart :option="correlationHeatmapOption" autoresize style="height:100%;" />
           </div>
+        </div>
+        </div><!-- end backtest-results-content -->
+
+        <!-- 操作 buttons 置底 -->
+        <div class="flex justify-center gap-3 mt-6">
+          <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
+            <Target class="w-4 h-4 mr-2" />加入追蹤
+          </button>
+          <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
+            <Save class="w-4 h-4 mr-2" />儲存回測
+          </button>
+          <ShareImageButton
+            v-if="results"
+            result-type="backtest"
+            :result-id="currentPortfolioId"
+            capture-selector="#backtest-results-content"
+            @share-success="onImageShareSuccess"
+          />
         </div>
       </div>
     </div>

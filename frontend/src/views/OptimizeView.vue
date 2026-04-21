@@ -319,7 +319,9 @@
   </div>
 
     <!-- Optimization Results -->
-    <div v-if="!showSaved && results" id="optimize-results-chart" class="mt-6 space-y-6">
+    <div v-if="!showSaved && results" class="mt-6 space-y-6">
+      <!-- 截圖範圍（不含 button） -->
+      <div id="optimize-results-chart">
       <h3 class="mb-2">最佳化分析結果</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -393,8 +395,16 @@
         </div>
       </div>
 
-      <!-- Share Image Button -->
-      <div class="flex justify-center mt-4">
+      </div><!-- end optimize-results-chart -->
+
+      <!-- 底部操作按鈕 -->
+      <div class="flex justify-center gap-3 mt-4">
+        <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking" :disabled="!selectedItems.length">
+          <Target class="w-4 h-4 mr-2" />加入追蹤
+        </button>
+        <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true" :disabled="!selectedItems.length">
+          <Save class="w-4 h-4 mr-2" />儲存最佳化
+        </button>
         <ShareImageButton
           result-type="optimize"
           capture-selector="#optimize-results-chart"
@@ -436,6 +446,7 @@ import { Trophy, Shield, Dna, X, Check, Loader2, FolderOpen, Trash2, ArrowLeft, 
 import axios from 'axios'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { usePreferenceStore } from '../stores/preference'
+import { useTrackingStore } from '../stores/tracking'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import CurrencySelector from '../components/CurrencySelector.vue'
 import ShareImageButton from '../components/ShareImageButton.vue'
@@ -443,6 +454,7 @@ import ShareImageButton from '../components/ShareImageButton.vue'
 const auth = useAuthStore()
 const router = useRouter()
 const preference = usePreferenceStore()
+const trackingStore = useTrackingStore()
 const { isMobile, isTablet, isDesktop } = useBreakpoint()
 // Remove local API_BASE declaration
 
@@ -1010,6 +1022,14 @@ onMounted(async () => {
 
 function onImageShareSuccess(shareResult) {
   console.log('圖形分享成功:', shareResult)
+}
+
+async function addAllToTracking() {
+  const symbols = selectedItems.value.map(i => i.symbol)
+  const names = selectedItems.value.map(i => i.name || i.symbol)
+  const categories = selectedItems.value.map(i => i.category || 'us_etf')
+  await trackingStore.addFromBacktest(symbols, names, categories)
+  alert(`已將 ${symbols.length} 個資產加入追蹤！`)
 }
 
 // ✅ 監聽權重變化，防抖計算組合性能（僅在有結果時）
