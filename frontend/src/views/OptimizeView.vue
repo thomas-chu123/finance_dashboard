@@ -319,7 +319,7 @@
   </div>
 
     <!-- Optimization Results -->
-    <div v-if="!showSaved && results" class="mt-6 space-y-6">
+    <div v-if="!showSaved && results" id="optimize-results-chart" class="mt-6 space-y-6">
       <h3 class="mb-2">最佳化分析結果</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -393,6 +393,15 @@
         </div>
       </div>
 
+      <!-- Share Image Button -->
+      <div class="flex justify-center mt-4">
+        <ShareImageButton
+          result-type="optimize"
+          capture-selector="#optimize-results-chart"
+          @share-success="onImageShareSuccess"
+        />
+      </div>
+
     </div>
 
     <!-- Save modal -->
@@ -429,6 +438,7 @@ import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { usePreferenceStore } from '../stores/preference'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import CurrencySelector from '../components/CurrencySelector.vue'
+import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -997,6 +1007,10 @@ onMounted(async () => {
     console.error('[OptimizeView] Failed to load symbols:', error)
   }
 })
+
+function onImageShareSuccess(shareResult) {
+  console.log('圖形分享成功:', shareResult)
+}
 
 // ✅ 監聽權重變化，防抖計算組合性能（僅在有結果時）
 let perfCalculationTimer = null

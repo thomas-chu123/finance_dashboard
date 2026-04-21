@@ -19,6 +19,7 @@ from app.services.news_briefing_service import run_market_briefing_session
 from app.services.dividend_sync import sync_dividend_calendar
 from app.services.dividend_notify_service import check_and_send_dividend_notifications
 from app.services.rsi_service import get_rsi_calculation_service
+from app.services.image_share import ImageShareManager
 
 logger = logging.getLogger(__name__)
 scheduler = AsyncIOScheduler(timezone="Asia/Taipei")
@@ -391,6 +392,16 @@ async def run_dividend_notify_check():
         logger.error(f"[Scheduler] Dividend notify failed: {e}")
 
 
+async def run_image_cleanup():
+    """清理過期的分享圖片（30天以上）"""
+    try:
+        manager = ImageShareManager()
+        deleted = manager.cleanup_expired_images()
+        logger.info(f"[Scheduler] Image cleanup complete: {deleted} files removed.")
+    except Exception as e:
+        logger.error(f"[Scheduler] Image cleanup failed: {e}")
+
+
 def start_scheduler():
     scheduler.add_job(check_prices, "interval", minutes=30, id="price_check", replace_existing=True)
     # Sync TW ETF list daily at 01:00 Asia/Taipei
@@ -405,9 +416,11 @@ def start_scheduler():
     scheduler.add_job(run_dividend_sync, "cron", hour=6, minute=0, id="dividend_sync", replace_existing=True)
     # Dividend notification check at 06:30 (after sync completes)
     scheduler.add_job(run_dividend_notify_check, "cron", hour=6, minute=30, id="dividend_notify", replace_existing=True)
+    # Cleanup expired share images daily at 03:00
+    scheduler.add_job(run_image_cleanup, "cron", hour=3, minute=0, id="image_cleanup", replace_existing=True)
     scheduler.start()
     logger.info(
         "[Scheduler] Started: price_check (every 30 min), tw_etf_sync (daily 01:00), "
         "us_etf_sync (daily 02:00), briefing (08:00/13:00/18:00), "
-        "dividend_sync (06:00), dividend_notify (06:30)"
+        "dividend_sync (06:00), dividend_notify (06:30), image_cleanup (03:00)"
     )

@@ -383,7 +383,7 @@
       </div>
 
       <!-- Results Summary -->
-      <div v-if="results" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500 mt-6">
+      <div v-if="results" id="monte-results-chart" class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500 mt-6">
         <div class="glass-card bg-brand-500/10 border-brand-500/20">
           <div class="p-6 text-center">
             <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">投資成功率</h4>
@@ -455,7 +455,12 @@
     </div>
 
     <!-- Save button -->
-    <div v-if="results && !showSaved" class="flex gap-3 mt-8 justify-center mb-8">
+    <div v-if="results && !showSaved" class="flex gap-3 mt-8 justify-center mb-4">
+      <ShareImageButton
+        result-type="monte_carlo"
+        capture-selector="#monte-results-chart"
+        @share-success="onImageShareSuccess"
+      />
       <button class="flex items-center justify-center px-6 py-3 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
         <Save class="w-4 h-4 mr-2" />儲存模擬結果
       </button>
@@ -496,6 +501,7 @@ import {
   Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft, Save
 } from 'lucide-vue-next'
 import CurrencySelector from '../components/CurrencySelector.vue'
+import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
 const preference = usePreferenceStore()
@@ -905,6 +911,10 @@ async function saveMonteCarloSimulation() {
 onMounted(() => {
   loadSymbols()
 })
+
+function onImageShareSuccess(shareResult) {
+  console.log('圖形分享成功:', shareResult)
+}
 </script>
 
 <style scoped>

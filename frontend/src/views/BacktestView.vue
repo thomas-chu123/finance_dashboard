@@ -389,12 +389,7 @@
               capture-selector="#backtest-results-chart"
               @share-success="onImageShareSuccess"
             />
-            <ShareButton 
-              v-if="currentPortfolioId && results"
-              :portfolio-id="currentPortfolioId" 
-              :portfolio-name="portfolioName"
-              @share-success="onShareSuccess"
-            />
+
           </div>
         </div>
 
@@ -590,7 +585,7 @@ import { metricsDefinitions } from '../utils/metricsDefinitions'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 import CurrencySelector from '../components/CurrencySelector.vue'
-import ShareButton from '../components/ShareButton.vue'
+
 import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
@@ -758,10 +753,6 @@ async function runBacktest() {
     await new Promise(r => setTimeout(r, 400))
     console.log('[DEBUG] Backtest results:', res.data)
     results.value = res.data
-    
-    // 更新分享功能的投組資訊
-    currentPortfolioId.value = currentLoadedPortfolioId.value
-    portfolioName.value = saveName.value || '回測投組'
     
     // Auto-save if it's a loaded portfolio
     if (currentLoadedPortfolioId.value && saveName.value) {
@@ -1090,7 +1081,6 @@ async function saveBacktest() {
       const savedPortfolioId = res.data.portfolio_id
       if (savedPortfolioId) {
         currentPortfolioId.value = savedPortfolioId
-        portfolioName.value = saveName.value
       }
     })
     showSaveModal.value = false
@@ -1116,12 +1106,6 @@ async function addToTracking(items) {
 
 // 分享功能相關變數
 const currentPortfolioId = ref(null)
-const portfolioName = ref('回測投組')
-
-function onShareSuccess(shareResult) {
-  console.log('分享成功:', shareResult)
-  // 可以在這裡添加分享成功後的操作，如顯示通知、重新加載列表等
-}
 
 function onImageShareSuccess(imageShareResult) {
   console.log('圖像分享成功:', imageShareResult)

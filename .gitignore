@@ -5,6 +5,7 @@ node_modules/
 
 # Temporary files and debug output
 temp/
+tmp/
 
 # Python
 __pycache__/

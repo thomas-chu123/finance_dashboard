@@ -82,13 +82,7 @@ async def lifespan(app: FastAPI):
         logger.warning(f"⚠️ Redis connection failed: {e}. Falling back to InMemoryBackend for caching.")
         FastAPICache.init(InMemoryBackend(), prefix="fin-cache")
 
-    # Run database migrations
-    from app.services.migrations import ensure_portfolio_shares_table
-    try:
-        await ensure_portfolio_shares_table()
-    except Exception as e:
-        logger.error(f"❌ 數據庫遷移失敗: {e}")
-    
+    # Start scheduler
     start_scheduler()
     yield
     if scheduler.running:
