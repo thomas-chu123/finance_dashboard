@@ -369,7 +369,7 @@
       </div>
 
       <!-- Results -->
-      <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6">
+      <div v-if="results" class="mt-6 border-t border-[var(--border-color)] pt-6" id="backtest-results-chart">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
@@ -382,6 +382,13 @@
             <button class="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
               <Save class="w-4 h-4 mr-2" />儲存回測
             </button>
+            <ShareImageButton
+              v-if="results"
+              result-type="backtest"
+              :result-id="currentPortfolioId"
+              capture-selector="#backtest-results-chart"
+              @share-success="onImageShareSuccess"
+            />
             <ShareButton 
               v-if="currentPortfolioId && results"
               :portfolio-id="currentPortfolioId" 
@@ -584,6 +591,7 @@ import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Che
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 import CurrencySelector from '../components/CurrencySelector.vue'
 import ShareButton from '../components/ShareButton.vue'
+import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
@@ -1113,6 +1121,11 @@ const portfolioName = ref('回測投組')
 function onShareSuccess(shareResult) {
   console.log('分享成功:', shareResult)
   // 可以在這裡添加分享成功後的操作，如顯示通知、重新加載列表等
+}
+
+function onImageShareSuccess(imageShareResult) {
+  console.log('圖像分享成功:', imageShareResult)
+  // 可以在這裡添加圖像分享成功後的操作
 }
 
 onMounted(async () => {

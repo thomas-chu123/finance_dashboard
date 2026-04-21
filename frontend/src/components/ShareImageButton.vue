@@ -1,30 +1,30 @@
 <template>
-  <div class="share-button-container">
-    <!-- 分享按鈕 - 直接觸發分享 -->
+  <div class="share-image-button-container">
+    <!-- 分享圖片按鈕 -->
     <button
-      @click="handleQuickShare"
+      @click="handleGenerateAndShare"
       :disabled="isLoading"
-      class="btn-share"
-      title="分享此投組"
+      class="btn-share-image"
+      title="生成PNG並分享"
     >
       <svg v-if="!isLoading" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C9.589 12.938 10 12.077 10 11.25c0-1.657-1.343-3-3-3s-3 1.343-3 3 1.343 3 3 3c.423 0 .815-.1 1.197-.292m9.457-5.966A9.967 9.967 0 1012 20.25m4.772-4.772a9.969 9.969 0 01-5.087 2.025" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
       <span v-else class="spinner"></span>
-      {{ isLoading ? '分享中...' : '分享' }}
+      {{ isLoading ? '生成中...' : '生成分享圖' }}
     </button>
 
-    <!-- 分享連結模態窗口 (用於 Safari 或 clipboard API 失敗) -->
+    <!-- 分享連結模態窗口 -->
     <transition name="fade">
       <div v-if="showShareModal" class="share-modal-overlay" @click="closeModal">
         <div class="share-modal" @click.stop>
           <div class="share-modal-header">
-            <h3>分享連結已生成</h3>
+            <h3>分享圖形已生成</h3>
             <button class="modal-close" @click="closeModal">&times;</button>
           </div>
           
           <div class="share-modal-body">
-            <p class="share-hint">點擊下方連結複製，或手動複製：</p>
+            <p class="share-hint">分享連結已生成，點擊複製：</p>
             
             <div class="share-link-container">
               <input 
@@ -64,17 +64,24 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { sharePortfolio } from '@/api/shares'
+import { ref, nextTick } from 'vue'
+import { uploadResultImage } from '@/api/shares'
+import html2canvas from 'html2canvas'
 
 const props = defineProps({
-  portfolioId: {
+  resultId: {
+    type: String,
+    description: '結果ID（可選，用於記錄）',
+  },
+  resultType: {
     type: String,
     required: true,
+    validator: (value) => ['backtest', 'optimize', 'monte_carlo'].includes(value),
   },
-  portfolioName: {
+  captureSelector: {
     type: String,
-    default: 'Investment Portfolio',
+    required: true,
+    description: '要截圖的DOM選擇器',
   },
 })
 
@@ -103,15 +110,13 @@ const tryClipboardCopy = async (text) => {
   return false
 }
 
-// 備用複製方案（同步上下文）
+// 備用複製方案
 const tryExecCommandCopy = () => {
   try {
     if (linkInput.value) {
       linkInput.value.select()
       const success = document.execCommand('copy')
-      if (success) {
-        return true
-      }
+      return success
     }
   } catch (err) {
     console.error('execCommand failed:', err)
@@ -143,61 +148,73 @@ const closeModal = () => {
   showShareModal.value = false
 }
 
-const handleQuickShare = async () => {
+const handleGenerateAndShare = async () => {
   try {
     isLoading.value = true
     errorMessage.value = ''
     showErrorMessage.value = false
     showSuccessMessage.value = false
 
-    // 使用預設配置直接生成分享
-    const response = await sharePortfolio(props.portfolioId, {
-      share_type: 'snapshot',
-      expires_in_days: 30,
-      share_description: '',
+    // 使用 html2canvas 截圖
+    const element = document.querySelector(props.captureSelector)
+    if (!element) {
+      throw new Error(`找不到元素: ${props.captureSelector}`)
+    }
+
+    // 截圖
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
     })
 
-    // 嘗試複製分享連結到剪貼簿
-    if (response.share_url) {
-      shareUrl.value = response.share_url
-      
-      // 首先嘗試直接複製
-      const clipboardSuccess = await tryClipboardCopy(response.share_url)
-      
-      if (clipboardSuccess) {
-        // Clipboard API 成功
-        showSuccessMessage.value = true
-        setTimeout(() => {
-          showSuccessMessage.value = false
-        }, 3000)
-        emit('share-success', response)
-      } else {
-        // Clipboard API 失敗，顯示模態框讓用戶手動複製
-        showShareModal.value = true
-        emit('share-success', response)
-      }
+    // 轉換為 Blob
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, 'image/png')
+    })
+
+    // 建立 FormData
+    const formData = new FormData()
+    formData.append('file', blob, `${props.resultType}.png`)
+    formData.append('result_type', props.resultType)
+    if (props.resultId) {
+      formData.append('portfolio_id', props.resultId)
     }
+
+    // 上傳到後端
+    const response = await uploadResultImage(formData)
+
+    // 構建分享 URL - 使用前端地址而不是後端
+    const appBaseUrl = import.meta.env.VITE_APP_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3100')
+    shareUrl.value = `${appBaseUrl}/share/image/${response.image_hash}`
+
+    // 嘗試複製
+    const clipboardSuccess = await tryClipboardCopy(shareUrl.value)
+
+    if (clipboardSuccess) {
+      showSuccessMessage.value = true
+      setTimeout(() => {
+        showSuccessMessage.value = false
+      }, 3000)
+    } else {
+      showShareModal.value = true
+    }
+
+    emit('share-success', response)
   } catch (err) {
-    // 解析錯誤消息
-    let message = '分享失敗，請稍後重試'
-    
+    let message = '生成分享圖失敗'
+
     if (err.response?.data?.detail) {
       message = err.response.data.detail
     } else if (err.message) {
       message = err.message
     }
-    
-    // 檢查常見的認證錯誤
-    if (message.includes('401') || message.includes('Not authenticated')) {
-      message = '認證失敗，請重新登入'
-    }
-    
-    console.error('Share error:', { status: err.response?.status, message, fullError: err })
-    
+
+    console.error('Share image error:', err)
     errorMessage.value = message
     showErrorMessage.value = true
 
-    // 5 秒後隱藏錯誤訊息
     setTimeout(() => {
       showErrorMessage.value = false
     }, 5000)
@@ -208,12 +225,12 @@ const handleQuickShare = async () => {
 </script>
 
 <style scoped>
-.share-button-container {
+.share-image-button-container {
   display: inline-block;
   position: relative;
 }
 
-.btn-share {
+.btn-share-image {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -229,12 +246,12 @@ const handleQuickShare = async () => {
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-.btn-share:hover:not(:disabled) {
+.btn-share-image:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.btn-share:disabled {
+.btn-share-image:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
@@ -323,7 +340,6 @@ const handleQuickShare = async () => {
 .share-link-container {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1rem;
 }
 
 .share-link-input {
@@ -363,13 +379,11 @@ const handleQuickShare = async () => {
   background: #4c5fc7;
 }
 
-
 .share-modal-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
 }
 
 .btn-close {

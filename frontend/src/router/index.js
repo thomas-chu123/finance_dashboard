@@ -15,6 +15,12 @@ const routes = [
     meta: { requiresAuth: false },
   },
   {
+    path: '/share/image/:imageHash',
+    name: 'ShareImage',
+    component: () => import('../views/ShareImageView.vue'),
+    meta: { requiresAuth: false },
+  },
+  {
     path: '/',
     component: () => import('../views/LayoutView.vue'),
     meta: { requiresAuth: true },

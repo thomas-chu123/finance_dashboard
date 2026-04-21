@@ -54,6 +54,7 @@ class Settings(BaseSettings):
     environment: str = "development"  # 'development' | 'staging' | 'production'
     debug: bool = False
     secret_key: str = "your-secret-key-change-in-production"
+    temp_dir: str = "/tmp"  # 臨時文件存儲目錄（用於圖像分享）
 
     class Config:
         env_file = str(BASE_DIR / ".env")
