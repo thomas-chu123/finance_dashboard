@@ -1,9 +1,10 @@
 import axios from 'axios'
+import { API_BASE_URL } from './config'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8005/api'
+const API_BASE_URL_CLIENT = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8005'
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/api`,
 })
 
 // 自動添加認證令牌

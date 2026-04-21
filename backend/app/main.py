@@ -113,7 +113,14 @@ async def log_request_origin(request, call_next):
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3100", settings.app_base_url],
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:3100",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3100",
+        "http://127.0.0.1:8005",
+        settings.app_base_url,
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*", "Content-Type"],

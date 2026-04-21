@@ -4,9 +4,9 @@
  */
 
 import axios from 'axios'
+import { API_BASE_URL } from './config'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.DEV ? '' : window.location.origin)
+const API_BASE = API_BASE_URL
 
 const client = axios.create({
   baseURL: `${API_BASE}/api/admin`,

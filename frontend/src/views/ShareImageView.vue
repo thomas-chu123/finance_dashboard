@@ -59,7 +59,7 @@ const loadImage = async () => {
     loading.value = true
     errorMessage.value = ''
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin)
+    const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8005' : window.location.origin)
     imageUrl.value = `${apiBase}/api/backtest/share/image/${imageHash}`
     // 讓 <img> 的 @error handler 處理載入失敗
     loading.value = false

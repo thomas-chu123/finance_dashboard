@@ -52,7 +52,7 @@ function sendLog(level, ...args) {
       return (typeof arg === 'object' ? JSON.stringify(arg) : String(arg))
     }).join(' ')
     
-    const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '' : window.location.origin)
+    const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8005' : window.location.origin)
     fetch(`${apiBase}/api/logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,8 +88,8 @@ console.error = function(...args) {
   sendLog('error', ...args)
 }
 
-// Initial log to confirm environment
-const initialApiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '(Dev Mod)' : window.location.origin)
+// 初始日誌確認環境
+const initialApiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8005' : window.location.origin)
 console.log('Frontend initialized. API Base:', initialApiBase)
 
 const app = createApp(App)
