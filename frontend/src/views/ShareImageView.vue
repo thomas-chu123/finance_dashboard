@@ -9,7 +9,7 @@
     <!-- Success State -->
     <div v-else-if="imageUrl" class="success-state">
       <div class="image-wrapper">
-        <img :src="imageUrl" :alt="`${resultType} 分享圖像`" class="shared-image" />
+        <img :src="imageUrl" :alt="`${resultType} 分享圖像`" class="shared-image" @error="onImageError" />
       </div>
       <div class="actions">
         <button @click="downloadImage" class="btn-download">
@@ -58,23 +58,21 @@ const loadImage = async () => {
   try {
     loading.value = true
     errorMessage.value = ''
-    
-    // 直接使用後端 API 地址獲取圖像
+
     const apiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:8000' : window.location.origin)
     imageUrl.value = `${apiBase}/api/backtest/share/image/${imageHash}`
-    
-    // 驗證圖像是否存在（通過發送 HEAD 請求）
-    const response = await fetch(imageUrl.value, { method: 'HEAD' })
-    if (!response.ok) {
-      throw new Error(response.statusText)
-    }
-    
+    // 讓 <img> 的 @error handler 處理載入失敗
     loading.value = false
   } catch (err) {
     loading.value = false
     errorMessage.value = err.message || '無法加載圖像，請確認連結正確。'
     imageUrl.value = null
   }
+}
+
+const onImageError = () => {
+  imageUrl.value = null
+  errorMessage.value = '圖像不存在或已過期（30天）'
 }
 
 const downloadImage = async () => {

@@ -66,7 +66,7 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { uploadResultImage } from '@/api/shares'
-import html2canvas from 'html2canvas'
+import html2canvas from 'html2canvas-pro'
 
 const props = defineProps({
   resultId: {
@@ -155,18 +155,23 @@ const handleGenerateAndShare = async () => {
     showErrorMessage.value = false
     showSuccessMessage.value = false
 
-    // 使用 html2canvas 截圖
+    // 使用 html-to-image 截圖
     const element = document.querySelector(props.captureSelector)
     if (!element) {
       throw new Error(`找不到元素: ${props.captureSelector}`)
     }
 
-    // 截圖
+    // 使用 html2canvas-pro 截圖（支援現代 CSS 色彩函數）
     const canvas = await html2canvas(element, {
       scale: 2,
       backgroundColor: '#ffffff',
       useCORS: true,
       logging: false,
+      allowTaint: true,
+    }).catch((imgErr) => {
+      const detail = imgErr instanceof Error ? imgErr.message : JSON.stringify(imgErr, Object.getOwnPropertyNames(imgErr))
+      console.error('html2canvas-pro error:', detail, imgErr)
+      throw new Error(`截圖失敗: ${detail}`)
     })
 
     // 轉換為 Blob
@@ -203,12 +208,16 @@ const handleGenerateAndShare = async () => {
 
     emit('share-success', response)
   } catch (err) {
+    // 統一處理各類錯誤型別
     let message = '生成分享圖失敗'
-
-    if (err.response?.data?.detail) {
+    if (err?.response?.data?.detail) {
       message = err.response.data.detail
-    } else if (err.message) {
+    } else if (err instanceof Error) {
       message = err.message
+    } else if (typeof err === 'string') {
+      message = err
+    } else if (err && typeof err === 'object') {
+      message = JSON.stringify(err)
     }
 
     console.error('Share image error:', err)
