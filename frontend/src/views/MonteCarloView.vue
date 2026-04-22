@@ -62,32 +62,22 @@
             </div>
           </div>
           <div class="p-3 sm:p-4">
-            <div v-if="p.items" class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" style="gap:12px;">
               <div>
                 <div class="text-xs text-muted">初始金額</div>
                 <div class="fw-600 text-rose-600">${{ (p.initial_amount || 0).toLocaleString() }}</div>
               </div>
               <div>
                 <div class="text-xs text-muted">年數</div>
-                <div class="fw-600 text-brand-600">{{ p.years || '--' }}</div>
+                <div class="fw-600 text-brand-600">{{ getConfigValue(p, 'years', '--') }}</div>
               </div>
               <div>
                 <div class="text-xs text-muted">模擬次數</div>
-                <div class="fw-600 text-accent">{{ (p.simulations || 0).toLocaleString() }}</div>
-              </div>
-            </div>
-            <div v-else class="grid grid-cols-1 sm:grid-cols-3 gap-3" style="gap:12px;">
-              <div>
-                <div class="text-xs text-muted">初始金額</div>
-                <div class="fw-600 text-muted">--</div>
+                <div class="fw-600 text-accent">{{ formatSimulations(getConfigValue(p, 'simulations', 0)) }}</div>
               </div>
               <div>
-                <div class="text-xs text-muted">年數</div>
-                <div class="fw-600 text-muted">--</div>
-              </div>
-              <div>
-                <div class="text-xs text-muted">模擬次數</div>
-                <div class="fw-600 text-muted">--</div>
+                <div class="text-xs text-muted">成功率</div>
+                <div class="fw-600 text-green-600">{{ getSuccessRate(p) }}</div>
               </div>
             </div>
             <div class="mt-3">
@@ -827,6 +817,30 @@ async function loadSavedPortfolios() {
   finally {
     loadingSaved.value = false
   }
+}
+
+// ✅ 從結果 JSON 的 config 中提取年數
+function getConfigValue(portfolio, key, defaultValue = null) {
+  const config = portfolio.results_json?.config
+  if (config && config[key] !== undefined) {
+    return config[key]
+  }
+  return defaultValue
+}
+
+// ✅ 格式化模擬次數
+function formatSimulations(value) {
+  if (!value || value === 0) return '0'
+  return value.toLocaleString()
+}
+
+// ✅ 從結果 JSON 中提取成功率
+function getSuccessRate(portfolio) {
+  const successRate = portfolio.results_json?.summary?.success_rate
+  if (successRate !== undefined && successRate !== null) {
+    return `${(successRate * 100).toFixed(1)}%`
+  }
+  return '--'
 }
 
 async function deleteSaved(id) {
