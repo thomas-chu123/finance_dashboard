@@ -174,11 +174,11 @@
               <tr class="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)]/50">
                 <th class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">指標</th>
                 <th v-for="(r, i) in successResults" :key="r.name"
-                  class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">
-                  <div class="flex items-center justify-end gap-1.5">
+                  class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider min-w-32">
+                  <div class="flex flex-col items-center justify-center gap-1.5">
                     <span class="w-2.5 h-2.5 rounded-full inline-block flex-shrink-0"
                       :style="{ backgroundColor: PORTFOLIO_COLORS[resultOriginalIndex(i)] }"></span>
-                    <span class="text-[var(--text-primary)]">{{ r.name }}</span>
+                    <span class="text-[var(--text-primary)] whitespace-normal break-words">{{ r.name }}</span>
                   </div>
                 </th>
               </tr>
