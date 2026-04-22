@@ -407,6 +407,41 @@
             <span class="text-sm font-bold text-brand-500 flex-shrink-0">{{ item.weight.toFixed(0) }}%</span>
           </div>
         </div>
+        <!-- 模擬參數設定資訊 -->
+        <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">初始金額</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ (config.initial_amount || 0).toLocaleString() }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">模擬年數</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.years }} 年</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">模擬次數</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.simulations.toLocaleString() }} 次</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">幣種</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.displayCurrency }}</div>
+            </div>
+          </div>
+          <div v-if="config.annual_contribution > 0 || config.annual_withdrawal > 0" class="grid grid-cols-2 gap-3 text-sm mt-3 pt-3 border-t border-[var(--border-color)]/50">
+            <div v-if="config.annual_contribution > 0">
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">年投入金額</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ (config.annual_contribution || 0).toLocaleString() }}</div>
+            </div>
+            <div v-if="config.annual_withdrawal > 0">
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">年取百分比</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.annual_withdrawal.toFixed(2) }}%</div>
+            </div>
+            <div v-if="config.adjust_for_inflation">
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">通膨調整</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">已啟用 ({{ config.inflation_mean.toFixed(2) }}%)</div>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Summary Stats -->
       <div class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">

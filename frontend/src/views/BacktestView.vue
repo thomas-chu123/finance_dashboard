@@ -393,6 +393,23 @@
               <span class="text-sm font-bold text-brand-500 flex-shrink-0">{{ item.weight.toFixed(0) }}%</span>
             </div>
           </div>
+          <!-- 時間範圍與金額資訊 -->
+          <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
+            <div class="grid grid-cols-3 gap-3 text-sm">
+              <div>
+                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">時間範圍</div>
+                <div class="font-mono text-xs text-[var(--text-primary)]">{{ btConfig.start_date }} → {{ btConfig.end_date }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">初始金額</div>
+                <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ (btConfig.initial_amount || 0).toLocaleString() }}</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">幣種</div>
+                <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.displayCurrency }}</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="flex items-center mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">

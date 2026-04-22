@@ -343,6 +343,23 @@
             <span class="text-sm font-bold text-brand-500 flex-shrink-0">{{ Math.round(item.weight) }}%</span>
           </div>
         </div>
+        <!-- 時間範圍與金額資訊 -->
+        <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
+          <div class="grid grid-cols-3 gap-3 text-sm">
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">時間範圍</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ optConfig.start_date }} → {{ optConfig.end_date }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">分析期間</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ calculateDays(optConfig.start_date, optConfig.end_date) }} 天</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">幣種</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.displayCurrency }}</div>
+            </div>
+          </div>
+        </div>
       </div>
       <h3 class="mb-2">最佳化分析結果</h3>
 
@@ -605,6 +622,16 @@ async function runOptimization() {
   } finally {
     runLoading.value = false
   }
+}
+
+// ✅ 計算日期差異
+function calculateDays(startDate, endDate) {
+  if (!startDate || !endDate) return 0
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+  const diffTime = Math.abs(end - start)
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  return diffDays
 }
 
 // ✅ 均勻分配權重（整數百分比）
