@@ -18,13 +18,8 @@
       "args": [
         "@supabase/mcp-server-supabase@0.7.0",
         "--project-ref",
-        "nwfbdgiodeubppydadkn",
-        "--access-token",
-        "${env:SUPABASE_ACCESS_TOKEN}"
+        "nwfbdgiodeubppydadkn"
       ],
-      "env": {
-        "SUPABASE_ACCESS_TOKEN": "${env:SUPABASE_ACCESS_TOKEN}"
-      },
       "type": "stdio"
     }
   }

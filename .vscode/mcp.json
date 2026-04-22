@@ -1,12 +1,4 @@
 {
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "SUPABASE_ACCESS_TOKEN",
-      "description": "Supabase Personal Access Token（個人訪問令牌）",
-      "password": true
-    }
-  ],
   "servers": {
     "notebooklm-mcp": {
       "command": "uvx",
@@ -28,9 +20,6 @@
         "--project-ref",
         "nwfbdgiodeubppydadkn"
       ],
-      "env": {
-        "SUPABASE_ACCESS_TOKEN": "${input:SUPABASE_ACCESS_TOKEN}"
-      },
       "type": "stdio"
     }
   }
