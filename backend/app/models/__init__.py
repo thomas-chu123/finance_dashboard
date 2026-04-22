@@ -269,7 +269,7 @@ class BacktestCompareRequest(BaseModel):
     portfolios: List[ComparePortfolioConfig]
     start_date: str
     end_date: str
-    initial_amount: float = 10000
+    initial_amount: float = 100000
 
 # ──────────────────────────────────────────────
 # Monte Carlo Simulation

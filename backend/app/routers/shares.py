@@ -39,11 +39,11 @@ async def get_shared_image(image_hash: str):
 @router.post("/share/image/upload")
 async def upload_result_image(
     file: UploadFile = File(...),
-    result_type: str = Form(..., description="圖形類型: backtest, optimize, monte_carlo"),
+    result_type: str = Form(..., description="圖形類型: backtest, optimize, monte_carlo, compare"),
     portfolio_id: Optional[str] = Form(None, description="投組ID"),
     authorization: str = Header(None),
 ):
-    """上傳回測/優化/蒙地卡羅結果PNG圖形"""
+    """上傳回測/優化/蒙地卡羅/比較結果PNG圖形"""
     try:
         if not authorization:
             raise HTTPException(status_code=401, detail="Not authenticated")
@@ -52,7 +52,7 @@ async def upload_result_image(
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        if result_type not in ["backtest", "optimize", "monte_carlo"]:
+        if result_type not in ["backtest", "optimize", "monte_carlo", "compare"]:
             raise HTTPException(status_code=400, detail="Invalid result_type")
 
         content = await file.read()

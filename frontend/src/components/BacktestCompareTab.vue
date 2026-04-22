@@ -25,7 +25,7 @@
               class="w-full h-9 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg px-3 focus:ring-brand-500 focus:border-brand-500" />
           </div>
           <div class="space-y-1">
-            <label class="block text-xs font-medium text-muted">初始金額 (USD)</label>
+            <label class="block text-xs font-medium text-muted">初始金額</label>
             <input v-model.number="compareConfig.initial_amount" type="number" step="1000" min="1000"
               class="w-full h-9 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg px-3 focus:ring-brand-500 focus:border-brand-500" />
           </div>
@@ -121,6 +121,40 @@
 
     <!-- 結果區塊 -->
     <template v-if="compareResults">
+      <!-- 截圖範圍開始 -->
+      <div id="compare-results-content" class="space-y-4">
+      
+      <!-- 比較設定信息卡 -->
+      <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-brand-500/5">
+          <div class="flex items-center gap-2">
+            <Scale class="w-4 h-4 text-brand-500" />
+            <span class="font-bold text-sm text-[var(--text-primary)]">比較設定</span>
+          </div>
+          <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">{{ filledSlots }} 個組合</span>
+        </div>
+        <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">開始日期</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ compareConfig.start_date }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">結束日期</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ compareConfig.end_date }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">初始金額</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ compareConfig.initial_amount.toLocaleString() }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">分析期間</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ calculateDays(compareConfig.start_date, compareConfig.end_date) }} 天</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 錯誤警示列 -->
       <div v-for="r in compareResults.filter(r => r.error)" :key="r.name"
         class="p-3 text-sm text-amber-700 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-300 rounded-lg">
@@ -216,6 +250,14 @@
           <v-chart :option="drawdownChartOption" autoresize style="height:100%;" />
         </div>
       </div>
+
+      <!-- 分享按鈕 -->
+      <div class="flex justify-end">
+        <ShareImageButton capture-selector="#compare-results-content" result-type="compare" />
+      </div>
+
+      </div>
+      <!-- 截圖範圍結束 -->
     </template>
 
     <!-- 空白提示 -->
@@ -237,7 +279,9 @@ import { GridComponent, TooltipComponent, LegendComponent, ToolboxComponent, Mar
 import VChart from 'vue-echarts'
 import { Scale, FolderOpen, X, Play, Loader2, BarChart3, BarChart2, TrendingUp, TrendingDown } from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
+import { usePreferenceStore } from '../stores/preference'
 import CurrencySelector from './CurrencySelector.vue'
+import ShareImageButton from './ShareImageButton.vue'
 
 use([CanvasRenderer, LineChart, BarChart, GridComponent, TooltipComponent, LegendComponent, ToolboxComponent, MarkPointComponent, MarkLineComponent])
 
@@ -246,6 +290,7 @@ const props = defineProps({
 })
 
 const auth = useAuthStore()
+const preference = usePreferenceStore()
 
 // ── 顏色定義 ──────────────────────────────────────────
 const PORTFOLIO_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444']
@@ -597,6 +642,14 @@ const drawdownChartOption = computed(() => {
     series,
   }
 })
+
+// ── 日期計算 ──────────────────────────────────────────
+function calculateDays(startDate, endDate) {
+  const start = new Date(startDate).getTime()
+  const end = new Date(endDate).getTime()
+  const diffTime = Math.abs(end - start)
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
 </script>
 
 <style scoped>
