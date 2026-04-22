@@ -1,13 +1,14 @@
 <template>
   <Teleport to="body">
     <div v-if="isOpen" class="fixed inset-0 z-50 flex items-start justify-center pt-20">
-      <!-- 背景 Backdrop - 移除 @click="close" 以避免中文輸入法干擾 -->
+      <!-- 背景 Backdrop -->
       <div 
         class="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+        @click="close"
       />
       
       <!-- Modal 容器 -->
-      <div class="relative w-full max-w-2xl mx-4 bg-[var(--bg-primary)] rounded-lg shadow-2xl border border-[var(--border-color)] overflow-hidden">
+      <div class="relative w-full max-w-2xl mx-4 bg-[var(--bg-primary)] rounded-lg shadow-2xl border border-[var(--border-color)] overflow-hidden" @click.stop>
         <!-- 搜尋輸入框區域 -->
         <div class="flex items-center px-4 py-3 border-b border-[var(--border-color)]">
           <Search :size="18" class="text-zinc-400 flex-shrink-0" />
