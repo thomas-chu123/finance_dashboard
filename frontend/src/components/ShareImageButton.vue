@@ -190,9 +190,9 @@ const handleGenerateAndShare = async () => {
     // 上傳到後端
     const response = await uploadResultImage(formData)
 
-    // 構建分享 URL - 使用前端地址而不是後端
+    // 構建分享 URL - 直接使用後台 API 連結
     const appBaseUrl = import.meta.env.VITE_APP_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3100')
-    shareUrl.value = `${appBaseUrl}/share/image/${response.image_hash}`
+    shareUrl.value = `${appBaseUrl}/api/backtest/share/image/${response.image_hash}`
 
     // 嘗試複製
     const clipboardSuccess = await tryClipboardCopy(shareUrl.value)
