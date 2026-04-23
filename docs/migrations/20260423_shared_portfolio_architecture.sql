@@ -19,16 +19,31 @@ CREATE INDEX IF NOT EXISTS idx_monte_carlo_results_json ON backtest_portfolios
 
 -- 3. Migrate existing results_json data based on portfolio_type
 -- This preserves existing data while preparing for the new architecture
+-- Also includes parameters (start_date, end_date, initial_amount) in JSONB for auditability and reproducibility
+
+-- Migrate backtest results with parameters included
 UPDATE backtest_portfolios
-SET backtest_results_json = results_json
+SET backtest_results_json = COALESCE(results_json, '{}'::jsonb) || jsonb_build_object(
+    'start_date', start_date,
+    'end_date', end_date,
+    'initial_amount', initial_amount
+)
 WHERE portfolio_type = 'backtest' AND backtest_results_json IS NULL;
 
+-- Migrate optimize results with parameters included
 UPDATE backtest_portfolios
-SET optimize_results_json = results_json
+SET optimize_results_json = COALESCE(results_json, '{}'::jsonb) || jsonb_build_object(
+    'start_date', start_date,
+    'end_date', end_date,
+    'initial_amount', initial_amount
+)
 WHERE portfolio_type = 'optimize' AND optimize_results_json IS NULL;
 
+-- Migrate monte carlo results with parameters included
 UPDATE backtest_portfolios
-SET monte_carlo_results_json = results_json
+SET monte_carlo_results_json = COALESCE(results_json, '{}'::jsonb) || jsonb_build_object(
+    'initial_amount', initial_amount
+)
 WHERE portfolio_type = 'monte_carlo' AND monte_carlo_results_json IS NULL;
 
 -- 4. Optional: Keep portfolio_type for now for backward compatibility

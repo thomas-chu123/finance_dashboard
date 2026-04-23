@@ -93,15 +93,12 @@ async def save_monte_carlo(body: MonteCarloSaveRequest, authorization: str = Hea
     
     sb = get_supabase()
 
-    # ✅ 新架構：只更新 monte_carlo_results_json，不修改 portfolio_type 和基礎數據
-    # 蒙地卡羅模擬不使用 start_date/end_date，設為 None
-    # ✅ 將配置參數包含在 results_json.config 中，以便前端加載時可以還原配置
-    results_data = body.results_json or {}
-    if not isinstance(results_data, dict):
-        results_data = {}
+    # ✅ 方案 A：參數存儲於結果 JSONB
+    # 蒙地卡羅模擬不使用 start_date/end_date，用 years 代替
+    results_data = body.results_json.copy() if body.results_json else {}
     
-    # ✅ 保存配置參數，前端加載時可以還原
-    results_data["config"] = {
+    # ✅ 保存配置參數到結果中，前端加載時可以還原
+    results_data.update({
         "years": body.years,
         "simulations": body.simulations,
         "annual_contribution": body.annual_contribution,
@@ -109,7 +106,8 @@ async def save_monte_carlo(body: MonteCarloSaveRequest, authorization: str = Hea
         "inflation_mean": body.inflation_mean,
         "inflation_std": body.inflation_std,
         "adjust_for_inflation": body.adjust_for_inflation,
-    }
+        "initial_amount": body.initial_amount,
+    })
     
     mc_data = {
         "user_id": user_id,
@@ -117,7 +115,7 @@ async def save_monte_carlo(body: MonteCarloSaveRequest, authorization: str = Hea
         "initial_amount": body.initial_amount,
         "start_date": None,  # ✅ 蒙地卡羅不定義特定日期範圍
         "end_date": None,    # ✅ 蒙地卡羅不定義特定日期範圍
-        "monte_carlo_results_json": results_data,  # ✅ 寫入蒙地卡羅專用欄位
+        "monte_carlo_results_json": results_data,  # ✅ 在結果中也存儲參數
         "portfolio_type": "monte_carlo",  # 保留以支持向後兼容
     }
     

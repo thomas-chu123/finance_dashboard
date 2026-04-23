@@ -75,14 +75,22 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
     user_id = get_user_id(authorization)
     sb = get_supabase()
 
-    # ✅ 新架構：使用共享 portfolio，只更新 backtest_results_json
-    portfolio_data = {
-        "user_id": user_id,
-        "name": body.name,
+    # ✅ 方案 A：參數存儲於結果 JSONB，根層日期作為共享模板
+    # 在 backtest_results_json 中包含計算參數，用於復現和審計
+    backtest_results = body.results_json.copy() if body.results_json else {}
+    backtest_results.update({
         "start_date": body.start_date,
         "end_date": body.end_date,
         "initial_amount": body.initial_amount,
-        "backtest_results_json": body.results_json,  # ✅ 寫入回測專用欄位
+    })
+    
+    portfolio_data = {
+        "user_id": user_id,
+        "name": body.name,
+        "start_date": body.start_date,      # 根層日期（模板/預設值）
+        "end_date": body.end_date,
+        "initial_amount": body.initial_amount,
+        "backtest_results_json": backtest_results,  # ✅ 在結果中也存儲參數
         "portfolio_type": "backtest",  # 保留以支持向後兼容
     }
 

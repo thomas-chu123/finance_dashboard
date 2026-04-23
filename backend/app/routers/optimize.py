@@ -99,14 +99,21 @@ async def save_optimization(body: OptimizeSaveRequest, authorization: str = Head
     
     sb = get_supabase()
 
-    # ✅ 新架構：只更新 optimize_results_json，不修改 portfolio_type 和基礎數據
+    # ✅ 方案 A：參數存儲於結果 JSONB
+    optimize_results = body.results_json.copy() if body.results_json else {}
+    optimize_results.update({
+        "start_date": body.start_date,
+        "end_date": body.end_date,
+        "initial_amount": body.initial_amount,
+    })
+    
     optimization_data = {
         "user_id": user_id,
         "name": body.name,
-        "start_date": body.start_date,
+        "start_date": body.start_date,      # 根層日期（可能由 Backtest 設定）
         "end_date": body.end_date,
-        "initial_amount": 0,  # 優化沒有初始金額
-        "optimize_results_json": body.results_json,  # ✅ 寫入優化專用欄位
+        "initial_amount": body.initial_amount,
+        "optimize_results_json": optimize_results,  # ✅ 在結果中也存儲參數
         "portfolio_type": "optimize",  # 保留以支持向後兼容
     }
     
