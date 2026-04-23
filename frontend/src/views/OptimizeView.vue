@@ -915,9 +915,8 @@ function exportToBacktest(portfolioData) {
 
 async function loadSavedPortfolios() {
   try {
-    // ✅ 改為讀取 /api/backtest，顯示所有類型的組合（backtest, optimize, monte_carlo）
-    // 這樣 OptimizeView 可以加載任何功能保存的組合
-    const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
+    // ✅ 呼叫 /api/optimize 端點加載優化結果
+    const res = await axios.get(`${API_BASE}/api/optimize`, { headers: auth.headers })
     savedPortfolios.value = res.data
     currentPage.value = 1  // ✅ 重置分頁到第一頁
   } catch (e) { console.error('Load saved failed', e) }
@@ -930,8 +929,8 @@ async function deleteSaved(id) {
   if (!confirm('確定刪除此優化結果？')) return
   try {
     saveError.value = ''
-    // ✅ 改為使用 /api/backtest 刪除組合
-    await axios.delete(`${API_BASE}/api/backtest/${id}`, { headers: auth.headers })
+    // ✅ 呼叫 /api/optimize 刪除優化結果
+    await axios.delete(`${API_BASE}/api/optimize/${id}`, { headers: auth.headers })
     await loadSavedPortfolios()
   } catch (e) { console.error('Delete failed', e) }
 }

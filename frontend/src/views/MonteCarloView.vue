@@ -808,9 +808,8 @@ function formatNumber(num) {
 
 async function loadSavedPortfolios() {
   try {
-    // ✅ 改為讀取 /api/backtest，顯示所有類型的組合（backtest, optimize, monte_carlo）
-    // 這樣 MonteCarloView 可以加載任何功能保存的組合
-    const res = await axios.get(`${API_BASE}/api/backtest`, { headers: auth.headers })
+    // ✅ 呼叫 /api/monte-carlo 端點加載蒙地卡羅結果
+    const res = await axios.get(`${API_BASE}/api/monte-carlo`, { headers: auth.headers })
     savedPortfolios.value = res.data
     currentPage.value = 1  // ✅ 重置分頁到第一頁
   } catch (e) { console.error('Load saved failed', e) }
@@ -865,8 +864,8 @@ async function deleteSaved(id) {
   if (!confirm('確定刪除此蒙地卡羅結果？')) return
   try {
     saveError.value = ''
-    // ✅ 改為使用 /api/backtest 刪除組合
-    await axios.delete(`${API_BASE}/api/backtest/${id}`, { headers: auth.headers })
+    // ✅ 呼叫 /api/monte-carlo 刪除蒙地卡羅結果
+    await axios.delete(`${API_BASE}/api/monte-carlo/${id}`, { headers: auth.headers })
     await loadSavedPortfolios()
   } catch (e) { console.error('Delete failed', e) }
 }
