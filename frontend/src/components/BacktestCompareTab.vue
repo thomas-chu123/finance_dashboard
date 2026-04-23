@@ -300,9 +300,9 @@ const slotCount = ref(2)
 const slots = ref([null, null, null, null])   // savedPortfolio 物件 or null
 
 const compareConfig = reactive({
-  start_date: '2020-01-01',
+  start_date: '2015-01-01',
   end_date: new Date().toISOString().split('T')[0],
-  initial_amount: 10000,
+  initial_amount: 100000,
 })
 
 const compareResults = ref(null)
