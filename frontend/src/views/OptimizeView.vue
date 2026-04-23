@@ -988,6 +988,7 @@ async function autoSaveOptimization() {
       items: itemsToSave,  // ✅ 傳遞計算後的權重
       start_date: optConfig.start_date,
       end_date: optConfig.end_date,
+      initial_amount: optConfig.initial_amount,  // ✅ 添加初始金額
       results_json: results.value,
     }, { headers: auth.headers })
     console.log('[OptimizeView] Auto-save successful:', response.data)
@@ -1041,6 +1042,7 @@ async function saveOptimization() {
       items: itemsToSave,  // ✅ 傳遞計算後的權重
       start_date: optConfig.start_date,
       end_date: optConfig.end_date,
+      initial_amount: optConfig.initial_amount,  // ✅ 添加初始金額
       results_json: results.value,
     }, { headers: auth.headers })
     showSaveModal.value = false
