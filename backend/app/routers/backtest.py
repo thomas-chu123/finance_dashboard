@@ -42,11 +42,12 @@ async def list_portfolios(authorization: str = Header(default="")):
     sb = get_supabase()
     
     # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
-    # ✅ 回測視圖應顯示 ALL 類型的組合（不過濾），以便跨功能加載
+    # ✅ 過濾 portfolio_type='backtest'，只顯示回測結果，避免與優化/蒙地卡羅結果混淆
     portfolios = (
         sb.table("backtest_portfolios")
         .select("*, backtest_portfolio_items(*)")  # 在一個查詢中獲取 items
         .eq("user_id", user_id)
+        .eq("portfolio_type", "backtest")  # ✅ 只顯示回測結果
         .order("created_at", desc=True)
         .execute()
     )
