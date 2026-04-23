@@ -1073,7 +1073,8 @@ function loadSaved(p) {
   btConfig.start_date = p.start_date || '2015-01-01'
   btConfig.end_date = p.end_date || new Date().toISOString().split('T')[0]
   btConfig.initial_amount = p.initial_amount || 100000
-  results.value = p.results_json
+  // ✅ 只有在有實際結果時才恢復結果（與 Optimize 一致）
+  results.value = (p.results_json && p.results_json.metrics) ? p.results_json : null
   currentLoadedPortfolioId.value = p.id
   loadedPortfolioName.value = p.name  // ✅ 記錄已加載的組合名稱
   saveName.value = p.name
