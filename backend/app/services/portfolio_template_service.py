@@ -93,16 +93,18 @@ def copy_template_to_user(user_id: str, template_id: str, portfolio_name: Option
             raise Exception("Failed to create portfolio")
         
         # Add items
-        items_to_insert = [
-            {
+        # Category is now pre-defined in portfolio_template_items table
+        items_to_insert = []
+        for item in template_items:
+            items_to_insert.append({
                 "portfolio_id": new_portfolio_id,
                 "symbol": item["symbol"],
                 "name": item.get("name", item["symbol"]),
                 "weight": item["weight"],
-                "category": "index"
-            }
-            for item in template_items
-        ]
+                "category": item.get("category", "index")  # Use template's category or default to 'index'
+            })
+
+
         
         items_res = sb.table("backtest_portfolio_items").insert(items_to_insert).execute()
         if not items_res.data:

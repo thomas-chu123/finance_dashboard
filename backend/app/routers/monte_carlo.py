@@ -188,10 +188,15 @@ async def list_monte_carlo_results(authorization: str = Header(default="")):
     
     # 將嵌套的關聯數據重新映射為 items 欄位
     result = []
+    
     for p in (results.data or []):
         # Supabase 回傳的結構中包含 backtest_portfolio_items 作為嵌套陣列
         if isinstance(p.get("backtest_portfolio_items"), list):
             p["items"] = p.pop("backtest_portfolio_items")
+            # ✅ 確保 category 欄位存在（前端應正確傳遞）
+            for item in p["items"]:
+                if not item.get("category"):
+                    item["category"] = "index"  # 預設值
         else:
             p["items"] = []
         
