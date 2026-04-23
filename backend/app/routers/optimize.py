@@ -33,6 +33,7 @@ class OptimizeSaveRequest(BaseModel):
     items: List[OptimizeItem]
     start_date: str
     end_date: str
+    initial_amount: float = 100000
     display_currency: str = "TWD"  # USD 或 TWD，預設為 TWD
     results_json: Optional[dict] = None
 

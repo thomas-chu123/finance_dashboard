@@ -819,16 +819,24 @@ async function loadSavedPortfolios() {
   }
 }
 
-// ✅ 從結果 JSON 的 config 中提取年數（優先使用 config，其次從根層級）
+// ✅ 從結果 JSON 中提取配置值（支持多層結構）
 function getConfigValue(portfolio, key, defaultValue = null) {
+  // 層級1：直接從 results_json 根層級獲取（新結構）
+  if (portfolio.results_json && portfolio.results_json[key] !== undefined) {
+    return portfolio.results_json[key]
+  }
+  
+  // 層級2：嘗試從 results_json.config 獲取（如果存在）
   const config = portfolio.results_json?.config
   if (config && config[key] !== undefined) {
     return config[key]
   }
-  // 次優先：嘗試從 portfolio root level 獲取（舊資料相容）
+  
+  // 層級3：嘗試從 portfolio root level 獲取（舊資料相容）
   if (portfolio[key] !== undefined) {
     return portfolio[key]
   }
+  
   return defaultValue
 }
 
@@ -838,9 +846,15 @@ function formatSimulations(value) {
   return value.toLocaleString()
 }
 
-// ✅ 從結果 JSON 中提取成功率
+// ✅ 從結果 JSON 中提取成功率（支持多層結構）
 function getSuccessRate(portfolio) {
-  const successRate = portfolio.results_json?.summary?.success_rate
+  // 層級1：results_json 根層級
+  let successRate = portfolio.results_json?.success_rate
+  // 層級2：results_json.summary（蒙地卡羅引擎結構）
+  if (successRate === undefined) {
+    successRate = portfolio.results_json?.summary?.success_rate
+  }
+  
   if (successRate !== undefined && successRate !== null) {
     return `${(successRate * 100).toFixed(1)}%`
   }
