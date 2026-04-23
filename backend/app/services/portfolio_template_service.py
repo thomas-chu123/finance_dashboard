@@ -8,11 +8,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_all_templates() -> List[Dict[str, Any]]:
-    """Get all available portfolio templates."""
+    """Get all available portfolio templates (basic info only).
+    
+    For templates with items, use get_all_templates_with_items() instead.
+    """
     try:
         sb = get_supabase()
-        # Query directly from portfolio_templates table instead of view
-        # to avoid potential RLS issues with views
         templates_res = (
             sb.table("portfolio_templates")
             .select("id, name, description, display_order")
@@ -39,6 +40,32 @@ def get_all_templates() -> List[Dict[str, Any]]:
         return templates
     except Exception as e:
         logger.error(f"Failed to get templates: {str(e)}", exc_info=True)
+        return []
+
+
+def get_all_templates_with_items() -> List[Dict[str, Any]]:
+    """Get all available portfolio templates with their items and categories.
+    
+    Returns templates from portfolio_templates_with_items view which includes:
+    - template_id, template_name, description, display_order
+    - items array with id, symbol, name, weight, category
+    """
+    try:
+        sb = get_supabase()
+        templates_res = (
+            sb.table("portfolio_templates_with_items")
+            .select("*")
+            .execute()
+        )
+        
+        if not templates_res.data:
+            logger.warning("No active templates found")
+            return []
+        
+        logger.info(f"Retrieved {len(templates_res.data)} active templates with items")
+        return templates_res.data
+    except Exception as e:
+        logger.error(f"Failed to get templates with items: {str(e)}", exc_info=True)
         return []
 
 
