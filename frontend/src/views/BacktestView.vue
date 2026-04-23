@@ -1078,14 +1078,7 @@ function loadSaved(p) {
   saveName.value = p.name
   loadedPortfolioType.value = p.portfolio_type // ✅ 紀錄類別
   
-  // ✅ 如果 load 的組合沒有 metrics，自動執行重新計算
-  if (!p.results_json?.metrics) {
-    console.log('[DEBUG] Missing metrics, auto-running backtest...');
-    // 延遲一點點執行以確保 UI 已經切換
-    setTimeout(() => {
-      runBacktest();
-    }, 100);
-  }
+  // ✅ 只恢復配置，計算需手動觸發（與 Optimize/Monte Carlo 一致）
 }
 
 async function saveBacktest() {
