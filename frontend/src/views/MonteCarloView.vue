@@ -819,11 +819,15 @@ async function loadSavedPortfolios() {
   }
 }
 
-// ✅ 從結果 JSON 的 config 中提取年數
+// ✅ 從結果 JSON 的 config 中提取年數（優先使用 config，其次從根層級）
 function getConfigValue(portfolio, key, defaultValue = null) {
   const config = portfolio.results_json?.config
   if (config && config[key] !== undefined) {
     return config[key]
+  }
+  // 次優先：嘗試從 portfolio root level 獲取（舊資料相容）
+  if (portfolio[key] !== undefined) {
+    return portfolio[key]
   }
   return defaultValue
 }

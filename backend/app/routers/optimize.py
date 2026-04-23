@@ -193,9 +193,13 @@ async def list_optimization_results(authorization: str = Header(default="")):
         else:
             p["items"] = []
         
-        # ✅ 新架構適配層：為向後兼容，將 optimize_results_json 映射到 results_json
-        if p.get("optimize_results_json") and not p.get("results_json"):
+        # ✅ 新架構適配層：確保 results_json 始終存在（向後兼容舊資料）
+        # 優先使用新的 optimize_results_json，其次使用舊的 results_json，最後設為空對象
+        if p.get("optimize_results_json"):
             p["results_json"] = p.get("optimize_results_json")
+        elif not p.get("results_json"):
+            p["results_json"] = {}
+        # else: 舊資料且有 results_json，保持原樣
         
         result.append(p)
     
