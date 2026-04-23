@@ -43,7 +43,13 @@ def get_all_templates() -> List[Dict[str, Any]]:
 
 
 def copy_template_to_user(user_id: str, template_id: str, portfolio_name: Optional[str] = None) -> str:
-    """Copy a template to user's portfolio."""
+    """Copy a template to user's portfolio.
+    
+    Uses the new shared portfolio architecture (Plan A):
+    - Single portfolio shared by all modules (backtest, optimize, monte_carlo)
+    - Results stored in module-specific JSONB columns
+    - No portfolio_type discriminator
+    """
     try:
         sb = get_supabase()
         
@@ -68,14 +74,18 @@ def copy_template_to_user(user_id: str, template_id: str, portfolio_name: Option
         if not template_items:
             raise ValueError("Template has no items")
         
-        # Create portfolio
+        # Create portfolio using shared architecture
         new_portfolio_id = str(uuid.uuid4())
         portfolio_data = {
             "id": new_portfolio_id,
             "user_id": user_id,
             "name": template_name,
-            "portfolio_type": "template",
-            "initial_amount": 100000
+            "initial_amount": 100000,
+            # Plan A: Three separate JSONB columns for module results
+            # These will be populated when users run backtest/optimize/monte_carlo
+            "backtest_results_json": None,
+            "optimize_results_json": None,
+            "monte_carlo_results_json": None
         }
         
         port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
@@ -99,7 +109,7 @@ def copy_template_to_user(user_id: str, template_id: str, portfolio_name: Option
             sb.table("backtest_portfolios").delete().eq("id", new_portfolio_id).execute()
             raise Exception("Failed to insert items")
         
-        logger.info(f"Copied template to portfolio {new_portfolio_id}")
+        logger.info(f"Copied template to portfolio {new_portfolio_id} using shared architecture")
         return new_portfolio_id
         
     except Exception as e:
