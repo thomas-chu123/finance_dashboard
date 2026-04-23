@@ -217,19 +217,45 @@ async def run_backtest(
         "data": heatmap_data,
     }
 
-    # Beta vs SPY
+    # Determine benchmark: 0050.TW only if portfolio contains ONLY Taiwan ETF, otherwise SPY
+    has_taiwan = any(
+        it.get("category") == "tw_etf" or 
+        it["symbol"].endswith(".TW") or 
+        it["symbol"].endswith(".TWO") 
+        for it in items
+    )
+    has_us = any(
+        it.get("category") == "us_etf" or 
+        it.get("category") == "index" or
+        it["symbol"].endswith(".US") or
+        (not it["symbol"].endswith(".TW") and not it["symbol"].endswith(".TWO") and it.get("category") != "tw_etf")
+        for it in items
+    )
+    
+    # Use 0050.TW as benchmark ONLY if portfolio is 100% Taiwan ETF
+    benchmark_symbol = "0050.TW" if (has_taiwan and not has_us) else "SPY"
+    logger.info(f"[Backtest] Benchmark determination: has_taiwan={has_taiwan}, has_us={has_us} → benchmark={benchmark_symbol}")
+
+    # Beta calculation using the determined benchmark
     beta_val = 1.0
     try:
-        if "SPY" in price_data:
-            spy_series = price_data["SPY"]
+        if benchmark_symbol in price_data:
+            benchmark_prices_for_beta = price_data[benchmark_symbol]
         else:
-            spy_series = await get_historical_prices("SPY", start_date, end_date)
+            benchmark_prices_for_beta = await get_historical_prices(benchmark_symbol, start_date, end_date)
 
-        if not spy_series.empty:
-            spy_returns = spy_series.pct_change().dropna()
-            aligned = port_returns.align(spy_returns, join="inner")
+        if not benchmark_prices_for_beta.empty:
+            # For Taiwan benchmark, convert to USD if needed
+            if benchmark_symbol == "0050.TW" and not twd_fx.empty:
+                combined_bm = pd.DataFrame({"price": benchmark_prices_for_beta, "fx": twd_fx}).ffill().dropna()
+                if not combined_bm.empty:
+                    benchmark_prices_for_beta = combined_bm["price"] / combined_bm["fx"]
+            
+            benchmark_returns_for_beta = benchmark_prices_for_beta.pct_change().dropna()
+            aligned = port_returns.align(benchmark_returns_for_beta, join="inner")
             if len(aligned[0]) > 10:
                 beta_val = _beta(aligned[0], aligned[1])
+                logger.info(f"[Backtest] Beta calculated vs {benchmark_symbol}: {beta_val:.4f}")
     except Exception as e:
         logger.warning(f"[Backtest] Beta calculation problem: {e}")
 
@@ -275,18 +301,8 @@ async def run_backtest(
     corr_matrix = returns.corr().round(4).to_dict()
 
     # Benchmark fetching and comparison
-    benchmark_symbol = "SPY"  # Default benchmark
     benchmark_prices = pd.Series()
     try:
-        # Determine benchmark based on symbols or category
-        has_taiwan = any(
-            it.get("category") == "tw_etf" or 
-            it["symbol"].endswith(".TW") or 
-            it["symbol"].endswith(".TWO") 
-            for it in items
-        )
-        if has_taiwan:
-            benchmark_symbol = "0050.TW"
         
         if benchmark_symbol in price_data:
             benchmark_prices = price_data[benchmark_symbol]

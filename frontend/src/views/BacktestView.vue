@@ -682,8 +682,15 @@ const filteredSymbols = computed(() => {
 const totalWeight = computed(() => selectedItems.value.reduce((s, i) => s + (i.weight || 0), 0))
 
 const benchmarkSymbol = computed(() => {
+  // Prefer backend's benchmark_symbol if available
+  if (results.value?.metrics?.benchmark_symbol) {
+    return results.value.metrics.benchmark_symbol
+  }
+  // Fallback: local decision logic (only for pre-result display)
   const hasTaiwan = selectedItems.value.some(i => i.category === 'tw_etf')
-  return hasTaiwan ? '0050' : 'SPY'
+  const hasUS = selectedItems.value.some(i => i.category === 'us_etf' || i.category === 'index' || i.symbol.endsWith('.US') || (!i.symbol.endsWith('.TW') && !i.symbol.endsWith('.TWO') && i.category !== 'tw_etf'))
+  // Use 0050.TW only if portfolio is 100% Taiwan ETF
+  return (hasTaiwan && !hasUS) ? '0050.TW' : 'SPY'
 })
 
 // ✅ 分頁計算：只渲染當前頁的項目
