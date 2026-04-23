@@ -411,7 +411,8 @@
             </div>
           </div>
         </div>
-        <div class="flex items-center mb-4">
+        <!-- ✅ 只有在有計算結果時才顯示結果區域 -->
+        <div v-if="results" class="flex items-center mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
             回測結果 
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
@@ -419,7 +420,7 @@
         </div>
 
         <!-- Metrics -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div v-if="results" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <!-- CAGR -->
           <div class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-4 shadow-sm">
             <div class="text-[10px] text-muted uppercase tracking-widest mb-1 font-bold flex items-center gap-2 whitespace-nowrap group relative">
@@ -500,7 +501,7 @@
         </div>
 
         <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-12">
+        <div v-if="results" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-12">
           <!-- Portfolio growth chart -->
           <div class="glass-card">
             <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
