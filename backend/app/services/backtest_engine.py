@@ -218,23 +218,16 @@ async def run_backtest(
     }
 
     # Determine benchmark: 0050.TW only if portfolio contains ONLY Taiwan ETF, otherwise SPY
-    has_taiwan = any(
-        it.get("category") == "tw_etf" or 
-        it["symbol"].endswith(".TW") or 
-        it["symbol"].endswith(".TWO") 
-        for it in items
-    )
+    # Primary logic: use category field (more reliable than symbol suffix)
+    has_taiwan = any(it.get("category") == "tw_etf" for it in items)
     has_us = any(
-        it.get("category") == "us_etf" or 
-        it.get("category") == "index" or
-        it["symbol"].endswith(".US") or
-        (not it["symbol"].endswith(".TW") and not it["symbol"].endswith(".TWO") and it.get("category") != "tw_etf")
+        it.get("category") in ("us_etf", "index") 
         for it in items
     )
     
     # Use 0050.TW as benchmark ONLY if portfolio is 100% Taiwan ETF
     benchmark_symbol = "0050.TW" if (has_taiwan and not has_us) else "SPY"
-    logger.info(f"[Backtest] Benchmark determination: has_taiwan={has_taiwan}, has_us={has_us} → benchmark={benchmark_symbol}")
+    logger.info(f"[Backtest] Benchmark determination: has_taiwan={has_taiwan}, has_us={has_us}, categories={[it.get('category') for it in items]} → benchmark={benchmark_symbol}")
 
     # Beta calculation using the determined benchmark
     beta_val = 1.0

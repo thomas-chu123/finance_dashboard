@@ -687,8 +687,9 @@ const benchmarkSymbol = computed(() => {
     return results.value.metrics.benchmark_symbol
   }
   // Fallback: local decision logic (only for pre-result display)
+  // Use category field, not symbol suffix (more reliable)
   const hasTaiwan = selectedItems.value.some(i => i.category === 'tw_etf')
-  const hasUS = selectedItems.value.some(i => i.category === 'us_etf' || i.category === 'index' || i.symbol.endsWith('.US') || (!i.symbol.endsWith('.TW') && !i.symbol.endsWith('.TWO') && i.category !== 'tw_etf'))
+  const hasUS = selectedItems.value.some(i => i.category === 'us_etf' || i.category === 'index')
   // Use 0050.TW only if portfolio is 100% Taiwan ETF
   return (hasTaiwan && !hasUS) ? '0050.TW' : 'SPY'
 })
