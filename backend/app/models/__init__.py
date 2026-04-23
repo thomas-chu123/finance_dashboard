@@ -251,11 +251,19 @@ class BacktestPortfolioResponse(BaseModel):
     id: str
     user_id: str
     name: str
-    start_date: Optional[str] = None  # ✅ 蒙地卡羅和優化不需要日期
-    end_date: Optional[str] = None    # ✅ 蒙地卡羅和優化不需要日期
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
     initial_amount: float
-    portfolio_type: Optional[str] = "backtest"  # ✅ 用於區分功能類型
-    results_json: Optional[dict]
+    portfolio_type: Optional[str] = None  # 保留向後兼容性，新架構中不使用
+    
+    # ✅ 新架構：各模塊各自的結果欄位
+    backtest_results_json: Optional[dict] = None
+    optimize_results_json: Optional[dict] = None
+    monte_carlo_results_json: Optional[dict] = None
+    
+    # ✅ 舊架構兼容：為已遷移前端保留此欄位
+    results_json: Optional[dict] = None
+    
     items: Optional[List[dict]] = None
     created_at: str
 

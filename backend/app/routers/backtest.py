@@ -41,13 +41,12 @@ async def list_portfolios(authorization: str = Header(default="")):
     user_id = get_user_id(authorization)
     sb = get_supabase()
     
-    # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
-    # ✅ 過濾 portfolio_type='backtest'，只顯示回測結果，避免與優化/蒙地卡羅結果混淆
+    # ✅ 新架構：不過濾 portfolio_type，返回所有共用 Portfolio
+    # 前端根據當前模塊選擇對應的結果欄位顯示
     portfolios = (
         sb.table("backtest_portfolios")
         .select("*, backtest_portfolio_items(*)")  # 在一個查詢中獲取 items
         .eq("user_id", user_id)
-        .eq("portfolio_type", "backtest")  # ✅ 只顯示回測結果
         .order("created_at", desc=True)
         .execute()
     )
@@ -60,6 +59,12 @@ async def list_portfolios(authorization: str = Header(default="")):
             p["items"] = p.pop("backtest_portfolio_items")
         else:
             p["items"] = []
+        
+        # ✅ 新架構適配層：為向後兼容，將 backtest_results_json 映射到 results_json
+        # 如果 backtest_results_json 存在，使用它；否則使用原有的 results_json
+        if p.get("backtest_results_json") and not p.get("results_json"):
+            p["results_json"] = p.get("backtest_results_json")
+        
         result.append(p)
     
     return result
@@ -70,23 +75,25 @@ async def save_portfolio(body: BacktestSaveRequest, authorization: str = Header(
     user_id = get_user_id(authorization)
     sb = get_supabase()
 
-    # ✅ 添加 portfolio_type='backtest' 以支持多功能共用表
+    # ✅ 新架構：使用共享 portfolio，只更新 backtest_results_json
     portfolio_data = {
         "user_id": user_id,
         "name": body.name,
         "start_date": body.start_date,
         "end_date": body.end_date,
         "initial_amount": body.initial_amount,
-        "portfolio_type": "backtest",  # ✅ 標記為回測功能
-        "results_json": body.results_json,
+        "backtest_results_json": body.results_json,  # ✅ 寫入回測專用欄位
+        "portfolio_type": "backtest",  # 保留以支持向後兼容
     }
 
     if body.id:
+        # ✅ 更新現有 Portfolio：只更新回測相關欄位
         portfolio_data["id"] = body.id
         port_res = sb.table("backtest_portfolios").upsert(portfolio_data).execute()
         sb.table("backtest_portfolio_items").delete().eq("portfolio_id", body.id).execute()
         portfolio_id = body.id
     else:
+        # ✅ 建立新 Portfolio
         port_res = sb.table("backtest_portfolios").insert(portfolio_data).execute()
         if not port_res.data:
             raise HTTPException(status_code=500, detail="Failed to save portfolio")

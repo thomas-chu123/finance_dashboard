@@ -93,7 +93,7 @@ async def save_monte_carlo(body: MonteCarloSaveRequest, authorization: str = Hea
     
     sb = get_supabase()
 
-    # ✅ 改為寫入 backtest_portfolios（共用表）
+    # ✅ 新架構：只更新 monte_carlo_results_json，不修改 portfolio_type 和基礎數據
     # 蒙地卡羅模擬不使用 start_date/end_date，設為 None
     # ✅ 將配置參數包含在 results_json.config 中，以便前端加載時可以還原配置
     results_data = body.results_json or {}
@@ -117,8 +117,8 @@ async def save_monte_carlo(body: MonteCarloSaveRequest, authorization: str = Hea
         "initial_amount": body.initial_amount,
         "start_date": None,  # ✅ 蒙地卡羅不定義特定日期範圍
         "end_date": None,    # ✅ 蒙地卡羅不定義特定日期範圍
-        "portfolio_type": "monte_carlo",  # ✅ 標記為蒙地卡羅功能
-        "results_json": results_data,  # ✅ 包含配置參數
+        "monte_carlo_results_json": results_data,  # ✅ 寫入蒙地卡羅專用欄位
+        "portfolio_type": "monte_carlo",  # 保留以支持向後兼容
     }
     
     logger.info(f"[MONTE_CARLO SAVE] Saving with data: {mc_data}")
@@ -178,13 +178,12 @@ async def list_monte_carlo_results(authorization: str = Header(default="")):
     user_id = get_user_id(authorization)
     sb = get_supabase()
     
-    # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
-    # ✅ 從 backtest_portfolios 共用表讀取，過濾 portfolio_type='monte_carlo'
+    # ✅ 新架構：調用共享的 backtest 列表端點
+    # 蒙地卡羅模塊使用相同的 profile 列表，只是顯示 monte_carlo_results_json
     results = (
         sb.table("backtest_portfolios")
         .select("*, backtest_portfolio_items(*)")
         .eq("user_id", user_id)
-        .eq("portfolio_type", "monte_carlo")  # ✅ 只顯示蒙地卡羅結果
         .order("created_at", desc=True)
         .execute()
     )
@@ -197,6 +196,11 @@ async def list_monte_carlo_results(authorization: str = Header(default="")):
             p["items"] = p.pop("backtest_portfolio_items")
         else:
             p["items"] = []
+        
+        # ✅ 新架構適配層：為向後兼容，將 monte_carlo_results_json 映射到 results_json
+        if p.get("monte_carlo_results_json") and not p.get("results_json"):
+            p["results_json"] = p.get("monte_carlo_results_json")
+        
         result.append(p)
     
     return result

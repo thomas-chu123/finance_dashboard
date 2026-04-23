@@ -99,15 +99,15 @@ async def save_optimization(body: OptimizeSaveRequest, authorization: str = Head
     
     sb = get_supabase()
 
-    # ✅ 改為寫入 backtest_portfolios（共用表）
+    # ✅ 新架構：只更新 optimize_results_json，不修改 portfolio_type 和基礎數據
     optimization_data = {
         "user_id": user_id,
         "name": body.name,
         "start_date": body.start_date,
         "end_date": body.end_date,
         "initial_amount": 0,  # 優化沒有初始金額
-        "portfolio_type": "optimize",  # ✅ 標記為優化功能
-        "results_json": body.results_json,
+        "optimize_results_json": body.results_json,  # ✅ 寫入優化專用欄位
+        "portfolio_type": "optimize",  # 保留以支持向後兼容
     }
     
     # ✅ 支持 upsert：如果提供 id，則更新；否則建立新組合
@@ -167,13 +167,12 @@ async def list_optimization_results(authorization: str = Header(default="")):
     user_id = get_user_id(authorization)
     sb = get_supabase()
     
-    # ✅ 優化：使用單一查詢包含關聯數據，避免 N+1 問題
-    # ✅ 從 backtest_portfolios 共用表讀取，過濾 portfolio_type='optimize'
+    # ✅ 新架構：調用共享的 backtest 列表端點
+    # 優化模塊使用相同的 profile 列表，只是顯示 optimize_results_json
     results = (
         sb.table("backtest_portfolios")
         .select("*, backtest_portfolio_items(*)")
         .eq("user_id", user_id)
-        .eq("portfolio_type", "optimize")  # ✅ 只顯示優化結果
         .order("created_at", desc=True)
         .execute()
     )
@@ -186,6 +185,11 @@ async def list_optimization_results(authorization: str = Header(default="")):
             p["items"] = p.pop("backtest_portfolio_items")
         else:
             p["items"] = []
+        
+        # ✅ 新架構適配層：為向後兼容，將 optimize_results_json 映射到 results_json
+        if p.get("optimize_results_json") and not p.get("results_json"):
+            p["results_json"] = p.get("optimize_results_json")
+        
         result.append(p)
     
     return result
