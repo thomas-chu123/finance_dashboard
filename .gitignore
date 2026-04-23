@@ -11,11 +11,13 @@ tmp/
 __pycache__/
 *.py[cod]
 *$py.class
-backend.log
-frontend.log
+backend/backend.log
+backend/backend.log.*
+backend/frontend.log
+backend/frontend.log.*
 *.log
 .pytest_cache/
-backend/backend.log.*
+
 
 # Frontend
 frontend/node_modules/
