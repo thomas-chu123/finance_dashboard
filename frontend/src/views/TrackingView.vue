@@ -523,7 +523,7 @@ const currentPrice = ref(null)
 const fetchingPrice = ref(false)
 const isComposingSymbol = ref(false)  // 中文輸入法狀態
 let fetchPriceTimeout = null  // 防抖計時器
-let compositionEndStamp = 0  // 用來防止 compositionend 之後立即執行 fetchPrice
+let justCompletedCompositionSymbol = false  // 標記剛完成 composition
 
 // Close dropdown when clicking outside
 if (typeof window !== 'undefined') {
@@ -622,8 +622,15 @@ function selectSymbol(s) {
 function handleCompositionEnd(e) {
   console.log('[TrackingView] compositionend 事件', { timestamp: new Date().getTime() })
   isComposingSymbol.value = false
-  // 設置時間戳，防止 @input 立即執行 fetchPrice
-  compositionEndStamp = Date.now()
+  
+  // 設置標記：剛剛完成 composition，接下來的 @input 應該跳過 fetchPrice（短時間內）
+  justCompletedCompositionSymbol = true
+  
+  // 300ms 後重置標記
+  setTimeout(() => {
+    justCompletedCompositionSymbol = false
+    console.log('[TrackingView] 重置 justCompletedCompositionSymbol 標記')
+  }, 300)
 }
 
 function handleSymbolInputEnter(e) {
@@ -656,11 +663,9 @@ function onSymbolInput() {
     return
   }
   
-  // 防止 compositionend 剛剛觸發後立即執行 fetchPrice（50ms 內）
-  const timeSinceCompositionEnd = Date.now() - compositionEndStamp
-  if (timeSinceCompositionEnd < 50) {
-    console.log('[TrackingView] compositionend 剛剛發生，跳過 fetchPrice 執行', { timeSince: timeSinceCompositionEnd })
-    // 不執行 fetchPrice，只更新下拉清單
+  // 如果剛剛完成 composition，也忽略此 input（避免立即執行 fetchPrice）
+  if (justCompletedCompositionSymbol) {
+    console.log('[TrackingView] 剛剛完成 composition，跳過 fetchPrice 執行')
     form.symbol = symbolSearch.value
     showSymbolDropdown.value = true
     return

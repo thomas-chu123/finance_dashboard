@@ -144,7 +144,7 @@ const inputRef = ref(null)
 const query = ref('')
 const selectedIndex = ref(0)
 const isComposing = ref(false)
-let compositionEndStamp = 0  // 用來防止 compositionend 之後立即執行 selectResult
+let justCompletedComposition = false  // 標記剛完成 composition，300ms 內忽略 Enter
 
 /**
  * 格式化價格顯示
@@ -229,10 +229,10 @@ async function handleSearch() {
 function handleEnterKey(e) {
   console.log('[GlobalSearchModal] Enter 鍵按下', {
     isComposing: isComposing.value,
+    justCompletedComposition: justCompletedComposition,
     query: query.value,
     resultsCount: searchStore.results.length,
     selectedIndex: selectedIndex.value,
-    timeSinceCompositionEnd: Date.now() - compositionEndStamp,
     timestamp: new Date().toISOString(),
     eventType: e.type,
     key: e.key
@@ -245,11 +245,11 @@ function handleEnterKey(e) {
     return
   }
 
-  // 防止 compositionend 剛剛觸發後立即執行 selectResult（50ms 內）
-  const timeSinceCompositionEnd = Date.now() - compositionEndStamp
-  if (timeSinceCompositionEnd < 50) {
-    console.log('[GlobalSearchModal] compositionend 剛剛發生，忽略 Enter 鍵', { timeSince: timeSinceCompositionEnd })
+  // 如果剛剛完成 composition，忽略此 Enter 鍵（應該是 IME 確認鍵）
+  if (justCompletedComposition) {
+    console.log('[GlobalSearchModal] 剛剛完成 composition，忽略 Enter 鍵（這是 IME 確認鍵）')
     e.preventDefault()
+    justCompletedComposition = false  // 重置標記
     return
   }
 
@@ -287,8 +287,15 @@ function handleCompositionEnd() {
     timestamp: new Date().toISOString()
   })
   isComposing.value = false
-  // 設置時間戳，防止 @keydown.enter 立即執行 selectResult
-  compositionEndStamp = Date.now()
+  
+  // 設置標記：剛剛完成 composition，接下來的 Enter 鍵應該被忽略（這是 IME 確認鍵）
+  justCompletedComposition = true
+  
+  // 300ms 後重置標記，允許用戶正常使用 Enter 鍵選擇搜尋結果
+  setTimeout(() => {
+    justCompletedComposition = false
+    console.log('[GlobalSearchModal] 重置 justCompletedComposition 標記')
+  }, 300)
 }
 
 /**
