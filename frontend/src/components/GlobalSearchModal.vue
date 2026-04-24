@@ -230,7 +230,7 @@ async function handleSearch() {
  * - 如果有搜尋結果且高亮了項目，則選擇該項目
  * - 否則觸發搜尋
  */
-function handleEnterKey(e) {
+async function handleEnterKey(e) {
   console.log('[GlobalSearchModal] Enter 鍵按下', {
     isComposing: isComposing.value,
     justCompletedComposition: justCompletedComposition,
