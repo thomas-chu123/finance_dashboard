@@ -63,14 +63,14 @@
             <p class="text-sm text-red-500">{{ searchStore.error }}</p>
           </div>
 
-          <!-- 空提示 -->
-          <div v-else-if="!query" class="p-8 text-center text-[var(--text-secondary)]">
+          <!-- 空提示（用戶還沒輸入或已修改搜尋詞但還沒按搜尋） -->
+          <div v-else-if="!query || !hasSearched" class="p-8 text-center text-[var(--text-secondary)]">
             <p class="text-sm">輸入關鍵字後按「搜尋」開始查詢</p>
             <p class="text-xs mt-2 text-zinc-500">支持符號、中文名稱或英文名稱</p>
           </div>
 
-          <!-- 無結果 -->
-          <div v-else-if="!searchStore.results.length" class="p-4 text-center text-[var(--text-secondary)]">
+          <!-- 無結果（用戶已按搜尋，但沒有結果） -->
+          <div v-else-if="hasSearched && !searchStore.results.length" class="p-4 text-center text-[var(--text-secondary)]">
             <p class="text-sm">找不到相符的結果</p>
           </div>
 
@@ -144,6 +144,7 @@ const inputRef = ref(null)
 const query = ref('')
 const selectedIndex = ref(0)
 const isComposing = ref(false)
+const hasSearched = ref(false)  // 標記用戶是否已按過搜尋按鈕或 Enter（區分輸入中 vs 無結果）
 let justCompletedComposition = false  // 標記剛完成 composition，300ms 內忽略 Enter
 
 /**
@@ -184,6 +185,7 @@ async function open() {
   isOpen.value = true
   query.value = ''
   selectedIndex.value = 0
+  hasSearched.value = false  // 重置搜尋狀態
   searchStore.reset()
   
   await nextTick()
@@ -207,6 +209,8 @@ async function handleSearch() {
   if (!query.value.trim()) {
     return
   }
+  
+  hasSearched.value = true  // 標記已搜尋
   
   console.log('[GlobalSearchModal] handleSearch 觸發', {
     query: query.value,
@@ -264,7 +268,7 @@ function handleEnterKey(e) {
     selectResult(searchStore.results[selectedIndex.value])
   } else {
     console.log('[GlobalSearchModal] 沒有搜尋結果或未選中項目，執行 handleSearch')
-    handleSearch()
+    await handleSearch()
   }
 }
 
@@ -364,10 +368,12 @@ watch(query, (newVal) => {
     searchStore.results = []
     searchStore.error = null
     selectedIndex.value = 0
+    hasSearched.value = false  // 重置搜尋狀態（用戶在輸入新詞，還沒按搜尋）
     
     console.log('[GlobalSearchModal] 搜尋詞改變，清空舊結果', {
       oldQuery: searchStore.query,
       newQuery: newVal,
+      hasSearched: hasSearched.value,
       timestamp: new Date().toISOString()
     })
   }
