@@ -144,6 +144,7 @@ const inputRef = ref(null)
 const query = ref('')
 const selectedIndex = ref(0)
 const isComposing = ref(false)
+let compositionEndStamp = 0  // 用來防止 compositionend 之後立即執行 selectResult
 
 /**
  * 格式化價格顯示
@@ -231,6 +232,7 @@ function handleEnterKey(e) {
     query: query.value,
     resultsCount: searchStore.results.length,
     selectedIndex: selectedIndex.value,
+    timeSinceCompositionEnd: Date.now() - compositionEndStamp,
     timestamp: new Date().toISOString(),
     eventType: e.type,
     key: e.key
@@ -239,6 +241,15 @@ function handleEnterKey(e) {
   // 如果正在進行中文輸入組合，忽略 Enter 鍵
   if (isComposing.value) {
     console.log('[GlobalSearchModal] 正在進行中文輸入，忽略 Enter 鍵')
+    e.preventDefault()
+    return
+  }
+
+  // 防止 compositionend 剛剛觸發後立即執行 selectResult（50ms 內）
+  const timeSinceCompositionEnd = Date.now() - compositionEndStamp
+  if (timeSinceCompositionEnd < 50) {
+    console.log('[GlobalSearchModal] compositionend 剛剛發生，忽略 Enter 鍵', { timeSince: timeSinceCompositionEnd })
+    e.preventDefault()
     return
   }
 
@@ -276,6 +287,8 @@ function handleCompositionEnd() {
     timestamp: new Date().toISOString()
   })
   isComposing.value = false
+  // 設置時間戳，防止 @keydown.enter 立即執行 selectResult
+  compositionEndStamp = Date.now()
 }
 
 /**
