@@ -848,13 +848,19 @@ async function handleSave() {
   try {
     const data = { ...form }
     
+    // 前端傳遞當前價格到後端
+    if (currentPrice.value !== null) {
+      data.current_price = currentPrice.value
+    }
+    
     console.log('[TrackingView.handleSave] 準備提交的數據:', {
       symbol: data.symbol,
       name: data.name,
       category: data.category,
       trigger_mode: data.trigger_mode,
       notify_channel: data.notify_channel,
-      notes: data.notes
+      notes: data.notes,
+      current_price: data.current_price
     })
     
     // 根據觸發模式決定要保留/刪除哪些參數

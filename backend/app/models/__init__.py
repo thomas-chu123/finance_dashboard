@@ -83,6 +83,7 @@ class TrackingCreate(BaseModel):
     rsi_above: Optional[float] = None  # RSI 超買閾值
     notify_channel: str = "email"
     notes: Optional[str] = None
+    current_price: Optional[float] = None  # 前端傳遞的當前價格
 
 
 class TrackingUpdate(BaseModel):

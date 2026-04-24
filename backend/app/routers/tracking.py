@@ -117,6 +117,7 @@ async def create_tracking(body: TrackingCreate, authorization: str = Header(defa
     try:
         user_id = get_user_id(authorization)
         sb = get_supabase()
+        rsi_service = get_rsi_calculation_service()
         
         logger.info(f"[create_tracking] 開始創建追蹤項目: {body.symbol}, mode={body.trigger_mode}, user={user_id}")
         
@@ -127,34 +128,82 @@ async def create_tracking(body: TrackingCreate, authorization: str = Header(defa
             body.rsi_above
         )
         
-        # 插入數據
+        # 準備插入數據
         data = body.model_dump()
         data["user_id"] = user_id
         data["is_active"] = True
         data["alert_triggered"] = False
         
+        # 移除 current_price（我們稍後會更新）
+        from datetime import datetime, timezone
+        inserted_current_price = data.pop("current_price", None)
+        
         logger.debug(f"[create_tracking] 準備插入的數據: {data}")
         
+        # 先插入追蹤項目，不包括 current_price 和 current_rsi
         res = sb.table("tracked_indices").insert(data).execute()
         
         if not res.data:
             logger.error(f"[create_tracking] 插入失敗，無返回數據: {res}")
             raise HTTPException(status_code=500, detail="Create failed - no data returned from database")
         
-        # 獲取當前市場價格，立即填充到返回的數據中
         created_item = res.data[0]
-        try:
-            current_price = await get_current_price(body.symbol, body.category)
-            if current_price is not None:
-                created_item["current_price"] = current_price
-                logger.info(f"[create_tracking] 已填充當前價格: {body.symbol} = {current_price}")
-            else:
-                logger.warning(f"[create_tracking] 無法獲取當前價格: {body.symbol}")
-        except Exception as e:
-            logger.warning(f"[create_tracking] 獲取價格失敗（非致命錯誤）: {str(e)}")
-            # 不拋出異常，繼續返回項目
+        tracking_id = created_item.get("id")
         
-        logger.info(f"✓ 新增追蹤項目: {body.symbol} (id={created_item.get('id')}, mode={body.trigger_mode}, user={user_id})")
+        # 1. 取得當前價格：優先使用前端傳遞的，否則即時獲取
+        current_price = inserted_current_price
+        if current_price is None:
+            try:
+                current_price = await get_current_price(body.symbol, body.category)
+                logger.info(f"[create_tracking] 已獲取當前價格: {body.symbol} = {current_price}")
+            except Exception as e:
+                logger.warning(f"[create_tracking] 獲取價格失敗: {str(e)}")
+                current_price = None
+        else:
+            logger.info(f"[create_tracking] 使用前端傳遞的價格: {body.symbol} = {current_price}")
+        
+        # 2. 計算初始 RSI（如果需要）
+        current_rsi = None
+        if body.trigger_mode in ("rsi", "both", "either"):
+            try:
+                current_rsi = await rsi_service.cache_service.calculate_and_cache_rsi(
+                    body.symbol,
+                    body.category,
+                    period=body.rsi_period or 14,
+                    force_refresh=True
+                )
+                if current_rsi is not None:
+                    logger.info(f"[create_tracking] 已計算初始 RSI: {body.symbol} = {current_rsi:.2f}")
+                else:
+                    logger.warning(f"[create_tracking] 無法計算 RSI: {body.symbol}")
+            except Exception as e:
+                logger.warning(f"[create_tracking] RSI 計算失敗（非致命錯誤）: {str(e)}")
+        
+        # 3. 更新數據庫中的價格和 RSI 值
+        update_data = {}
+        if current_price is not None:
+            update_data["current_price"] = current_price
+            update_data["price_updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        if current_rsi is not None:
+            update_data["current_rsi"] = round(current_rsi, 2)
+            update_data["rsi_updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        # 執行更新
+        if update_data:
+            update_res = sb.table("tracked_indices").update(update_data).eq("id", tracking_id).execute()
+            if update_res.data:
+                logger.info(f"[create_tracking] 已更新追蹤項目的價格/RSI: {tracking_id}")
+                # 用更新後的數據覆蓋返回對象
+                created_item.update(update_data)
+            else:
+                logger.warning(f"[create_tracking] 更新追蹤項目失敗: {tracking_id}")
+        
+        # 填充返回數據
+        created_item["current_price"] = current_price
+        created_item["current_rsi"] = current_rsi
+        
+        logger.info(f"✓ 新增追蹤項目: {body.symbol} (id={tracking_id}, price={current_price}, rsi={current_rsi}, mode={body.trigger_mode}, user={user_id})")
         return created_item
     except HTTPException:
         raise
