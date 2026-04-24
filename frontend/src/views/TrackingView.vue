@@ -329,7 +329,11 @@
               <div class="relative input-with-dropdown">
                 <input v-model="symbolSearch" type="text" class="w-full h-10 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block px-3" 
                   placeholder="輸入或選擇代碼..." :disabled="!!editItem"
-                  @input="onSymbolInput" @focus="showSymbolDropdown = true" />
+                  @input="onSymbolInput" 
+                  @focus="showSymbolDropdown = true"
+                  @compositionstart="isComposingSymbol = true"
+                  @compositionend="handleCompositionEnd"
+                  @keydown.enter.prevent="handleSymbolInputEnter" />
                 
                 <div v-if="showSymbolDropdown && filteredSymbols.length" class="absolute z-10 w-full mt-1 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-auto">
                   <div v-for="s in filteredSymbols" :key="s.symbol" class="px-4 py-2 hover:bg-[var(--bg-sidebar)] cursor-pointer border-b border-[var(--border-color)] last:border-0" @click="selectSymbol(s)">
@@ -517,6 +521,9 @@ const symbolSearch = ref('')
 const showSymbolDropdown = ref(false)
 const currentPrice = ref(null)
 const fetchingPrice = ref(false)
+const isComposingSymbol = ref(false)  // 中文輸入法狀態
+let fetchPriceTimeout = null  // 防抖計時器
+let compositionEndStamp = 0  // 用來防止 compositionend 之後立即執行 fetchPrice
 
 // Close dropdown when clicking outside
 if (typeof window !== 'undefined') {
@@ -584,9 +591,15 @@ async function fetchPrice(symbol, category) {
     const res = await axios.get(`${API_BASE}/api/market/quotes?symbols=${symbol}`, { headers: auth.headers })
     if (res.data && res.data[0]) {
       currentPrice.value = res.data[0].price
+      console.log('[TrackingView] 成功獲取價格:', { symbol, price: currentPrice.value })
     }
   } catch (e) {
-    console.error('Failed to fetch price:', e)
+    console.error('[TrackingView] 獲取價格失敗:', {
+      symbol,
+      error: e.message,
+      status: e.response?.status,
+      timestamp: new Date().toISOString()
+    })
     currentPrice.value = null
   } finally {
     fetchingPrice.value = false
@@ -598,18 +611,79 @@ function selectSymbol(s) {
   form.name = s.name
   symbolSearch.value = s.symbol
   showSymbolDropdown.value = false
-  fetchPrice(s.symbol, form.category)
+  // 清除之前的防抖計時器
+  if (fetchPriceTimeout) clearTimeout(fetchPriceTimeout)
+  fetchPrice(s.symbol, form.category).catch(err => {
+    console.error('[TrackingView] 選擇符號後獲取價格失敗:', err)
+    // 不要中斷用戶流程
+  })
+}
+
+function handleCompositionEnd(e) {
+  console.log('[TrackingView] compositionend 事件', { timestamp: new Date().getTime() })
+  isComposingSymbol.value = false
+  // 設置時間戳，防止 @input 立即執行 fetchPrice
+  compositionEndStamp = Date.now()
+}
+
+function handleSymbolInputEnter(e) {
+  console.log('[TrackingView] Enter 鍵按下', {
+    isComposing: isComposingSymbol.value,
+    query: symbolSearch.value,
+    timestamp: new Date().toISOString()
+  })
+  
+  // 如果正在進行中文輸入組合，忽略 Enter 鍵
+  if (isComposingSymbol.value) {
+    console.log('[TrackingView] 正在進行中文輸入組合，忽略 Enter 鍵')
+    return
+  }
+  
+  // 如果有相符的符號，直接選擇
+  const match = allSymbols.value.find(s => s.symbol.toLowerCase() === symbolSearch.value.toLowerCase())
+  if (match) {
+    console.log('[TrackingView] 直接選擇符號:', match.symbol)
+    selectSymbol(match)
+  } else {
+    console.log('[TrackingView] 未找到相符的符號')
+  }
 }
 
 function onSymbolInput() {
+  // 如果正在進行中文輸入組合，忽略此事件
+  if (isComposingSymbol.value) {
+    console.log('[TrackingView] 正在進行中文輸入組合，忽略 input 事件')
+    return
+  }
+  
+  // 防止 compositionend 剛剛觸發後立即執行 fetchPrice（50ms 內）
+  const timeSinceCompositionEnd = Date.now() - compositionEndStamp
+  if (timeSinceCompositionEnd < 50) {
+    console.log('[TrackingView] compositionend 剛剛發生，跳過 fetchPrice 執行', { timeSince: timeSinceCompositionEnd })
+    // 不執行 fetchPrice，只更新下拉清單
+    form.symbol = symbolSearch.value
+    showSymbolDropdown.value = true
+    return
+  }
+
   form.symbol = symbolSearch.value
   showSymbolDropdown.value = true
-  // Try to find if it matches exactly
-  const match = allSymbols.value.find(s => s.symbol.toLowerCase() === symbolSearch.value.toLowerCase())
-  if (match) {
-    form.name = match.name
-    fetchPrice(match.symbol, form.category)
-  }
+  
+  // 清除之前的防抖計時器
+  if (fetchPriceTimeout) clearTimeout(fetchPriceTimeout)
+  
+  // 防抖：延遲 300ms 後才執行 fetchPrice
+  fetchPriceTimeout = setTimeout(() => {
+    // Try to find if it matches exactly
+    const match = allSymbols.value.find(s => s.symbol.toLowerCase() === symbolSearch.value.toLowerCase())
+    if (match) {
+      form.name = match.name
+      fetchPrice(match.symbol, form.category).catch(err => {
+        console.error('[TrackingView] 獲取價格失敗:', err)
+        // 不要中斷用戶流程，只是記錄錯誤
+      })
+    }
+  }, 300)
 }
 
 
