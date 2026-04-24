@@ -186,7 +186,7 @@
             <tbody class="divide-y divide-[var(--border-color)]/50">
               <tr v-for="row in summaryRows" :key="row.key"
                 class="hover:bg-[var(--bg-sidebar)]/30 transition-colors">
-                <td class="px-4 py-3 text-muted font-medium whitespace-nowrap">
+                <td class="px-4 py-3 text-muted font-medium whitespace-nowrap align-middle">
                   <span class="flex items-center gap-1">
                     {{ row.label }}
                     <span v-if="row.tooltip"
@@ -195,7 +195,7 @@
                   </span>
                 </td>
                 <td v-for="(r, i) in successResults" :key="r.name"
-                  class="px-4 py-3 text-right font-mono"
+                  class="px-4 py-3 text-right font-mono align-middle"
                   :class="[cellClass(row, r, i), isBest(row, i) ? 'font-bold' : '']">
                   {{ formatCell(row, r) }}
                   <span v-if="isBest(row, i)" class="ml-1 text-[10px] opacity-60">★</span>
@@ -479,7 +479,7 @@ const growthChartOption = computed(() => {
     backgroundColor: 'transparent',
     textStyle: chartTextStyle,
     animation: false,
-    grid: { left: 72, right: 20, top: 30, bottom: 60 },
+    grid: { left: 72, right: 20, top: 30, bottom: 100 },
     legend: {
       bottom: 4, left: 'center', icon: 'roundRect',
       textStyle: { color: '#8b949e', fontSize: 11 },
@@ -546,7 +546,7 @@ const annualChartOption = computed(() => {
     backgroundColor: 'transparent',
     textStyle: chartTextStyle,
     animation: false,
-    grid: { left: 52, right: 12, top: 30, bottom: 60 },
+    grid: { left: 52, right: 12, top: 30, bottom: 100 },
     legend: {
       bottom: 4, left: 'center', icon: 'roundRect',
       textStyle: { color: '#8b949e', fontSize: 11 },
@@ -607,7 +607,7 @@ const drawdownChartOption = computed(() => {
     backgroundColor: 'transparent',
     textStyle: chartTextStyle,
     animation: false,
-    grid: { left: 56, right: 20, top: 20, bottom: 60 },
+    grid: { left: 56, right: 20, top: 20, bottom: 100 },
     legend: {
       bottom: 4, left: 'center', icon: 'roundRect',
       textStyle: { color: '#8b949e', fontSize: 11 },
