@@ -20,10 +20,10 @@
             class="flex-1 ml-3 bg-transparent outline-none text-[var(--text-primary)] placeholder-zinc-500 font-medium"
             @keydown.arrow-down="moveDown"
             @keydown.arrow-up="moveUp"
-            @keydown.enter="selectCurrent"
+            @keydown.enter="handleEnterKey"
             @keydown.escape="close"
-            @compositionstart="isComposing = true"
-            @compositionend="isComposing = false"
+            @compositionstart="handleCompositionStart"
+            @compositionend="handleCompositionEnd"
           />
           <button
             class="ml-2 px-3 py-1 text-xs font-semibold text-white bg-brand-500 hover:bg-brand-600 rounded transition-colors"
@@ -207,11 +207,75 @@ async function handleSearch() {
     return
   }
   
+  console.log('[GlobalSearchModal] handleSearch 觸發', {
+    query: query.value,
+    category: searchStore.selectedCategory,
+    timestamp: new Date().toISOString()
+  })
+  
   selectedIndex.value = 0
   await searchStore.performSearch(
     query.value,
     searchStore.selectedCategory
   )
+}
+
+/**
+ * 處理 Enter 鍵按下
+ * - 如果有搜尋結果且高亮了項目，則選擇該項目
+ * - 否則觸發搜尋
+ */
+function handleEnterKey(e) {
+  console.log('[GlobalSearchModal] Enter 鍵按下', {
+    isComposing: isComposing.value,
+    query: query.value,
+    resultsCount: searchStore.results.length,
+    selectedIndex: selectedIndex.value,
+    timestamp: new Date().toISOString(),
+    eventType: e.type,
+    key: e.key
+  })
+
+  // 如果正在進行中文輸入組合，忽略 Enter 鍵
+  if (isComposing.value) {
+    console.log('[GlobalSearchModal] 正在進行中文輸入，忽略 Enter 鍵')
+    return
+  }
+
+  e.preventDefault()
+
+  // 檢查是否有搜尋結果
+  if (searchStore.results.length > 0 && selectedIndex.value < searchStore.results.length) {
+    console.log('[GlobalSearchModal] 有搜尋結果，執行 selectCurrent', {
+      selectedItem: searchStore.results[selectedIndex.value].symbol,
+      selectedIndex: selectedIndex.value
+    })
+    selectResult(searchStore.results[selectedIndex.value])
+  } else {
+    console.log('[GlobalSearchModal] 沒有搜尋結果或未選中項目，執行 handleSearch')
+    handleSearch()
+  }
+}
+
+/**
+ * 處理中文輸入開始
+ */
+function handleCompositionStart() {
+  console.log('[GlobalSearchModal] 中文輸入開始 (compositionstart)', {
+    timestamp: new Date().toISOString()
+  })
+  isComposing.value = true
+}
+
+/**
+ * 處理中文輸入結束
+ */
+function handleCompositionEnd() {
+  console.log('[GlobalSearchModal] 中文輸入結束 (compositionend)', {
+    query: query.value,
+    timestamp: new Date().toISOString()
+  })
+  isComposing.value = false
 }
 
 /**
@@ -237,20 +301,15 @@ function moveUp(e) {
 }
 
 /**
- * 選擇當前高亮的結果
- */
-function selectCurrent(e) {
-  e.preventDefault()
-  if (searchStore.results.length > 0 && selectedIndex.value < searchStore.results.length) {
-    selectResult(searchStore.results[selectedIndex.value])
-  }
-}
-
-/**
  * 選擇搜尋結果
  * 發出 'select' 事件給父組件
  */
 function selectResult(item) {
+  console.log('[GlobalSearchModal] 選擇搜尋結果', {
+    symbol: item.symbol,
+    name: item.name_zh,
+    timestamp: new Date().toISOString()
+  })
   emit('select', item)
   close()
 }
