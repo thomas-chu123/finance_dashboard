@@ -356,6 +356,23 @@ watch(isOpen, (newVal) => {
   }
 })
 
+// 當搜尋詞改變時，清空舊結果和錯誤提示
+// 只有按「搜尋」按鈕或 Enter 時才會執行新搜尋
+watch(query, (newVal) => {
+  if (newVal !== searchStore.query) {
+    // 搜尋詞已改變，清空舊結果
+    searchStore.results = []
+    searchStore.error = null
+    selectedIndex.value = 0
+    
+    console.log('[GlobalSearchModal] 搜尋詞改變，清空舊結果', {
+      oldQuery: searchStore.query,
+      newQuery: newVal,
+      timestamp: new Date().toISOString()
+    })
+  }
+})
+
 // 定義導出的方法
 const emit = defineEmits(['select'])
 
