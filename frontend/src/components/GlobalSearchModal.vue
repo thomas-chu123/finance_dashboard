@@ -323,6 +323,7 @@ function moveUp(e) {
 /**
  * 選擇搜尋結果
  * 發出 'select' 事件給父組件
+ * 注意：不自動關閉視窗，由用戶手動按 ESC 或點擊背景關閉
  */
 function selectResult(item) {
   console.log('[GlobalSearchModal] 選擇搜尋結果', {
@@ -331,7 +332,7 @@ function selectResult(item) {
     timestamp: new Date().toISOString()
   })
   emit('select', item)
-  close()
+  // 不關閉視窗 - 用戶可以繼續搜尋或按 ESC/點擊背景關閉
 }
 
 // 當 isOpen 改變時，監聽全局快捷鍵
