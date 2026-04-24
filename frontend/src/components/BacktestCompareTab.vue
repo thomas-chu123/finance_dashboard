@@ -172,7 +172,7 @@
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-[var(--border-color)] bg-[var(--bg-sidebar)]/50">
-                <th class="px-4 py-3 text-left text-xs font-bold text-muted uppercase tracking-wider">指標</th>
+                <th class="px-4 py-3 text-center text-xs font-bold text-muted uppercase tracking-wider min-w-24">指標</th>
                 <th v-for="(r, i) in successResults" :key="r.name"
                   class="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider min-w-32">
                   <div class="flex flex-col items-center justify-center gap-1.5">
@@ -186,8 +186,8 @@
             <tbody class="divide-y divide-[var(--border-color)]/50">
               <tr v-for="row in summaryRows" :key="row.key"
                 class="hover:bg-[var(--bg-sidebar)]/30 transition-colors">
-                <td class="px-4 py-3 text-muted font-medium whitespace-nowrap align-middle">
-                  <span class="flex items-center gap-1">
+                <td class="px-4 py-3 text-muted font-medium whitespace-nowrap align-middle text-center min-w-24">
+                  <span class="flex items-center justify-center gap-1">
                     {{ row.label }}
                     <span v-if="row.tooltip"
                       v-tooltip="row.tooltip"
@@ -195,7 +195,7 @@
                   </span>
                 </td>
                 <td v-for="(r, i) in successResults" :key="r.name"
-                  class="px-4 py-3 text-right font-mono align-middle"
+                  class="px-4 py-3 text-center font-mono align-middle min-w-32"
                   :class="[cellClass(row, r, i), isBest(row, i) ? 'font-bold' : '']">
                   {{ formatCell(row, r) }}
                   <span v-if="isBest(row, i)" class="ml-1 text-[10px] opacity-60">★</span>
