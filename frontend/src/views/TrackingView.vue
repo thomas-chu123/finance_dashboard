@@ -93,15 +93,33 @@
         <table class="w-full text-left">
           <thead class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
             <tr class="text-xs text-zinc-500 dark:text-zinc-400 border-b border-[var(--border-color)]">
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">代碼</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">名稱</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">類別</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">目前價格</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">觸發模式</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">價格觸發條件</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">RSI 指標</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">通知方式</th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">狀態</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('symbol')">
+                <div class="flex items-center gap-1">代碼 <ArrowUp v-if="sortColumn === 'symbol' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'symbol' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('name')">
+                <div class="flex items-center gap-1">名稱 <ArrowUp v-if="sortColumn === 'name' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'name' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('category')">
+                <div class="flex items-center gap-1">類別 <ArrowUp v-if="sortColumn === 'category' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'category' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('current_price')">
+                <div class="flex items-center gap-1">目前價格 <ArrowUp v-if="sortColumn === 'current_price' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'current_price' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('trigger_mode')">
+                <div class="flex items-center gap-1">觸發模式 <ArrowUp v-if="sortColumn === 'trigger_mode' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'trigger_mode' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('trigger_price')">
+                <div class="flex items-center gap-1">價格觸發條件 <ArrowUp v-if="sortColumn === 'trigger_price' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'trigger_price' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('current_rsi')">
+                <div class="flex items-center gap-1">RSI 指標 <ArrowUp v-if="sortColumn === 'current_rsi' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'current_rsi' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('notify_channel')">
+                <div class="flex items-center gap-1">通知方式 <ArrowUp v-if="sortColumn === 'notify_channel' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'notify_channel' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('is_active')">
+                <div class="flex items-center gap-1">狀態 <ArrowUp v-if="sortColumn === 'is_active' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'is_active' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+              </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap">操作</th>
             </tr>
           </thead>
@@ -473,7 +491,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import axios from 'axios'
 import {
   Plus, Loader2, BarChart2, TrendingUp, TrendingDown, X, ArrowUpRight, ArrowDownRight,
-  Mail, MessageCircle, Edit2, Bell, Trash2, PlusCircle, AlertCircle
+  Mail, MessageCircle, Edit2, Bell, Trash2, PlusCircle, AlertCircle, ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-vue-next'
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
@@ -692,6 +710,20 @@ function onSymbolInput() {
 }
 
 
+// 排序狀態
+const sortColumn = ref('')
+const sortDirection = ref('asc')
+
+function handleSort(column) {
+  if (sortColumn.value === column) {
+    if (sortDirection.value === 'asc') sortDirection.value = 'desc'
+    else { sortColumn.value = ''; sortDirection.value = 'asc' }
+  } else {
+    sortColumn.value = column
+    sortDirection.value = 'asc'
+  }
+}
+
 const filteredItems = computed(() => {
   const items = trackingStore.items.map(item => {
     // Ensure category field exists; fallback to 'us_etf' if missing
@@ -704,9 +736,28 @@ const filteredItems = computed(() => {
     return item
   })
   
-  return activeCategory.value === 'all'
+  let result = activeCategory.value === 'all'
     ? items
     : items.filter(i => i.category === activeCategory.value)
+    
+  if (sortColumn.value) {
+    result = [...result].sort((a, b) => {
+      let valA = a[sortColumn.value]
+      let valB = b[sortColumn.value]
+      
+      if (valA === null || valA === undefined) valA = ''
+      if (valB === null || valB === undefined) valB = ''
+      
+      if (typeof valA === 'string') valA = valA.toLowerCase()
+      if (typeof valB === 'string') valB = valB.toLowerCase()
+
+      if (valA < valB) return sortDirection.value === 'asc' ? -1 : 1
+      if (valA > valB) return sortDirection.value === 'asc' ? 1 : -1
+      return 0
+    })
+  }
+
+  return result
 })
 
 function inferCategory(symbol) {

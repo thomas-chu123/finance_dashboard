@@ -101,12 +101,42 @@
               </div>
               <div v-else class="min-w-[400px] sm:min-w-[700px]">
                 <div class="grid grid-cols-4 sm:grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
-                  <div class="col-span-1">代碼</div>
-                  <div class="col-span-2">名稱 <span class="hidden sm:inline">/ 類別</span></div>
-                  <div class="col-span-1">目前價格</div>
-                  <div class="col-span-1 hidden sm:block">價格門檻</div>
-                  <div class="col-span-1 hidden sm:block">RSI 指標</div>
-                  <div class="col-span-1 hidden sm:block">狀態</div>
+                  <div class="col-span-1 cursor-pointer hover:text-[var(--text-primary)] transition-colors flex items-center gap-1" @click="handleSort('symbol')">
+                    代碼
+                    <ArrowUp v-if="sortColumn === 'symbol' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
+                    <ArrowDown v-else-if="sortColumn === 'symbol' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
+                    <ArrowUpDown v-else :size="12" class="opacity-30" />
+                  </div>
+                  <div class="col-span-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors flex items-center gap-1" @click="handleSort('name')">
+                    名稱 <span class="hidden sm:inline">/ 類別</span>
+                    <ArrowUp v-if="sortColumn === 'name' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
+                    <ArrowDown v-else-if="sortColumn === 'name' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
+                    <ArrowUpDown v-else :size="12" class="opacity-30" />
+                  </div>
+                  <div class="col-span-1 cursor-pointer hover:text-[var(--text-primary)] transition-colors flex items-center gap-1" @click="handleSort('current_price')">
+                    目前價格
+                    <ArrowUp v-if="sortColumn === 'current_price' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
+                    <ArrowDown v-else-if="sortColumn === 'current_price' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
+                    <ArrowUpDown v-else :size="12" class="opacity-30" />
+                  </div>
+                  <div class="col-span-1 hidden sm:flex cursor-pointer hover:text-[var(--text-primary)] transition-colors items-center gap-1" @click="handleSort('trigger_price')">
+                    價格門檻
+                    <ArrowUp v-if="sortColumn === 'trigger_price' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
+                    <ArrowDown v-else-if="sortColumn === 'trigger_price' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
+                    <ArrowUpDown v-else :size="12" class="opacity-30" />
+                  </div>
+                  <div class="col-span-1 hidden sm:flex cursor-pointer hover:text-[var(--text-primary)] transition-colors items-center gap-1" @click="handleSort('current_rsi')">
+                    RSI 指標
+                    <ArrowUp v-if="sortColumn === 'current_rsi' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
+                    <ArrowDown v-else-if="sortColumn === 'current_rsi' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
+                    <ArrowUpDown v-else :size="12" class="opacity-30" />
+                  </div>
+                  <div class="col-span-1 hidden sm:flex cursor-pointer hover:text-[var(--text-primary)] transition-colors items-center gap-1" @click="handleSort('is_active')">
+                    狀態
+                    <ArrowUp v-if="sortColumn === 'is_active' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
+                    <ArrowDown v-else-if="sortColumn === 'is_active' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
+                    <ArrowUpDown v-else :size="12" class="opacity-30" />
+                  </div>
                 </div>
                 <div v-for="item in filteredTrackingItems" :key="item.id" class="grid grid-cols-4 sm:grid-cols-7 items-center p-4 border-b border-[var(--border-color)] hover:bg-[var(--bg-main)]/50 transition-colors">
                   <div class="col-span-1 font-bold text-sm tracking-tight text-brand-600 dark:text-brand-400">{{ item.symbol }}</div>
@@ -332,7 +362,7 @@ import { useDragDrop } from '../composables/useDragDrop'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import preferencesAPI from '../api/preferences'
 import {
-  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown
+  TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-vue-next'
 
 const auth = useAuthStore()
@@ -490,18 +520,50 @@ async function saveQuotes() {
 
 const activeCount = computed(() => trackingStore.items.filter(i => i.is_active).length)
 
-// 追蹤列表搜尋過濾
+// 追蹤列表搜尋與排序
 const trackingSearchQuery = ref('')
-const filteredTrackingItems = computed(() => {
-  if (!trackingSearchQuery.value.trim()) {
-    return trackingStore.items
+const sortColumn = ref('')
+const sortDirection = ref('asc')
+
+function handleSort(column) {
+  if (sortColumn.value === column) {
+    if (sortDirection.value === 'asc') sortDirection.value = 'desc'
+    else { sortColumn.value = ''; sortDirection.value = 'asc' }
+  } else {
+    sortColumn.value = column
+    sortDirection.value = 'asc'
   }
+}
+
+const filteredTrackingItems = computed(() => {
+  let result = trackingStore.items
   
-  const q = trackingSearchQuery.value.toLowerCase()
-  return trackingStore.items.filter(item => 
-    item.symbol.toLowerCase().includes(q) ||
-    (item.name && item.name.toLowerCase().includes(q))
-  )
+  if (trackingSearchQuery.value.trim()) {
+    const q = trackingSearchQuery.value.toLowerCase()
+    result = result.filter(item => 
+      item.symbol.toLowerCase().includes(q) ||
+      (item.name && item.name.toLowerCase().includes(q))
+    )
+  }
+
+  if (sortColumn.value) {
+    result = [...result].sort((a, b) => {
+      let valA = a[sortColumn.value]
+      let valB = b[sortColumn.value]
+      
+      if (valA === null || valA === undefined) valA = ''
+      if (valB === null || valB === undefined) valB = ''
+      
+      if (typeof valA === 'string') valA = valA.toLowerCase()
+      if (typeof valB === 'string') valB = valB.toLowerCase()
+
+      if (valA < valB) return sortDirection.value === 'asc' ? -1 : 1
+      if (valA > valB) return sortDirection.value === 'asc' ? 1 : -1
+      return 0
+    })
+  }
+
+  return result
 })
 
 function formatDate(d) {
