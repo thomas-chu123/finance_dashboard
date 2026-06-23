@@ -286,24 +286,31 @@ async def _generate_tw_market_forecast() -> tuple[list[dict], str]:
         f"台積電對加權指數估算影響：{_fmt_pct(taiex_impact_pct)}",
     ]
     prompt = (
-        "你是台股策略研究員。\n\n"
-        "請依下列權重評估當日台股：\n\n"
-        "權重：\n"
-        "- 台指期夜盤 50% (WTX&, yahoo tw finance)\n"
-        "- 台積電ADR 35% (^TSM, yahoo finance)\n"
-        "- 費城半導體指數 15% (^SOX, yahoo finance)\n\n"
-        "輸入資料：\n"
+        "根據以下數據建立「台股預測報告」。\n\n"
+        "請綜合以下數據：\n\n"
+        "1. 台積電ADR\n"
+        "2. 台指期夜盤\n"
+        "3. 費城半導體指數\n"
+        "5. 美元兌台幣\n\n"
+        "並使用下列權重：\n\n"
+        "- 夜盤 50%\n"
+        "- ADR 35%\n"
+        "- 費半 15%\n\n"
+        "即時數據：\n"
         + "\n".join(data_lines)
         + "\n\n"
-        "分析步驟：\n\n"
-        "Step1:\n計算ADR換算台積電理論價格\n\n公式：\nADR × USD/TWD ÷ 5\n\n"
-        "Step2:\n計算台積電預估漲跌幅\n\n"
-        "Step3:\n估算對加權指數影響\n\n假設：\n台積電每變動1%\n加權指數影響0.33%\n\n"
-        "Step4:\n分析夜盤與ADR是否同方向\n\n"
-        "Step5:\n給出：\n\n- 開盤預測\n- 收盤預測\n- 多空評分(-100~+100)\n- 主要風險因素\n\n"
-        "最後輸出：\n\n【結論】\n方向：\n信心：\n開盤區間：\n收盤區間：\n"
+        "輸出：\n\n"
+        "A. 看多/中性/看空\n"
+        "B. 信心指數(0~100)\n"
+        "C. 預估開盤點位\n"
+        "D. 預估收盤區間\n"
+        "E. 對台積電的預估價格\n"
+        "F. 影響最大的三個因素\n\n"
+        "最後請用一句話總結：\n"
+        "「台股今天最可能的劇本」。\n\n"
+        "限制：不要輸出 Step、公式或計算過程；只輸出 A-F 與最後一句話。"
     )
-    summary_text = await generate_custom_brief(prompt, label="tw_market_forecast", num_predict=900)
+    summary_text = await generate_custom_brief(prompt, label="tw_market_forecast", num_predict=450)
     if not summary_text:
         direction = "偏多" if ((quotes["WTX&"]["change_pct"] or 0) * 0.5 + (quotes["TSM"]["change_pct"] or 0) * 0.35 + (quotes["^SOX"]["change_pct"] or 0) * 0.15) > 0 else "偏空"
         summary_text = (
