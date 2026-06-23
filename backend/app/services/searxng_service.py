@@ -136,13 +136,14 @@ def _parse_html_results(html_text: str, count: int) -> list[dict]:
     return items
 
 
-async def search_news(query: str, count: int = 3) -> list[dict]:
+async def search_news(query: str, count: int = 3, time_range: str = "day") -> list[dict]:
     """
     呼叫 SearXNG JSON API 搜尋新聞.
 
     Args:
         query: 搜尋關鍵字（例如 "VTI ETF stock fund"）
         count: 回傳最多幾則新聞（預設 3）
+        time_range: SearXNG 時間範圍（day/week/month/year），預設 day
 
     Returns:
         新聞列表，每筆格式：
@@ -183,13 +184,13 @@ async def search_news(query: str, count: int = 3) -> list[dict]:
                 "format": "json",
                 "categories": "finance",
                 "language": "zh-TW",
-                "time_range": "day",
+                "time_range": time_range,
             },
             {
                 "q": q,
                 "format": "json",
                 "language": "zh-TW",
-                "time_range": "day",
+                "time_range": time_range,
             },
             {
                 "q": q,
@@ -231,8 +232,9 @@ async def search_news(query: str, count: int = 3) -> list[dict]:
                     )
                     continue
 
-                content_type = (resp.headers.get("content-type") or "").lower()
-                if "application/json" in content_type:
+                raw_content_type = resp.headers.get("content-type") if hasattr(resp, "headers") else ""
+                content_type = raw_content_type.lower() if isinstance(raw_content_type, str) else ""
+                if "application/json" in content_type or not content_type:
                     payload = resp.json()
                     all_results = payload.get("results", [])
                     results = all_results[:count]
@@ -271,7 +273,7 @@ async def search_news(query: str, count: int = 3) -> list[dict]:
                 html_resp = await _fetch_with_retry(
                     client=client,
                     url=f"{base_url}/search",
-                    params={"q": q, "language": "zh-TW", "time_range": "day"},
+                    params={"q": q, "language": "zh-TW", "time_range": time_range},
                     headers=browser_headers,
                     max_retries=3,
                     timeout=20.0,

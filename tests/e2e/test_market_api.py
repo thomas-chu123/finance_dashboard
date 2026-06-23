@@ -130,3 +130,8 @@ class TestMarketSymbols:
         data = resp.json()
         assert isinstance(data, dict)
         assert len(data) > 0
+
+        for symbol in ["^SOX", "TSM", "^TYX", "^TNX"]:
+            assert symbol in data
+            assert data[symbol]["yahoo_symbol"] == symbol
+            assert data[symbol]["category"] == "index"

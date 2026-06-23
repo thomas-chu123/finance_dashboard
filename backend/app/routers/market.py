@@ -43,7 +43,7 @@ async def _fetch_quote(meta: dict) -> dict:
         category = "oil"
     elif "=X" in symbol.upper():
         category = "exchange"
-    elif symbol.upper() in ("TAIEX", "WTX&"):
+    elif symbol.upper() in ("TAIEX", "WTX&", "^SOX", "^TYX", "^TNX"):
         category = "index"
     else:
         category = "us_etf"

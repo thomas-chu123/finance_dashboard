@@ -145,7 +145,9 @@ function formatDate(dateStr) {
 function daysUntil(dateStr) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const target = new Date(dateStr)
+  // 解析日期字符串，確保為本地時區（例如台灣時間 UTC+8）
+  const [year, month, day] = dateStr.split('-')
+  const target = new Date(parseInt(year), parseInt(month) - 1, parseInt(day), 0, 0, 0, 0)
   return Math.ceil((target - today) / 86400000)
 }
 

@@ -25,6 +25,11 @@ MAX_SYMBOLS_PER_SESSION = 20
 # 對應三個排程時間點（Asia/Taipei）
 VALID_SESSION_HOURS = (8, 13, 18)
 
+SPECIAL_BRIEF_ITEMS = (
+    {"symbol": "AI_WEEK", "name": "一週財經大事"},
+    {"symbol": "AI_TW_FCST", "name": "當日台股大盤風向與指數預測"},
+)
+
 
 # 依 category 補強搜尋語意，降低抓到同名非金融內容的機率。
 CATEGORY_FINANCE_HINTS: dict[str, str] = {
@@ -142,6 +147,212 @@ def _get_nearest_session_time() -> datetime:
     return nearest_taipei - taipei_offset
 
 
+def _pct_change(price: float | None, prev_close: float | None) -> float | None:
+    if price is None or prev_close in (None, 0):
+        return None
+    return (price - prev_close) / prev_close * 100
+
+
+def _fmt_num(value: float | None, digits: int = 2) -> str:
+    if value is None:
+        return "N/A"
+    return f"{value:,.{digits}f}"
+
+
+def _fmt_pct(value: float | None) -> str:
+    if value is None:
+        return "N/A"
+    sign = "+" if value > 0 else ""
+    return f"{sign}{value:.2f}%"
+
+
+async def _upsert_special_brief(
+    sb,
+    session_time: datetime,
+    symbol: str,
+    symbol_name: str,
+    news_items: list[dict],
+    summary_text: str,
+    error_message: str | None = None,
+) -> bool:
+    status = "completed" if summary_text else "failed"
+    sb.table("market_briefings").upsert(
+        {
+            "session_time": session_time.isoformat(),
+            "symbol": symbol,
+            "symbol_name": symbol_name,
+            "news_json": news_items,
+            "summary_text": summary_text,
+            "status": status,
+            "error_message": error_message if error_message else (None if summary_text else "特殊早報生成失敗"),
+        },
+        on_conflict="session_time,symbol",
+    ).execute()
+    return status == "completed"
+
+
+async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
+    """搜尋本週預計發生的財經事件，並以 Ollama 彙整成 AI brief 項目。"""
+    from app.services.searxng_service import search_news as searxng_search_news
+    from app.services.ollama_service import generate_custom_brief
+
+    taipei_today = (datetime.now(timezone.utc) + timedelta(hours=8)).date().isoformat()
+    query = (
+        f"本週 財經 大事 預定 {taipei_today} FOMC 利率 央行 CPI PCE PMI GDP earnings calendar "
+        "economic calendar market events this week"
+    )
+    news_items = await searxng_search_news(query=query, count=5, time_range="week")
+    if not news_items:
+        news_items = await search_news(query=query, count=5)
+
+    source_lines = "\n".join(
+        f"{idx}. {item.get('title', '')} - {item.get('description', '')} ({item.get('url', '')})"
+        for idx, item in enumerate(news_items[:5], start=1)
+    )
+    prompt = (
+        "你是財經事件編輯。請根據搜尋結果，整理本週預計發生、會影響金融市場的五個財經大事。"
+        "優先包含 FOMC、央行利率決議、通膨、就業、GDP、PMI、重要財報或地緣政治事件。"
+        "若搜尋結果不足，請明確標示資料有限，不要捏造精確日期。\n\n"
+        f"今天（台北時間）是 {taipei_today}。\n\n"
+        f"搜尋結果：\n{source_lines}\n\n"
+        "輸出繁體中文，格式：\n"
+        "【本週五大財經大事】\n"
+        "1. 事件：影響與市場觀察\n"
+        "...\n"
+        "【總結】一句話說明本週市場主軸。"
+    )
+    summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=900)
+    if not summary_text and news_items:
+        bullets = []
+        for idx, item in enumerate(news_items[:5], start=1):
+            title = item.get("title") or "未命名事件"
+            desc = item.get("description") or "請留意後續公布資訊。"
+            bullets.append(f"{idx}. {title}：{desc[:90]}")
+        summary_text = "【本週五大財經大事】\n" + "\n".join(bullets)
+    return news_items, summary_text
+
+
+async def _generate_tw_market_forecast() -> tuple[list[dict], str]:
+    """依台指期夜盤、台積電 ADR、SOX 與匯率生成當日台股預測。"""
+    from app.services.market_data import get_quote_data
+    from app.services.ollama_service import generate_custom_brief
+
+    quote_specs = [
+        ("WTX&", "index", "台指期夜盤"),
+        ("TSM", "index", "台積電 ADR"),
+        ("^SOX", "index", "費城半導體指數"),
+        ("TWD=X", "exchange", "USD/TWD"),
+        ("2330.TW", "tw_etf", "台積電台股"),
+        ("TAIEX", "index", "台灣加權指數"),
+    ]
+    quote_results = await asyncio.gather(
+        *[get_quote_data(symbol, category) for symbol, category, _ in quote_specs],
+        return_exceptions=True,
+    )
+
+    quotes: dict[str, dict] = {}
+    for (symbol, _category, name), result in zip(quote_specs, quote_results):
+        if isinstance(result, Exception):
+            logger.warning(f"[Briefing] quote fetch failed symbol={symbol}: {result}")
+            result = {"price": None, "prev_close": None, "change": None, "success": False}
+        price = result.get("price")
+        prev_close = result.get("prev_close")
+        pct = _pct_change(price, prev_close)
+        quotes[symbol] = {
+            "name": name,
+            "price": price,
+            "prev_close": prev_close,
+            "change": result.get("change"),
+            "change_pct": pct,
+            "success": bool(result.get("success")),
+        }
+
+    adr_price = quotes["TSM"]["price"]
+    usd_twd = quotes["TWD=X"]["price"]
+    tsm_tw_prev = quotes["2330.TW"]["prev_close"] or quotes["2330.TW"]["price"]
+    adr_theoretical = adr_price * usd_twd / 5 if adr_price and usd_twd else None
+    tsm_est_pct = _pct_change(adr_theoretical, tsm_tw_prev)
+    taiex_impact_pct = tsm_est_pct * 0.33 if tsm_est_pct is not None else None
+
+    data_lines = [
+        f"台指期夜盤 WTX&：現價 {_fmt_num(quotes['WTX&']['price'])}，昨收 {_fmt_num(quotes['WTX&']['prev_close'])}，漲跌幅 {_fmt_pct(quotes['WTX&']['change_pct'])}",
+        f"台積電 ADR TSM：現價 USD {_fmt_num(quotes['TSM']['price'])}，昨收 USD {_fmt_num(quotes['TSM']['prev_close'])}，漲跌幅 {_fmt_pct(quotes['TSM']['change_pct'])}",
+        f"費城半導體 ^SOX：現價 {_fmt_num(quotes['^SOX']['price'])}，昨收 {_fmt_num(quotes['^SOX']['prev_close'])}，漲跌幅 {_fmt_pct(quotes['^SOX']['change_pct'])}",
+        f"USD/TWD：{_fmt_num(usd_twd, 3)}",
+        f"台積電台股 2330.TW：現價 {_fmt_num(quotes['2330.TW']['price'])}，昨收 {_fmt_num(quotes['2330.TW']['prev_close'])}",
+        f"加權指數 TAIEX：現價 {_fmt_num(quotes['TAIEX']['price'])}，昨收 {_fmt_num(quotes['TAIEX']['prev_close'])}",
+        f"ADR 換算台積電理論價格：{_fmt_num(adr_theoretical)} TWD",
+        f"台積電預估漲跌幅：{_fmt_pct(tsm_est_pct)}",
+        f"台積電對加權指數估算影響：{_fmt_pct(taiex_impact_pct)}",
+    ]
+    prompt = (
+        "你是台股策略研究員。\n\n"
+        "請依下列權重評估當日台股：\n\n"
+        "權重：\n"
+        "- 台指期夜盤 50% (WTX&, yahoo tw finance)\n"
+        "- 台積電ADR 35% (^TSM, yahoo finance)\n"
+        "- 費城半導體指數 15% (^SOX, yahoo finance)\n\n"
+        "輸入資料：\n"
+        + "\n".join(data_lines)
+        + "\n\n"
+        "分析步驟：\n\n"
+        "Step1:\n計算ADR換算台積電理論價格\n\n公式：\nADR × USD/TWD ÷ 5\n\n"
+        "Step2:\n計算台積電預估漲跌幅\n\n"
+        "Step3:\n估算對加權指數影響\n\n假設：\n台積電每變動1%\n加權指數影響0.33%\n\n"
+        "Step4:\n分析夜盤與ADR是否同方向\n\n"
+        "Step5:\n給出：\n\n- 開盤預測\n- 收盤預測\n- 多空評分(-100~+100)\n- 主要風險因素\n\n"
+        "最後輸出：\n\n【結論】\n方向：\n信心：\n開盤區間：\n收盤區間：\n"
+    )
+    summary_text = await generate_custom_brief(prompt, label="tw_market_forecast", num_predict=900)
+    if not summary_text:
+        direction = "偏多" if ((quotes["WTX&"]["change_pct"] or 0) * 0.5 + (quotes["TSM"]["change_pct"] or 0) * 0.35 + (quotes["^SOX"]["change_pct"] or 0) * 0.15) > 0 else "偏空"
+        summary_text = (
+            "【結論】\n"
+            f"方向：{direction}\n"
+            "信心：低，因 AI 彙整暫時無法完成，以下僅依即時報價機械估算。\n"
+            f"開盤區間：參考台指期夜盤 {_fmt_pct(quotes['WTX&']['change_pct'])} 與 ADR 換算 {_fmt_pct(tsm_est_pct)}\n"
+            f"收盤區間：留意台積電影響約 {_fmt_pct(taiex_impact_pct)} 及電子權值股續航。"
+        )
+
+    news_items = [
+        {"title": row, "url": "", "description": "", "published_date": ""}
+        for row in data_lines
+    ]
+    return news_items, summary_text
+
+
+async def _generate_special_brief_items(sb, session_time: datetime) -> dict:
+    stats = {"total": len(SPECIAL_BRIEF_ITEMS), "success": 0, "failed": 0}
+
+    generators = [
+        ("AI_WEEK", "一週財經大事", _generate_weekly_finance_events),
+        ("AI_TW_FCST", "當日台股大盤風向與指數預測", _generate_tw_market_forecast),
+    ]
+    for symbol, name, generator in generators:
+        try:
+            news_items, summary_text = await generator()
+            ok = await _upsert_special_brief(sb, session_time, symbol, name, news_items, summary_text)
+            if ok:
+                stats["success"] += 1
+            else:
+                stats["failed"] += 1
+        except Exception as e:
+            logger.error(f"[Briefing] 特殊早報 {symbol} 生成失敗: {e}")
+            stats["failed"] += 1
+            try:
+                await _upsert_special_brief(sb, session_time, symbol, name, [], "", str(e))
+            except Exception as db_err:
+                logger.error(f"[Briefing] 特殊早報 {symbol} 寫入失敗狀態也失敗: {db_err}")
+
+    return stats
+
+
+async def run_special_brief_items(session_time: datetime) -> dict:
+    """單獨生成固定 AI brief 項目，供 API 在舊批次缺資料時背景補齊。"""
+    sb = get_supabase()
+    return await _generate_special_brief_items(sb, session_time)
+
+
 async def run_market_briefing_session(override_session_time: datetime | None = None) -> dict:
     """
     執行一次市場早報排程：
@@ -163,16 +374,18 @@ async def run_market_briefing_session(override_session_time: datetime | None = N
 
     logger.info(f"[Briefing] 排程開始，session_time={session_time.isoformat()}")
 
+    special_stats = await _generate_special_brief_items(sb, session_time)
+
     # 1. 查詢所有 is_active=True 的唯一 symbol
     try:
         res = sb.table("tracked_indices").select("symbol, name, category").eq("is_active", True).execute()
     except Exception as e:
         logger.error(f"[Briefing] 查詢 tracked_indices 失敗: {e}")
-        return {"total": 0, "success": 0, "failed": 0}
+        return special_stats
 
     if not res.data:
-        logger.info("[Briefing] 無 is_active=True 的追蹤項目，跳過排程")
-        return {"total": 0, "success": 0, "failed": 0}
+        logger.info("[Briefing] 無 is_active=True 的追蹤項目，僅完成固定 AI brief 項目")
+        return special_stats
 
     # 去重（同 symbol 可能被多位使用者追蹤）
     seen: set[str] = set()
@@ -195,9 +408,9 @@ async def run_market_briefing_session(override_session_time: datetime | None = N
         )
         symbols = symbols[:MAX_SYMBOLS_PER_SESSION]
 
-    total = len(symbols)
-    success_count = 0
-    failed_count = 0
+    total = len(symbols) + special_stats["total"]
+    success_count = special_stats["success"]
+    failed_count = special_stats["failed"]
 
     use_tavily = settings.ai_summary.upper() == "TAVILY"
     use_searxng_ollama = settings.ai_summary.upper() == "SEARXNG_OLLAMA"

@@ -30,6 +30,9 @@ SYMBOL_MAP = {
     "BRENT": "BZ=F",
     "GOLD": "GC=F",
     "TAIEX": "^TWII",
+    "SOX": "^SOX",
+    "TYX": "^TYX",
+    "TNX": "^TNX",
 }
 
 # RSI 代理映射：當符號本身無歷史數據時，使用相關性高的代理符號計算 RSI
@@ -159,6 +162,42 @@ SYMBOL_CATALOG = {
         "url_path": "quote/%5EHSI",
         "name_zh": "香港恆生指數",
         "name_en": "Hang Seng Index",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^SOX": {
+        "symbol": "^SOX",
+        "yahoo_symbol": "^SOX",
+        "url_path": "quote/%5ESOX",
+        "name_zh": "費城半導體指數",
+        "name_en": "PHLX Semiconductor Index",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "TSM": {
+        "symbol": "TSM",
+        "yahoo_symbol": "TSM",
+        "url_path": "quote/TSM",
+        "name_zh": "台積電 ADR",
+        "name_en": "Taiwan Semiconductor Manufacturing Company ADR",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^TYX": {
+        "symbol": "^TYX",
+        "yahoo_symbol": "^TYX",
+        "url_path": "quote/%5ETYX",
+        "name_zh": "美國 30 年期公債殖利率",
+        "name_en": "Treasury Yield 30 Years",
+        "category": "index",
+        "domain": "finance.yahoo.com"
+    },
+    "^TNX": {
+        "symbol": "^TNX",
+        "yahoo_symbol": "^TNX",
+        "url_path": "quote/%5ETNX",
+        "name_zh": "美國 10 年期公債殖利率",
+        "name_en": "Treasury Yield 10 Years",
         "category": "index",
         "domain": "finance.yahoo.com"
     },
@@ -418,8 +457,12 @@ async def get_quote_data(symbol: str, category: str) -> dict:
     # 特殊處理 TAIEX / ^TWII / WTX&：使用爬蟲而不是 yfinance（yfinance 數據過時）
     if upper_symbol in ("TAIEX", "^TWII", "WTX&"):
         logger.info(f"[MarketData] Using web scraper for {symbol}")
+        if upper_symbol == "WTX&":
+            result = await scrape_yahoo_tw_futures(symbol)
+            result["symbol"] = original_symbol
+            return result
         # Map TAIEX to ^TWII for URL
-        scrape_symbol = "^TWII" if upper_symbol in ("TAIEX", "^TWII") else symbol
+        scrape_symbol = "^TWII"
         result = await scrape_yahoo_tw_etf(scrape_symbol)
         # 保持原始符號在結果中
         result["symbol"] = original_symbol
@@ -816,6 +859,10 @@ def get_index_list() -> list[dict]:
         {"symbol": "^STOXX50E", "name": "Euro Stoxx 50", "category": "index"},
         {"symbol": "^FTSE", "name": "FTSE 100", "category": "index"},
         {"symbol": "^HSI", "name": "Hang Seng Index", "category": "index"},
+        {"symbol": "^SOX", "name": "PHLX Semiconductor Index", "category": "index"},
+        {"symbol": "TSM", "name": "Taiwan Semiconductor Manufacturing Company ADR", "category": "index"},
+        {"symbol": "^TYX", "name": "Treasury Yield 30 Years", "category": "index"},
+        {"symbol": "^TNX", "name": "Treasury Yield 10 Years", "category": "index"},
         {"symbol": "TAIEX", "name": "台灣加權股價指數", "category": "index"},
         {"symbol": "WTX&", "name": "台指數夜盤", "category": "index"},
         # Crypto symbols
