@@ -575,7 +575,7 @@ const allSymbols = computed(() => {
 const filteredSymbols = computed(() => {
   const q = symbolSearch.value.trim().toLowerCase()
   const normalizedQ = q.replace(/^\^/, '')
-  if (!q) return allSymbols.value.slice(0, 10)
+  if (!q) return allSymbols.value.slice(0, 20)
   return allSymbols.value.filter((s) => {
     const fields = [
       s.symbol,
