@@ -347,6 +347,12 @@ async def _generate_special_brief_items(sb, session_time: datetime) -> dict:
     return stats
 
 
+async def run_special_brief_items(session_time: datetime) -> dict:
+    """單獨生成固定 AI brief 項目，供 API 在舊批次缺資料時背景補齊。"""
+    sb = get_supabase()
+    return await _generate_special_brief_items(sb, session_time)
+
+
 async def run_market_briefing_session(override_session_time: datetime | None = None) -> dict:
     """
     執行一次市場早報排程：

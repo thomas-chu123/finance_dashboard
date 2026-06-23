@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Header, BackgroundTasks
 from app.config import get_settings
 from app.database import get_supabase
 from app.routers.users import get_user_id
-from app.services.news_briefing_service import run_market_briefing_session
+from app.services.news_briefing_service import run_market_briefing_session, run_special_brief_items
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,10 @@ _PROVIDER_LABELS = {
 }
 
 _SPECIAL_SYMBOLS = ["AI_WEEK", "AI_TW_FCST"]
+_SPECIAL_NAMES = {
+    "AI_WEEK": "一週財經大事",
+    "AI_TW_FCST": "當日台股大盤風向與指數預測",
+}
 
 
 def _get_provider_label() -> str:
@@ -28,8 +32,28 @@ def _get_provider_label() -> str:
     return _PROVIDER_LABELS.get(settings.ai_summary.upper(), "Brave Search + Gemini")
 
 
+def _parse_session_time(value: str) -> datetime:
+    """將 Supabase 回傳的 timestamptz 字串轉成 aware datetime."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _build_pending_special_item(session_time: str, symbol: str) -> dict:
+    return {
+        "session_time": session_time,
+        "symbol": symbol,
+        "symbol_name": _SPECIAL_NAMES.get(symbol, symbol),
+        "summary_text": "固定 AI brief 項目正在背景生成中，請稍後手動刷新或等待頁面重新載入。",
+        "news_json": [],
+        "status": "pending",
+        "error_message": None,
+    }
+
+
 @router.get("/latest")
-async def get_latest_briefing(authorization: str = Header(default="")):
+async def get_latest_briefing(
+    background_tasks: BackgroundTasks,
+    authorization: str = Header(default=""),
+):
     """
     取得最新一次排程批次中，屬於目前使用者追蹤清單的 symbol 早報摘要.
 
@@ -87,6 +111,15 @@ async def get_latest_briefing(authorization: str = Header(default="")):
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
 
     items = items_res.data or []
+    present_specials = {row.get("symbol") for row in items if row.get("symbol") in _SPECIAL_SYMBOLS}
+    missing_specials = [symbol for symbol in _SPECIAL_SYMBOLS if symbol not in present_specials]
+    if missing_specials:
+        try:
+            background_tasks.add_task(run_special_brief_items, _parse_session_time(session_time))
+            items = [_build_pending_special_item(session_time, symbol) for symbol in missing_specials] + items
+        except Exception as e:
+            logger.warning(f"[Briefing API] 排入固定 AI brief 背景補齊失敗: {e}")
+
     special_rank = {symbol: idx for idx, symbol in enumerate(_SPECIAL_SYMBOLS)}
     items = sorted(
         items,
