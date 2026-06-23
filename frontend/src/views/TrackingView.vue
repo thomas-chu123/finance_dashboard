@@ -573,11 +573,22 @@ const allSymbols = computed(() => {
 })
 
 const filteredSymbols = computed(() => {
-  const q = symbolSearch.value.toLowerCase()
+  const q = symbolSearch.value.trim().toLowerCase()
+  const normalizedQ = q.replace(/^\^/, '')
   if (!q) return allSymbols.value.slice(0, 10)
-  return allSymbols.value.filter(s => 
-    s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)
-  ).slice(0, 15)
+  return allSymbols.value.filter((s) => {
+    const fields = [
+      s.symbol,
+      s.yahoo_symbol,
+      s.name,
+      s.name_zh,
+      s.name_en,
+    ].filter(Boolean).map(value => String(value).toLowerCase())
+
+    return fields.some(value =>
+      value.includes(q) || value.replace(/^\^/, '').includes(normalizedQ)
+    )
+  }).slice(0, 15)
 })
 
 async function fetchAvailableSymbols() {
@@ -626,7 +637,7 @@ async function fetchPrice(symbol, category) {
 
 function selectSymbol(s) {
   form.symbol = s.symbol
-  form.name = s.name
+  form.name = s.name || s.name_zh || s.name_en || s.symbol
   symbolSearch.value = s.symbol
   showSymbolDropdown.value = false
   // 清除之前的防抖計時器
@@ -665,7 +676,15 @@ function handleSymbolInputEnter(e) {
   }
   
   // 如果有相符的符號，直接選擇
-  const match = allSymbols.value.find(s => s.symbol.toLowerCase() === symbolSearch.value.toLowerCase())
+  const normalizedInput = symbolSearch.value.trim().toLowerCase().replace(/^\^/, '')
+  const match = allSymbols.value.find((s) => {
+    const symbol = String(s.symbol || '').toLowerCase()
+    const yahooSymbol = String(s.yahoo_symbol || '').toLowerCase()
+    return symbol === symbolSearch.value.toLowerCase()
+      || yahooSymbol === symbolSearch.value.toLowerCase()
+      || symbol.replace(/^\^/, '') === normalizedInput
+      || yahooSymbol.replace(/^\^/, '') === normalizedInput
+  })
   if (match) {
     console.log('[TrackingView] 直接選擇符號:', match.symbol)
     selectSymbol(match)
@@ -698,9 +717,17 @@ function onSymbolInput() {
   // 防抖：延遲 300ms 後才執行 fetchPrice
   fetchPriceTimeout = setTimeout(() => {
     // Try to find if it matches exactly
-    const match = allSymbols.value.find(s => s.symbol.toLowerCase() === symbolSearch.value.toLowerCase())
+    const normalizedInput = symbolSearch.value.trim().toLowerCase().replace(/^\^/, '')
+    const match = allSymbols.value.find((s) => {
+      const symbol = String(s.symbol || '').toLowerCase()
+      const yahooSymbol = String(s.yahoo_symbol || '').toLowerCase()
+      return symbol === symbolSearch.value.toLowerCase()
+        || yahooSymbol === symbolSearch.value.toLowerCase()
+        || symbol.replace(/^\^/, '') === normalizedInput
+        || yahooSymbol.replace(/^\^/, '') === normalizedInput
+    })
     if (match) {
-      form.name = match.name
+      form.name = match.name || match.name_zh || match.name_en || match.symbol
       fetchPrice(match.symbol, form.category).catch(err => {
         console.error('[TrackingView] 獲取價格失敗:', err)
         // 不要中斷用戶流程，只是記錄錯誤

@@ -30,6 +30,9 @@ SYMBOL_MAP = {
     "BRENT": "BZ=F",
     "GOLD": "GC=F",
     "TAIEX": "^TWII",
+    "SOX": "^SOX",
+    "TYX": "^TYX",
+    "TNX": "^TNX",
 }
 
 # RSI 代理映射：當符號本身無歷史數據時，使用相關性高的代理符號計算 RSI
