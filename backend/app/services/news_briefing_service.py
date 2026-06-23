@@ -299,18 +299,18 @@ async def _generate_tw_market_forecast() -> tuple[list[dict], str]:
         "即時數據：\n"
         + "\n".join(data_lines)
         + "\n\n"
-        "輸出：\n\n"
-        "A. 看多/中性/看空\n"
-        "B. 信心指數(0~100)\n"
-        "C. 預估開盤點位\n"
-        "D. 預估收盤區間\n"
-        "E. 對台積電的預估價格\n"
-        "F. 影響最大的三個因素\n\n"
+        "輸出格式請固定如下，每一項都要保留題目名稱，並在結果後補一句短說明：\n\n"
+        "A. 市場方向：看多/中性/看空 - 用一句話說明主要原因。\n"
+        "B. 信心指數：0~100 - 用一句話說明信心高低依據。\n"
+        "C. 預估開盤點位：點位或區間 - 用一句話說明夜盤/ADR如何影響開盤。\n"
+        "D. 預估收盤區間：點位區間 - 用一句話說明盤中可能變化。\n"
+        "E. 台積電預估價格：價格或區間 - 用一句話說明ADR換算與權值影響。\n"
+        "F. 影響最大的三個因素：因素1、因素2、因素3 - 用一句話說明哪個因素權重最大。\n\n"
         "最後請用一句話總結：\n"
         "「台股今天最可能的劇本」。\n\n"
-        "限制：不要輸出 Step、公式或計算過程；只輸出 A-F 與最後一句話。"
+        "限制：不要輸出 Step、公式或計算過程；不要只給答案，必須包含每一項題目名稱與少量說明。"
     )
-    summary_text = await generate_custom_brief(prompt, label="tw_market_forecast", num_predict=450)
+    summary_text = await generate_custom_brief(prompt, label="tw_market_forecast", num_predict=650)
     if not summary_text:
         direction = "偏多" if ((quotes["WTX&"]["change_pct"] or 0) * 0.5 + (quotes["TSM"]["change_pct"] or 0) * 0.35 + (quotes["^SOX"]["change_pct"] or 0) * 0.15) > 0 else "偏空"
         summary_text = (
