@@ -19,6 +19,8 @@ _PROVIDER_LABELS = {
     "SEARXNG_OLLAMA": "SearXNG + Ollama",
 }
 
+_SPECIAL_SYMBOLS = ["AI_WEEK", "AI_TW_FCST"]
+
 
 def _get_provider_label() -> str:
     """依 AI_SUMMARY 設定回傳對外顯示的提供商名稱."""
@@ -51,8 +53,6 @@ async def get_latest_briefing(authorization: str = Header(default="")):
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
 
     user_symbols = {row["symbol"] for row in (tracking_res.data or [])}
-    if not user_symbols:
-        return {"session_time": None, "provider": _get_provider_label(), "items": []}
 
     # 2. 先取最新 session_time，再針對該 session 查詢使用者追蹤的 symbols
     #    避免 limit(50) 全域截斷導致部分 symbols 被漏掉
@@ -78,7 +78,7 @@ async def get_latest_briefing(authorization: str = Header(default="")):
             sb.table("market_briefings")
             .select("session_time, symbol, symbol_name, summary_text, news_json, status, error_message")
             .eq("session_time", session_time)
-            .in_("symbol", list(user_symbols))
+            .in_("symbol", list(user_symbols | set(_SPECIAL_SYMBOLS)))
             .order("symbol")
             .execute()
         )
@@ -87,6 +87,14 @@ async def get_latest_briefing(authorization: str = Header(default="")):
         raise HTTPException(status_code=500, detail="資料庫查詢失敗")
 
     items = items_res.data or []
+    special_rank = {symbol: idx for idx, symbol in enumerate(_SPECIAL_SYMBOLS)}
+    items = sorted(
+        items,
+        key=lambda row: (
+            special_rank.get(row.get("symbol"), len(special_rank)),
+            row.get("symbol") or "",
+        ),
+    )
 
     return {
         "session_time": session_time,

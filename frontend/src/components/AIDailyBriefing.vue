@@ -52,9 +52,9 @@
         <div class="flex items-start justify-between gap-3 p-4">
           <div class="flex items-center gap-2 shrink-0">
             <span class="text-xs font-bold px-2 py-0.5 rounded-md bg-brand-500/10 text-brand-700 dark:text-brand-400 uppercase tracking-wider">
-              {{ item.symbol }}
+              {{ displaySymbol(item) }}
             </span>
-            <span class="text-sm text-[var(--text-primary)] font-medium">{{ item.symbol_name }}</span>
+            <span class="text-sm text-[var(--text-primary)] font-medium">{{ displayName(item) }}</span>
           </div>
           <!-- status badge -->
           <span
@@ -88,11 +88,13 @@
           <div v-if="expandedSymbols.has(item.symbol)" class="px-4 pb-3 space-y-2">
             <div v-for="(news, idx) in item.news_json" :key="idx" class="text-xs border-l-2 border-brand-300 dark:border-brand-700 pl-3">
               <a
+                v-if="news.url"
                 :href="news.url"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="font-medium text-brand-600 dark:text-brand-400 hover:underline line-clamp-1"
               >{{ news.title }}</a>
+              <p v-else class="font-medium text-[var(--text-primary)] line-clamp-2">{{ news.title }}</p>
               <p class="text-zinc-500 mt-0.5 line-clamp-2">{{ news.description?.slice(0, 80) }}{{ news.description?.length > 80 ? '...' : '' }}</p>
               <p v-if="news.published_date" class="text-zinc-400 mt-0.5">{{ news.published_date }}</p>
             </div>
@@ -131,6 +133,18 @@ function toggleNews(symbol) {
   }
   // 觸發響應性更新
   expandedSymbols.value = new Set(expandedSymbols.value)
+}
+
+function displaySymbol(item) {
+  if (item.symbol === 'AI_WEEK') return '本週'
+  if (item.symbol === 'AI_TW_FCST') return '台股'
+  return item.symbol
+}
+
+function displayName(item) {
+  if (item.symbol === 'AI_WEEK') return '一週財經大事'
+  if (item.symbol === 'AI_TW_FCST') return '當日台股大盤風向與指數預測'
+  return item.symbol_name || item.symbol
 }
 
 /** 安全轉義 HTML 特殊字元 */

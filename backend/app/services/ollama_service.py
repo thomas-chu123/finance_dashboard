@@ -362,3 +362,52 @@ async def generate_market_summary(
         if fallback:
             logger.warning(f"[Ollama] {symbol} 例外後改用 fallback 摘要")
         return fallback
+
+
+async def generate_custom_brief(
+    prompt: str,
+    label: str = "custom",
+    temperature: float = 0.2,
+    num_predict: int = 900,
+) -> str:
+    """使用既有 Ollama 設定執行自訂金融 prompt，回傳純文字結果。"""
+    settings = get_settings()
+    base_url = settings.ollama_base_url
+    model = settings.ollama_model
+
+    if not base_url:
+        logger.warning("[Ollama] ollama_base_url 未設定，跳過自訂摘要生成")
+        return ""
+
+    final_prompt = prompt
+    if "qwen" in (model or "").lower() and settings.ollama_disable_thinking:
+        final_prompt = _with_no_think_directive(final_prompt)
+
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": final_prompt}],
+        "stream": False,
+        "think": False,
+        "options": {
+            "temperature": temperature,
+            "num_predict": num_predict,
+        },
+    }
+
+    try:
+        resp = await _post_chat(base_url=base_url, payload=payload)
+        if resp.status_code != 200:
+            logger.error(f"[Ollama] custom brief HTTP {resp.status_code} label={label}: {resp.text[:200]}")
+            return ""
+
+        payload_json = resp.json()
+        text = _extract_summary_from_payload(payload_json)
+        if text:
+            logger.info(f"[Ollama] custom brief generated label={label} chars={len(text)}")
+            return text.strip()
+
+        logger.warning(f"[Ollama] custom brief empty label={label} payload_head={str(payload_json)[:600]}")
+        return ""
+    except Exception as e:
+        logger.error(f"[Ollama] custom brief failed label={label}: {e}")
+        return ""

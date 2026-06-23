@@ -457,8 +457,12 @@ async def get_quote_data(symbol: str, category: str) -> dict:
     # 特殊處理 TAIEX / ^TWII / WTX&：使用爬蟲而不是 yfinance（yfinance 數據過時）
     if upper_symbol in ("TAIEX", "^TWII", "WTX&"):
         logger.info(f"[MarketData] Using web scraper for {symbol}")
+        if upper_symbol == "WTX&":
+            result = await scrape_yahoo_tw_futures(symbol)
+            result["symbol"] = original_symbol
+            return result
         # Map TAIEX to ^TWII for URL
-        scrape_symbol = "^TWII" if upper_symbol in ("TAIEX", "^TWII") else symbol
+        scrape_symbol = "^TWII"
         result = await scrape_yahoo_tw_etf(scrape_symbol)
         # 保持原始符號在結果中
         result["symbol"] = original_symbol
