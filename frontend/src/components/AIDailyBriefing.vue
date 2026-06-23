@@ -65,11 +65,11 @@
 
         <!-- AI 摘要 -->
         <div class="px-4 pb-3">
-          <p
+          <div
             v-if="item.summary_text"
-            class="text-sm text-[var(--text-primary)] leading-relaxed"
+            class="briefing-summary text-sm text-[var(--text-primary)] leading-relaxed"
             v-html="renderSummary(item.summary_text)"
-          ></p>
+          ></div>
           <p v-else class="text-sm text-zinc-400 italic">無摘要</p>
         </div>
 
@@ -142,9 +142,106 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
 }
 
+function decodeBasicEntities(str) {
+  return str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+}
+
+function normalizeSummaryText(text) {
+  return decodeBasicEntities(String(text))
+    .replace(/\r\n?/g, '\n')
+    .replace(/<\s*br\s*\/?\s*>/gi, '\n')
+    .replace(/<\s*(strong|b)\b[^>]*>/gi, '**')
+    .replace(/<\s*\/\s*(strong|b)\s*>/gi, '**')
+    .replace(/<\s*(em|i)\b[^>]*>/gi, '*')
+    .replace(/<\s*\/\s*(em|i)\s*>/gi, '*')
+    .replace(/<\s*h[1-6]\b[^>]*>/gi, '\n**')
+    .replace(/<\s*\/\s*h[1-6]\s*>/gi, '**\n')
+    .replace(/<\s*\/\s*(p|div|li|tr|h[1-6]|section|article)\s*>/gi, '\n')
+    .replace(/<\s*(p|div|li|tr|h[1-6]|section|article|ul|ol|table|tbody|thead)\b[^>]*>/gi, '\n')
+    .replace(/<\s*\/?\s*(td|th)\b[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\\\((.*?)\\\)/g, '$1')
+    .replace(/\$\s*([^$]+?)\s*\$/g, '$1')
+    .replace(/\\text\{([^}]+)\}/g, '$1')
+    .replace(/\\approx/g, '約')
+    .replace(/\\times/g, 'x')
+    .replace(/\\div/g, '/')
+    .replace(/\\rightarrow/g, '->')
+    .replace(/^#{1,6}\s*/gm, '')
+    .replace(/\s*---+\s*/g, '\n')
+    .replace(/\s+([#]{2,6}\s+)/g, '\n$1')
+    .replace(/([^\n])(\s*#{2,6}\s+)/g, '$1\n$2')
+    .replace(/\s+(?=\d+\.\s*(?:事件|Step|步驟|預測|開盤|收盤|結論|總結)[：:])/g, '\n')
+    .replace(/\s+(?=\d+\.\s*事件\s*[：:])/g, '\n')
+    .replace(/\s+(?=[*]\s*(?:\*\*)?[\u4e00-\u9fffA-Za-z0-9^$（(][^*\n]{1,60}(?:\*\*)?\s*[：:])/g, '\n')
+    .replace(/\s+(?=【[^】]{1,24}】)/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function renderInlineMarkdown(text, refMap) {
+  let html = escapeHtml(text)
+
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  html = html.replace(/(?<!\*)\*([^*\n]{2,80})\*(?!\*)/g, '<strong>$1</strong>')
+  html = html.replace(/\[(\d+)\]/g, (_, n) => {
+    const url = refMap[n]
+    if (!url) return `[${n}]`
+    return `<sup><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-brand-500 hover:text-brand-400">[${n}]</a></sup>`
+  })
+
+  return html
+}
+
+function classifyLine(line) {
+  if (/^\d+\.\s*/.test(line)) return 'numbered'
+  if (/^[*]\s+/.test(line)) return 'bullet'
+  if (/^#{2,6}\s*/.test(line)) return 'heading'
+  if (/^【[^】]{1,24}】/.test(line)) return 'heading'
+  if (/^(?:Step\s*\d+|步驟\s*\d+|分析步驟|預測台股|開盤預測|收盤預測|總結|結論)[：:\s]/i.test(line)) return 'heading'
+  return 'paragraph'
+}
+
+function renderSummaryBlocks(mainText, refMap) {
+  const normalized = normalizeSummaryText(mainText)
+  if (!normalized) return ''
+
+  const lines = normalized
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  return lines.map((rawLine) => {
+    const type = classifyLine(rawLine)
+    const line = rawLine.replace(/^#{2,6}\s*/, '')
+
+    if (type === 'numbered') {
+      const m = line.match(/^(\d+\.)\s*(.*)$/)
+      return `<div class="briefing-list-item"><span class="briefing-marker">${m?.[1] || ''}</span><div>${renderInlineMarkdown(m?.[2] || line, refMap)}</div></div>`
+    }
+
+    if (type === 'bullet') {
+      return `<div class="briefing-list-item briefing-bullet"><span class="briefing-marker">•</span><div>${renderInlineMarkdown(line.replace(/^[*]\s+/, ''), refMap)}</div></div>`
+    }
+
+    if (type === 'heading') {
+      return `<div class="briefing-heading">${renderInlineMarkdown(line, refMap)}</div>`
+    }
+
+    return `<p>${renderInlineMarkdown(line, refMap)}</p>`
+  }).join('')
+}
+
 /**
  * 將 summary_text 中的編號引用 [N] 轉為可點擊超連結上標。
- * 同時支持 Markdown 粗體 **xxxx** 轉換為 HTML <b> 標籤。
+ * 同時清理模型輸出的 HTML/Markdown 標記，並轉成可讀段落與縮排清單。
  * 格式預期：文字[1]文字[2]\n\n參考來源：\n[1] url1\n[2] url2
  */
 function renderSummary(text) {
@@ -164,20 +261,7 @@ function renderSummary(text) {
     }
   }
 
-  // 先 escape 主文 HTML
-  let html = escapeHtml(mainText)
-
-  // 將 Markdown 粗體 **xxxx** 轉換為 HTML <b> 標籤
-  html = html.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
-
-  // 再將 [N] 插入超連結
-  html = html.replace(/\[(\d+)\]/g, (_, n) => {
-    const url = refMap[n]
-    if (!url) return `[${n}]`
-    return `<sup><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="text-brand-500 hover:text-brand-400">[${n}]</a></sup>`
-  })
-
-  return html
+  return renderSummaryBlocks(mainText, refMap)
 }
 
 async function handleRefresh() {
@@ -193,3 +277,47 @@ onMounted(() => {
   briefingStore.fetchLatestBriefing()
 })
 </script>
+
+<style scoped>
+.briefing-summary {
+  overflow-wrap: anywhere;
+}
+
+.briefing-summary :deep(p) {
+  margin: 0 0 0.65rem;
+}
+
+.briefing-summary :deep(strong) {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.briefing-summary :deep(.briefing-heading) {
+  margin: 0.85rem 0 0.45rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.briefing-summary :deep(.briefing-heading:first-child) {
+  margin-top: 0;
+}
+
+.briefing-summary :deep(.briefing-list-item) {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  gap: 0.35rem;
+  margin: 0.55rem 0;
+  padding-left: 0.25rem;
+}
+
+.briefing-summary :deep(.briefing-bullet) {
+  grid-template-columns: 1.2rem minmax(0, 1fr);
+  margin-left: 1rem;
+}
+
+.briefing-summary :deep(.briefing-marker) {
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: right;
+}
+</style>
