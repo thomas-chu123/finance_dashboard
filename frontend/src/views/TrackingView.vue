@@ -329,6 +329,7 @@
                 <option value="oil">石油期貨</option>
                 <option value="us_etf">美國 ETF</option>
                 <option value="tw_etf">台灣 ETF</option>
+                <option value="jp_etf">日本 ETF</option>
                 <option value="funds">共同基金</option>
                 <option value="index">大盤指數</option>
                 <option value="crypto">加密貨幣</option>
@@ -522,6 +523,7 @@ const categories = [
   { value: 'oil', label: '石油' },
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
+  { value: 'jp_etf', label: '日本ETF' },
   { value: 'funds', label: '共同基金' },
   { value: 'index', label: '指數' },
   { value: 'exchange', label: '匯率' },
@@ -534,7 +536,7 @@ const form = reactive({
   notify_channel: 'email', notes: ''
 })
 
-const availableSymbols = ref({ tw_etf: [], us_etf: [], index: [], funds: [] })
+const availableSymbols = ref({ tw_etf: [], us_etf: [], jp_etf: [], index: [], funds: [] })
 const symbolSearch = ref('')
 const showSymbolDropdown = ref(false)
 const currentPrice = ref(null)
@@ -559,6 +561,8 @@ const allSymbols = computed(() => {
     availableSymbols.value.tw_etf.forEach(s => list.push({ ...s, type: 'tw_etf' }))
   } else if (cat === 'us_etf') {
     availableSymbols.value.us_etf.forEach(s => list.push({ ...s, type: 'us_etf' }))
+  } else if (cat === 'jp_etf') {
+    availableSymbols.value.jp_etf.forEach(s => list.push({ ...s, type: 'jp_etf' }))
   } else if (cat === 'funds') {
     availableSymbols.value.funds.forEach(s => list.push({ ...s, type: 'funds' }))
   } else if (['index', 'vix', 'oil', 'crypto', 'exchange'].includes(cat)) {
@@ -598,18 +602,20 @@ async function fetchAvailableSymbols() {
     console.log('[TrackingView] Available symbols received:', {
       tw_etf: res.data.tw_etf?.length || 0,
       us_etf: res.data.us_etf?.length || 0,
+      jp_etf: res.data.jp_etf?.length || 0,
       funds: res.data.funds?.length || 0,
       index: res.data.index?.length || 0
     })
     // Ensure funds array always exists, even if API doesn't return it
     availableSymbols.value = {
       ...res.data,
+      jp_etf: res.data.jp_etf || [],
       funds: res.data.funds || []
     }
   } catch (e) {
     console.error('[TrackingView] Failed to fetch symbols:', e.message, e.response?.status)
     // Set empty fallback
-    availableSymbols.value = { tw_etf: [], us_etf: [], index: [], funds: [] }
+    availableSymbols.value = { tw_etf: [], us_etf: [], jp_etf: [], index: [], funds: [] }
   }
 }
 
@@ -680,10 +686,13 @@ function handleSymbolInputEnter(e) {
   const match = allSymbols.value.find((s) => {
     const symbol = String(s.symbol || '').toLowerCase()
     const yahooSymbol = String(s.yahoo_symbol || '').toLowerCase()
+    const jpSymbol = symbol.replace(/\.t$/, '')
+    const jpYahooSymbol = yahooSymbol.replace(/\.t$/, '')
     return symbol === symbolSearch.value.toLowerCase()
       || yahooSymbol === symbolSearch.value.toLowerCase()
       || symbol.replace(/^\^/, '') === normalizedInput
       || yahooSymbol.replace(/^\^/, '') === normalizedInput
+      || (form.category === 'jp_etf' && (jpSymbol === normalizedInput || jpYahooSymbol === normalizedInput))
   })
   if (match) {
     console.log('[TrackingView] 直接選擇符號:', match.symbol)
@@ -721,10 +730,13 @@ function onSymbolInput() {
     const match = allSymbols.value.find((s) => {
       const symbol = String(s.symbol || '').toLowerCase()
       const yahooSymbol = String(s.yahoo_symbol || '').toLowerCase()
+      const jpSymbol = symbol.replace(/\.t$/, '')
+      const jpYahooSymbol = yahooSymbol.replace(/\.t$/, '')
       return symbol === symbolSearch.value.toLowerCase()
         || yahooSymbol === symbolSearch.value.toLowerCase()
         || symbol.replace(/^\^/, '') === normalizedInput
         || yahooSymbol.replace(/^\^/, '') === normalizedInput
+        || (form.category === 'jp_etf' && (jpSymbol === normalizedInput || jpYahooSymbol === normalizedInput))
     })
     if (match) {
       form.name = match.name || match.name_zh || match.name_en || match.symbol
@@ -795,6 +807,7 @@ function inferCategory(symbol) {
   if (upper === 'CL=F' || upper === 'BZ=F') return 'oil'
   if (upper === 'TWSE' || upper === 'TPEX') return 'index'
   if (upper.endsWith('.TW')) return 'tw_etf'
+  if (upper.endsWith('.T')) return 'jp_etf'
   if (upper.includes('BTC') || upper.includes('ETH')) return 'crypto'
   if (upper === 'EURUSD=X' || upper === 'JPYUSD=X') return 'exchange'
   return 'us_etf' // Default
@@ -806,6 +819,7 @@ function categoryBadgeInfo(cat) {
     oil: { label: '石油', class: 'bg-amber-500 text-white border border-amber-600' },
     us_etf: { label: '美股', class: 'bg-blue-500 text-white border border-blue-600' },
     tw_etf: { label: '台股', class: 'bg-purple-500 text-white border border-purple-600' },
+    jp_etf: { label: '日股', class: 'bg-red-500 text-white border border-red-600' },
     funds: { label: '基金', class: 'bg-green-500 text-white border border-green-600' },
     index: { label: '大盤', class: 'bg-violet-500 text-white border border-violet-600' },
     crypto: { label: '加密', class: 'bg-brand-500 text-white border border-brand-600' },
@@ -851,7 +865,9 @@ function openQuoteUrl(symbol, category = null) {
 
   // Fallback
   const isNumericTwCode = /^\d{4,6}$/.test(upper)
-  if (category === 'tw_etf' || isNumericTwCode) {
+  if (category === 'jp_etf' || upper.endsWith('.T')) {
+    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank', 'noopener,noreferrer')
+  } else if (category === 'tw_etf' || isNumericTwCode) {
     let finalSymbol = upper
     if (!upper.includes('.')) finalSymbol = upper + '.TW'
     window.open(`https://tw.stock.yahoo.com/quote/${finalSymbol}`, '_blank', 'noopener,noreferrer')
@@ -925,6 +941,9 @@ async function handleSave() {
   modalError.value = ''
   try {
     const data = { ...form }
+    if (data.category === 'jp_etf' && /^\d{4}$/.test(data.symbol)) {
+      data.symbol = `${data.symbol}.T`
+    }
     
     // 前端傳遞當前價格到後端
     if (currentPrice.value !== null) {

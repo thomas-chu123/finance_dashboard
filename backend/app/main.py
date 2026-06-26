@@ -180,3 +180,11 @@ async def trigger_us_etf_sync(background_tasks: BackgroundTasks):
     from app.services.us_etf_sync import sync_us_etf_list
     background_tasks.add_task(sync_us_etf_list)
     return {"status": "sync_started", "message": "US ETF sync has been started in the background."}
+
+
+@app.post("/api/admin/sync-jp-etf")
+async def trigger_jp_etf_sync(background_tasks: BackgroundTasks):
+    """Admin endpoint: immediately sync JP ETF list from JPX into Supabase."""
+    from app.services.jp_etf_sync import sync_jp_etf_list
+    background_tasks.add_task(sync_jp_etf_list)
+    return {"status": "sync_started", "message": "JP ETF sync has been started in the background."}

@@ -4,7 +4,7 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
-from app.services.market_data import get_historical_prices
+from app.services.market_data import get_historical_prices, get_symbol_currency
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,29 @@ async def run_monte_carlo_simulation(
     price_series_list = await asyncio.gather(*price_tasks)
     
     # Merge into a single DataFrame
-    df_prices = pd.DataFrame()
+    price_data = {}
     for s, series in zip(symbols, price_series_list):
         if not series.empty:
-            df_prices[s] = series
+            price_data[s] = series
+
+    fx_symbols = {"TWD": "TWD=X", "JPY": "JPY=X"}
+    fx_series = {}
+    for currency, fx_symbol in fx_symbols.items():
+        if any(get_symbol_currency(s) == currency for s in price_data):
+            fx = await get_historical_prices(fx_symbol, start_date, end_date, adjusted=True)
+            if not fx.empty:
+                fx_series[currency] = fx
+
+    for s, series in list(price_data.items()):
+        currency = get_symbol_currency(s)
+        fx = fx_series.get(currency)
+        if fx is None or fx.empty:
+            continue
+        combined = pd.DataFrame({"price": series, "fx": fx}).ffill().bfill().dropna(how="all")
+        if not combined.empty:
+            price_data[s] = combined["price"] / combined["fx"]
+
+    df_prices = pd.DataFrame(price_data).ffill().bfill()
             
     if df_prices.empty:
         return {"error": "Could not fetch historical data for any of the provided assets"}

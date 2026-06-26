@@ -446,13 +446,14 @@ const showQuoteModal = ref(false)
 const quoteSearch = ref('')
 const symbolsLoading = ref(false)
 const savingQuotes = ref(false)
-const availableSymbols = ref({ tw_etf: [], us_etf: [], index: [] })
+const availableSymbols = ref({ tw_etf: [], us_etf: [], jp_etf: [], index: [] })
 const selectedQuotes = ref([])
 const activeTab = ref('us_etf')
 
 const categoryTabs = [
   { key: 'us_etf', label: '美國ETF' },
   { key: 'tw_etf', label: '台灣ETF' },
+  { key: 'jp_etf', label: '日本ETF' },
   { key: 'index',  label: '指數/原物料' },
 ]
 
@@ -489,7 +490,7 @@ async function openQuoteModal() {
 
 function addQuote(item) {
   if (!selectedQuotes.value.some(q => q.symbol === item.symbol)) {
-    selectedQuotes.value.push({ symbol: item.symbol, name: item.name })
+    selectedQuotes.value.push({ symbol: item.symbol, name: item.name, category: item.category })
   }
 }
 
@@ -623,7 +624,9 @@ function openQuoteUrl(symbol, category = null) {
   // Fallback 邏輯（相容舊符號）
   // 也檢查純數字代碼（如舊版 profile 中存的 "0050" 而非 "0050.TW"）
   const isNumericTwCode = /^\d{4,6}$/.test(upper)
-  if (category === 'tw_etf' || isNumericTwCode) {
+  if (category === 'jp_etf' || upper.endsWith('.T')) {
+    window.open(`https://finance.yahoo.com/quote/${upper}`, '_blank')
+  } else if (category === 'tw_etf' || isNumericTwCode) {
     // 台灣 ETF: 0050.TW, 0056.TW 等
     let finalSymbol = upper
     if (!upper.includes('.')) {

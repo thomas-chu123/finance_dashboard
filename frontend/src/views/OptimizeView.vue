@@ -522,6 +522,7 @@ const calcPerfLoading = ref(false)  // 計算性能中的加載狀態
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
+  { value: 'jp_etf', label: '日本ETF' },
   { value: 'indices', label: '指數/原物料' },
   { value: 'crypto', label: '加密貨幣' },
   { value: 'funds', label: '共同基金' },
@@ -565,7 +566,8 @@ function removeSymbol(sym) {
 }
 
 function addSearchSymbol() {
-  const sym = symbolSearch.value.trim().toUpperCase()
+  let sym = symbolSearch.value.trim().toUpperCase()
+  if (symbolType.value === 'jp_etf' && /^\d{4}$/.test(sym)) sym = `${sym}.T`
   if (!sym || isSelected(sym) || selectedItems.value.length >= 10) return
   selectedItems.value.push({ symbol: sym, name: sym, category: symbolType.value, weight: Math.floor(100 / (selectedItems.value.length + 1)) })
   equalizeWeights()
@@ -578,6 +580,7 @@ async function loadSymbols() {
     const data = res.data
     if (symbolType.value === 'us_etf') availableSymbols.value = data.us_etf || []
     else if (symbolType.value === 'tw_etf') availableSymbols.value = data.tw_etf || []
+    else if (symbolType.value === 'jp_etf') availableSymbols.value = data.jp_etf || []
     else if (symbolType.value === 'crypto') {
       availableSymbols.value = (data.indices || []).filter(s => s.category === 'crypto')
     }
@@ -1118,5 +1121,3 @@ watch(
   width: 100% !important;
 }
 </style>
-
-

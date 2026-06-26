@@ -661,6 +661,7 @@ const loadedPortfolioType = ref(null) // ✅ 追蹤已加載的組合類型
 const symbolTypes = [
   { value: 'us_etf', label: '美國ETF' },
   { value: 'tw_etf', label: '台灣ETF' },
+  { value: 'jp_etf', label: '日本ETF' },
   { value: 'indices', label: '指數/原物料' },
   { value: 'crypto', label: '加密貨幣' },
   { value: 'funds', label: '共同基金' },
@@ -689,9 +690,10 @@ const benchmarkSymbol = computed(() => {
   // Fallback: local decision logic (only for pre-result display)
   // Use category field, not symbol suffix (more reliable)
   const hasTaiwan = selectedItems.value.some(i => i.category === 'tw_etf')
+  const hasJapan = selectedItems.value.some(i => i.category === 'jp_etf')
   const hasUS = selectedItems.value.some(i => i.category === 'us_etf' || i.category === 'index')
-  // Use 0050.TW only if portfolio is 100% Taiwan ETF
-  return (hasTaiwan && !hasUS) ? '0050.TW' : 'SPY'
+  if (hasJapan && !hasTaiwan && !hasUS) return '1321.T'
+  return (hasTaiwan && !hasJapan && !hasUS) ? '0050.TW' : 'SPY'
 })
 
 // ✅ 分頁計算：只渲染當前頁的項目
@@ -742,7 +744,8 @@ function adjustWeights(symbol, newWeight) {
 }
 
 function addSearchSymbol() {
-  const sym = symbolSearch.value.trim().toUpperCase()
+  let sym = symbolSearch.value.trim().toUpperCase()
+  if (symbolType.value === 'jp_etf' && /^\d{4}$/.test(sym)) sym = `${sym}.T`
   if (!sym || isSelected(sym) || selectedItems.value.length >= 10) return
   selectedItems.value.push({ symbol: sym, name: sym, category: symbolType.value, weight: 0 })
   equalizeWeights()
@@ -755,6 +758,7 @@ async function loadSymbols() {
     const data = res.data
     if (symbolType.value === 'us_etf') availableSymbols.value = data.us_etf || []
     else if (symbolType.value === 'tw_etf') availableSymbols.value = data.tw_etf || []
+    else if (symbolType.value === 'jp_etf') availableSymbols.value = data.jp_etf || []
     else if (symbolType.value === 'crypto') {
       availableSymbols.value = (data.indices || []).filter(s => s.category === 'crypto')
     }
@@ -1215,5 +1219,3 @@ onMounted(async () => {
   }
 }
 </style>
-
-

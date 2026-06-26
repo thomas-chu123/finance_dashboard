@@ -1,7 +1,7 @@
 """
 Price monitoring scheduler.
 Runs every 30 minutes to check tracked indices and send alerts.
-Also syncs TW ETF list from TWSE daily at 01:00 Asia/Taipei.
+Also syncs ETF lists daily from TWSE, Nasdaq, and JPX.
 Supports RSI-based and composite trigger conditions.
 """
 import asyncio
@@ -15,6 +15,7 @@ from app.services.email_service import send_email, build_alert_email
 from app.services.line_service import send_line_message, build_alert_message
 from app.services.tw_etf_sync import sync_tw_etf_list
 from app.services.us_etf_sync import sync_us_etf_list
+from app.services.jp_etf_sync import sync_jp_etf_list
 from app.services.news_briefing_service import run_market_briefing_session
 from app.services.dividend_sync import sync_dividend_calendar
 from app.services.dividend_notify_service import check_and_send_dividend_notifications
@@ -365,6 +366,15 @@ async def run_us_etf_sync():
         logger.error(f"[Scheduler] US ETF sync failed: {e}")
 
 
+async def run_jp_etf_sync():
+    """Wrapper to run sync_jp_etf_list and log outcome."""
+    try:
+        count = await sync_jp_etf_list()
+        logger.info(f"[Scheduler] JP ETF sync complete: {count} records updated.")
+    except Exception as e:
+        logger.error(f"[Scheduler] JP ETF sync failed: {e}")
+
+
 async def run_briefing_job():
     """Wrapper to run market briefing session and log outcome."""
     try:
@@ -408,6 +418,8 @@ def start_scheduler():
     scheduler.add_job(run_tw_etf_sync, "cron", hour=1, minute=0, id="tw_etf_sync", replace_existing=True)
     # Sync US ETF list daily at 02:00 Asia/Taipei
     scheduler.add_job(run_us_etf_sync, "cron", hour=2, minute=0, id="us_etf_sync", replace_existing=True)
+    # Sync JP ETF list daily at 02:30 Asia/Taipei
+    scheduler.add_job(run_jp_etf_sync, "cron", hour=2, minute=30, id="jp_etf_sync", replace_existing=True)
     # AI Market Briefing: 08:00, 13:00, 18:00 Asia/Taipei
     scheduler.add_job(run_briefing_job, "cron", hour=8, minute=0, id="briefing_0800", replace_existing=True)
     scheduler.add_job(run_briefing_job, "cron", hour=13, minute=0, id="briefing_1300", replace_existing=True)
@@ -421,6 +433,6 @@ def start_scheduler():
     scheduler.start()
     logger.info(
         "[Scheduler] Started: price_check (every 30 min), tw_etf_sync (daily 01:00), "
-        "us_etf_sync (daily 02:00), briefing (08:00/13:00/18:00), "
+        "us_etf_sync (daily 02:00), jp_etf_sync (daily 02:30), briefing (08:00/13:00/18:00), "
         "dividend_sync (06:00), dividend_notify (06:30), image_cleanup (03:00)"
     )
