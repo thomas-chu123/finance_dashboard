@@ -192,43 +192,77 @@ async def _upsert_special_brief(
 
 
 async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
-    """搜尋本週預計發生的財經事件，並以 Ollama 彙整成 AI brief 項目。"""
+    """先取得實際經濟數據，再結合本週事件搜尋結果交由 Ollama 評測。"""
+    from app.services.economic_data_service import (
+        fetch_weekly_economic_data,
+        format_economic_data_for_prompt,
+    )
     from app.services.searxng_service import search_news as searxng_search_news
     from app.services.ollama_service import generate_custom_brief
 
     taipei_today = (datetime.now(timezone.utc) + timedelta(hours=8)).date().isoformat()
+    economic_data = await fetch_weekly_economic_data()
+    economic_data_lines = format_economic_data_for_prompt(economic_data)
     query = (
         f"本週 財經 大事 預定 {taipei_today} FOMC 利率 央行 CPI PCE PMI GDP earnings calendar "
         "economic calendar market events this week"
     )
-    news_items = await searxng_search_news(query=query, count=5, time_range="week")
-    if not news_items:
-        news_items = await search_news(query=query, count=5)
+    searched_news = await searxng_search_news(query=query, count=5, time_range="week")
+    if not searched_news:
+        searched_news = await search_news(query=query, count=5)
 
     source_lines = "\n".join(
         f"{idx}. {item.get('title', '')} - {item.get('description', '')} ({item.get('url', '')})"
-        for idx, item in enumerate(news_items[:5], start=1)
+        for idx, item in enumerate(searched_news[:5], start=1)
     )
     prompt = (
-        "你是財經事件編輯。請根據搜尋結果，整理本週預計發生、會影響金融市場的五個財經大事。"
+        "你是財經事件編輯。請根據下方『已取得的實際經濟數據』與搜尋結果，"
+        "評測本週預計發生、會影響金融市場的五個財經大事。"
         "優先包含 FOMC、央行利率決議、通膨、就業、GDP、PMI、重要財報或地緣政治事件。"
+        "禁止只做 CPI、非農、WTI 或 PMI 的名詞解釋。"
+        "每個成功取得的指標都必須在正文中至少出現一次，並明確寫出期間、實際值與單位；"
+        "有前值或變動率時也必須引用並說明市場意義。"
+        "不得修改、推測或補造數據區塊中的數值。"
         "若搜尋結果不足，請明確標示資料有限，不要捏造精確日期。\n\n"
         f"今天（台北時間）是 {taipei_today}。\n\n"
-        f"搜尋結果：\n{source_lines}\n\n"
+        f"已取得的實際經濟數據：\n{economic_data_lines}\n\n"
+        f"SearXNG／備援搜尋結果：\n{source_lines or '- 沒有可用搜尋結果'}\n\n"
         "輸出繁體中文，格式：\n"
         "【本週五大財經大事】\n"
-        "1. 事件：影響與市場觀察\n"
+        "1. 事件：實際數據（期間、數值、單位、前值／變動）＋影響與市場觀察\n"
         "...\n"
         "【總結】一句話說明本週市場主軸。"
     )
     summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=900)
-    if not summary_text and news_items:
+    if summary_text:
+        # 固定附上程式產生的數據區塊，避免模型漏寫或改寫任何實際數值。
+        summary_text = f"【最新實際經濟數據】\n{economic_data_lines}\n\n{summary_text}"
+    else:
         bullets = []
-        for idx, item in enumerate(news_items[:5], start=1):
+        for idx, item in enumerate(searched_news[:5], start=1):
             title = item.get("title") or "未命名事件"
             desc = item.get("description") or "請留意後續公布資訊。"
             bullets.append(f"{idx}. {title}：{desc[:90]}")
-        summary_text = "【本週五大財經大事】\n" + "\n".join(bullets)
+        summary_text = (
+            "【最新實際經濟數據】\n"
+            + economic_data_lines
+            + "\n\n【本週五大財經大事】\n"
+            + ("\n".join(bullets) if bullets else "搜尋資料暫時不足，請稍後重試。")
+        )
+    economic_news_items = [
+        {
+            "title": f"{item['name']}：{item['value']} {item['unit']}",
+            "url": item["source_url"],
+            "description": (
+                f"期間 {item['period']}；來源 {item['source']}；"
+                f"參考頁面 {item['reference_url']}"
+            ),
+            "published_date": item["period"],
+            "economic_data": item,
+        }
+        for item in economic_data
+    ]
+    news_items = economic_news_items + searched_news
     return news_items, summary_text
 
 
