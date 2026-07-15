@@ -251,7 +251,11 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         )
     economic_news_items = [
         {
-            "title": f"{item['name']}：{item['value']} {item['unit']}",
+            "title": (
+                f"{item['name']}：{item['value']:.2f} {item['unit']}"
+                if item.get("key") == "wti"
+                else f"{item['name']}：{item['value']} {item['unit']}"
+            ),
             "url": item["source_url"],
             "description": (
                 f"期間 {item['period']}；來源 {item['source']}；"

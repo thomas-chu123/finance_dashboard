@@ -21,7 +21,7 @@ async def test_bls_data_calculates_cpi_and_nonfarm_changes():
         "Results": {
             "series": [
                 {
-                    "seriesID": "CUSR0000SA0",
+                    "seriesID": "CUUR0000SA0",
                     "data": [
                         {"year": "2026", "period": "M06", "value": "332.0"},
                         {"year": "2026", "period": "M05", "value": "331.0"},
@@ -99,6 +99,31 @@ def test_prompt_formatter_includes_period_value_unit_and_change():
     assert "實際值 158984 千人" in text
     assert "較前值變動 +57.00 千人" in text
     assert "來源 BLS" in text
+
+
+@pytest.mark.unit
+def test_prompt_formatter_limits_wti_to_two_decimal_places():
+    """WTI 實際值與前值顯示時應固定保留小數點後兩位。"""
+    text = format_economic_data_for_prompt(
+        [
+            {
+                "key": "wti",
+                "name": "WTI 原油期貨",
+                "period": "2026-07-15",
+                "value": 79.68000030517578,
+                "unit": "美元/桶",
+                "previous_value": 79.33999633789062,
+                "change": 0.34,
+                "change_pct": 0.43,
+                "source": "Yahoo Finance",
+                "source_url": "https://finance.yahoo.com/quote/CL=F/",
+            }
+        ]
+    )
+
+    assert "實際值 79.68 美元/桶" in text
+    assert "前值 79.34 美元/桶" in text
+    assert "79.68000030517578" not in text
 
 
 @pytest.mark.unit
