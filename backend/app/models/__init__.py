@@ -58,7 +58,7 @@ class ProfileResponse(BaseModel):
 # ──────────────────────────────────────────────
 # Tracked Indices
 # ──────────────────────────────────────────────
-VALID_CATEGORIES = {"vix", "oil", "us_etf", "tw_etf", "index", "crypto"}
+VALID_CATEGORIES = {"vix", "oil", "us_etf", "tw_etf", "jp_etf", "index", "crypto", "funds", "exchange"}
 VALID_DIRECTIONS = {"above", "below"}
 VALID_CHANNELS = {"email", "line", "both"}
 VALID_TRIGGER_MODES = {"price", "rsi", "both", "either"}  # both=AND, either=OR

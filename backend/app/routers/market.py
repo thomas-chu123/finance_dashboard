@@ -32,7 +32,9 @@ async def _fetch_quote(meta: dict) -> dict:
     symbol = meta["symbol"]
     # Infer category for get_quote_data
     sym_upper = symbol.upper().replace(".TWO", "").replace(".TW0", "").replace(".TW", "")
-    if any(symbol.endswith(suffix) for suffix in [".TW", ".TWO", ".TW0"]):
+    if symbol.upper().endswith(".T"):
+        category = "jp_etf"
+    elif any(symbol.endswith(suffix) for suffix in [".TW", ".TWO", ".TW0"]):
         category = "tw_etf"
     elif sym_upper.isdigit() and 4 <= len(sym_upper) <= 6:
         # Pure numeric code stored without .TW suffix (e.g. "0050" from legacy profile)
@@ -97,18 +99,20 @@ async def get_quotes_batch(metas: List[QuoteMeta]):
     return list(results)
 
 
-from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, get_index_list, get_fund_list
+from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, fetch_jp_etf_list, get_index_list, get_fund_list
 
 @router.get("/symbols")
 async def get_available_symbols():
     """Fetch all available symbols for the live quotes widget."""
     tw_etfs = await fetch_tw_etf_list()
     us_etfs = await fetch_us_etf_list()
+    jp_etfs = await fetch_jp_etf_list()
     indices = get_index_list()
     funds = await get_fund_list()
     return {
         "tw_etf": tw_etfs,
         "us_etf": us_etfs,
+        "jp_etf": jp_etfs,
         "index": indices,
         "funds": funds
     }
@@ -219,7 +223,7 @@ async def search_symbols(
     
     Args:
         q: 搜尋關鍵字 (支持 symbol、name_zh、name_en 模糊匹配)
-        category: 篩選類別 (tw_etf, us_etf, fund, index, vix, oil, exchange, 等)
+        category: 篩選類別 (tw_etf, us_etf, jp_etf, fund, index, vix, oil, exchange, 等)
         limit: 返回結果數量 (1-50，預設 15)
     
     Returns:
@@ -239,7 +243,7 @@ async def search_symbols(
             "total": 3
         }
     """
-    from app.services.market_data import SYMBOL_CATALOG, fetch_tw_etf_list, fetch_us_etf_list
+    from app.services.market_data import SYMBOL_CATALOG, fetch_tw_etf_list, fetch_us_etf_list, fetch_jp_etf_list
     
     # 若查詢字串為空，返回空結果
     if not q or len(q.strip()) == 0:
@@ -258,17 +262,21 @@ async def search_symbols(
     try:
         tw_task = fetch_tw_etf_list()
         us_task = fetch_us_etf_list()
-        tw_result, us_result = await asyncio.gather(
-            tw_task, us_task, return_exceptions=True
+        jp_task = fetch_jp_etf_list()
+        tw_result, us_result, jp_result = await asyncio.gather(
+            tw_task, us_task, jp_task, return_exceptions=True
         )
         
         tw_etfs = tw_result if not isinstance(tw_result, Exception) else []
         us_etfs = us_result if not isinstance(us_result, Exception) else []
+        jp_etfs = jp_result if not isinstance(jp_result, Exception) else []
         
         if tw_etfs:
             all_symbols.extend(tw_etfs)
         if us_etfs:
             all_symbols.extend(us_etfs)
+        if jp_etfs:
+            all_symbols.extend(jp_etfs)
     except Exception as e:
         logger.warning(f"Failed to fetch ETF lists: {e}")
     

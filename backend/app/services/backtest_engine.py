@@ -95,33 +95,34 @@ async def run_backtest(
         else:
             logger.warning(f"[Backtest] NO data found for {sym}")
 
-    # Currency conversion (TWD -> USD)
-    # We assume base currency is USD for now.
-    twd_fx = pd.Series()
-    if any(get_symbol_currency(s) == "TWD" for s in symbols):
-        twd_fx = await get_historical_prices("TWD=X", start_date, end_date)
-        if twd_fx.empty:
-            logger.warning("[Backtest] Could not fetch TWD=X exchange rate. Using local returns (no FX adjustment).")
-        else:
-            logger.info(f"[Backtest] Fetched {len(twd_fx)} days of USD/TWD exchange rate.")
+    # Currency conversion to USD base for cross-market calculations.
+    fx_symbols = {"TWD": "TWD=X", "JPY": "JPY=X"}
+    fx_series = {}
+    for currency, fx_symbol in fx_symbols.items():
+        if any(get_symbol_currency(s) == currency for s in symbols):
+            series = await get_historical_prices(fx_symbol, start_date, end_date)
+            if series.empty:
+                logger.warning(f"[Backtest] Could not fetch {fx_symbol} exchange rate. Using local {currency} prices.")
+            else:
+                fx_series[currency] = series
+                logger.info(f"[Backtest] Fetched {len(series)} days of USD/{currency} exchange rate.")
 
-    if not twd_fx.empty:
-        for sym in list(price_data.keys()):
-            if get_symbol_currency(sym) == "TWD":
-                # Align price and FX using ffill().bfill() to preserve all trading days
-                # IMPORTANT: Do NOT use .dropna() as it removes trading days that exist in either price_data or twd_fx
-                # This causes date misalignment and reduces trading_days count, which inflates CAGR calculations
-                combined = pd.DataFrame({"price": price_data[sym], "fx": twd_fx}).ffill().bfill()
-                combined = combined.dropna(how='all')  # Only drop rows where ALL values are NaN
-                if not combined.empty and len(combined) == len(price_data[sym]):
-                    price_data[sym] = combined["price"] / combined["fx"]
-                    logger.info(f"[Backtest] Adjusted {sym} to USD using TWD=X (rows: {len(combined)})")
-                else:
-                    # If alignment causes data loss, keep original TWD prices
-                    if not combined.empty and len(combined) < len(price_data[sym]):
-                        logger.warning(f"[Backtest] FX alignment for {sym} lost {len(price_data[sym]) - len(combined)} rows. Using local TWD prices.")
-                    else:
-                        logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local TWD prices.")
+    for sym in list(price_data.keys()):
+        currency = get_symbol_currency(sym)
+        fx = fx_series.get(currency)
+        if fx is None or fx.empty:
+            continue
+
+        # Align price and FX using ffill().bfill() to preserve all trading days.
+        combined = pd.DataFrame({"price": price_data[sym], "fx": fx}).ffill().bfill()
+        combined = combined.dropna(how='all')
+        if not combined.empty and len(combined) == len(price_data[sym]):
+            price_data[sym] = combined["price"] / combined["fx"]
+            logger.info(f"[Backtest] Adjusted {sym} to USD using {fx_symbols[currency]} (rows: {len(combined)})")
+        elif not combined.empty and len(combined) < len(price_data[sym]):
+            logger.warning(f"[Backtest] FX alignment for {sym} lost {len(price_data[sym]) - len(combined)} rows. Using local {currency} prices.")
+        else:
+            logger.warning(f"[Backtest] Could not align FX data with {sym}. Using local {currency} prices.")
 
     if not price_data:
         logger.error("[Backtest] No data fetched for ANY symbol.")
@@ -220,14 +221,17 @@ async def run_backtest(
     # Determine benchmark: 0050.TW only if portfolio contains ONLY Taiwan ETF, otherwise SPY
     # Primary logic: use category field (more reliable than symbol suffix)
     has_taiwan = any(it.get("category") == "tw_etf" for it in items)
-    has_us = any(
-        it.get("category") in ("us_etf", "index") 
-        for it in items
-    )
+    has_japan = any(it.get("category") == "jp_etf" for it in items)
+    has_us = any(it.get("category") in ("us_etf", "index") for it in items)
     
     # Use 0050.TW as benchmark ONLY if portfolio is 100% Taiwan ETF
-    benchmark_symbol = "0050.TW" if (has_taiwan and not has_us) else "SPY"
-    logger.info(f"[Backtest] Benchmark determination: has_taiwan={has_taiwan}, has_us={has_us}, categories={[it.get('category') for it in items]} → benchmark={benchmark_symbol}")
+    if has_japan and not has_taiwan and not has_us:
+        benchmark_symbol = "1321.T"
+    elif has_taiwan and not has_japan and not has_us:
+        benchmark_symbol = "0050.TW"
+    else:
+        benchmark_symbol = "SPY"
+    logger.info(f"[Backtest] Benchmark determination: has_taiwan={has_taiwan}, has_japan={has_japan}, has_us={has_us}, categories={[it.get('category') for it in items]} → benchmark={benchmark_symbol}")
 
     # Beta calculation using the determined benchmark
     beta_val = 1.0
@@ -238,9 +242,10 @@ async def run_backtest(
             benchmark_prices_for_beta = await get_historical_prices(benchmark_symbol, start_date, end_date)
 
         if not benchmark_prices_for_beta.empty:
-            # For Taiwan benchmark, convert to USD if needed
-            if benchmark_symbol == "0050.TW" and not twd_fx.empty:
-                combined_bm = pd.DataFrame({"price": benchmark_prices_for_beta, "fx": twd_fx}).ffill().dropna()
+            benchmark_currency = get_symbol_currency(benchmark_symbol)
+            benchmark_fx = fx_series.get(benchmark_currency)
+            if benchmark_fx is not None and not benchmark_fx.empty:
+                combined_bm = pd.DataFrame({"price": benchmark_prices_for_beta, "fx": benchmark_fx}).ffill().dropna()
                 if not combined_bm.empty:
                     benchmark_prices_for_beta = combined_bm["price"] / combined_bm["fx"]
             
@@ -302,8 +307,10 @@ async def run_backtest(
         else:
             benchmark_prices = await get_historical_prices(benchmark_symbol, start_date, end_date)
             
-        if not benchmark_prices.empty and get_symbol_currency(benchmark_symbol) == "TWD" and not twd_fx.empty:
-            combined_bm = pd.DataFrame({"price": benchmark_prices, "fx": twd_fx}).ffill().dropna()
+        benchmark_currency = get_symbol_currency(benchmark_symbol)
+        benchmark_fx = fx_series.get(benchmark_currency)
+        if not benchmark_prices.empty and benchmark_fx is not None and not benchmark_fx.empty:
+            combined_bm = pd.DataFrame({"price": benchmark_prices, "fx": benchmark_fx}).ffill().dropna()
             if not combined_bm.empty:
                 benchmark_prices = combined_bm["price"] / combined_bm["fx"]
                 logger.info(f"[Backtest] Converted benchmark {benchmark_symbol} to USD")

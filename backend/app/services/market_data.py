@@ -211,6 +211,8 @@ def _to_yf_symbol(symbol: str) -> str:
     upper = symbol.upper()
     if upper in SYMBOL_MAP:
         return SYMBOL_MAP[upper]
+    if _is_japan_etf(symbol):
+        return symbol if upper.endswith(".T") else f"{symbol}.T"
     # Taiwan ETF: append .TW if numeric
     if symbol.replace("-", "").replace("B", "").isdigit():
         return f"{symbol}.TW"
@@ -224,10 +226,18 @@ def _is_taiwan_stock(symbol: str) -> bool:
     return False
 
 
+def _is_japan_etf(symbol: str) -> bool:
+    """Detect if a symbol is a Japan ETF using Yahoo Finance .T mapping."""
+    upper = symbol.upper()
+    return upper.endswith(".T") and upper[:-2].isdigit() and len(upper[:-2]) == 4
+
+
 def get_symbol_currency(symbol: str) -> str:
-    """Identify the currency of a symbol (USD or TWD)."""
+    """Identify the currency of a symbol (USD, TWD, or JPY)."""
     if _is_taiwan_stock(symbol):
         return "TWD"
+    if _is_japan_etf(symbol):
+        return "JPY"
     if symbol.upper() in ["TAIEX", "^TWII"]:
         return "TWD"
     # Exchange rates like TWD=X are USD-based (1 USD = X TWD)
@@ -451,6 +461,9 @@ async def get_quote_data(symbol: str, category: str) -> dict:
     2. 台灣 ETF/股票 (0050.TW, 00878.TW 等) → 爬蟲（yfinance 對台灣股票延遲太高）
     3. 其他符號 → yfinance 或符號映射
     """
+    if category == "jp_etf" and not symbol.upper().endswith(".T"):
+        symbol = f"{symbol}.T"
+
     upper_symbol = symbol.upper()
     original_symbol = symbol
     
@@ -593,11 +606,13 @@ async def get_historical_prices(
             return pd.Series(dtype=float)
             
         # 時區標準化：以交易所本地時間的日期為準，避免轉成 UTC 造成日期偏移
-        # 台灣股票（Asia/Taipei = UTC+8）：若轉 UTC 則當日 0:00+08:00 → 前日 16:00 UTC → 日期少一天
+        # 台灣/日本股票（UTC+8/+9）：若轉 UTC 則交易日可能偏移到前一日
         # 美股（America/New_York）：轉 UTC 不影響日期（當日 04:00 UTC）
         if hist.index.tz is not None:
             if _is_taiwan_stock(symbol):
                 hist.index = hist.index.tz_convert("Asia/Taipei").tz_localize(None)
+            elif _is_japan_etf(symbol):
+                hist.index = hist.index.tz_convert("Asia/Tokyo").tz_localize(None)
             else:
                 hist.index = hist.index.tz_convert("America/New_York").tz_localize(None)
         hist.index = hist.index.normalize()
@@ -842,6 +857,61 @@ async def fetch_us_etf_list() -> list[dict]:
         {"symbol": "IWM", "name_zh": "iShares Russell 2000", "name_en": "iShares Russell 2000", "category": "us_etf", "yahoo_symbol": "IWM"},
         {"symbol": "GLD", "name_zh": "SPDR Gold Shares", "name_en": "SPDR Gold Shares", "category": "us_etf", "yahoo_symbol": "GLD"},
         {"symbol": "TLT", "name_zh": "iShares Treasury Bond", "name_en": "iShares 20+ Year Treasury Bond", "category": "us_etf", "yahoo_symbol": "TLT"},
+    ]
+
+
+async def fetch_jp_etf_list() -> list[dict]:
+    """Fetch Japan ETF list from Supabase, populated by the daily JPX sync job."""
+    def _format_row(row: dict) -> dict:
+        yahoo_symbol = row["symbol"] if str(row["symbol"]).endswith(".T") else f"{row['symbol']}.T"
+        name = row.get("name") or yahoo_symbol
+        return {
+            "symbol": yahoo_symbol,
+            "name": name,
+            "name_zh": name,
+            "name_en": name,
+            "category": "jp_etf",
+            "yahoo_symbol": yahoo_symbol,
+        }
+
+    try:
+        from app.database import get_supabase
+        sb = get_supabase()
+
+        all_rows = []
+        page_size = 1000
+        start = 0
+        while True:
+            res = sb.table("jp_etf_list").select("symbol, name").order("symbol").range(start, start + page_size - 1).execute()
+            if not res.data:
+                break
+            all_rows.extend(res.data)
+            if len(res.data) < page_size:
+                break
+            start += page_size
+
+        if all_rows:
+            return [_format_row(row) for row in all_rows]
+        logger.warning("[MarketData] jp_etf_list table is empty — triggering one-time sync from JPX.")
+    except Exception as e:
+        logger.error(f"[MarketData] Failed to query jp_etf_list from Supabase: {e}")
+
+    try:
+        from app.services.jp_etf_sync import sync_jp_etf_list
+        await sync_jp_etf_list()
+        from app.database import get_supabase
+        sb = get_supabase()
+        res = sb.table("jp_etf_list").select("symbol, name").order("symbol").execute()
+        if res.data:
+            return [_format_row(row) for row in res.data]
+    except Exception as e:
+        logger.error(f"[MarketData] Live JPX sync also failed: {e}")
+
+    logger.warning("[MarketData] Returning minimal hardcoded JP ETF fallback.")
+    return [
+        {"symbol": "1308.T", "name": "Nikko Exchange Traded Index Fund TOPIX", "name_zh": "Nikko Exchange Traded Index Fund TOPIX", "name_en": "Nikko Exchange Traded Index Fund TOPIX", "category": "jp_etf", "yahoo_symbol": "1308.T"},
+        {"symbol": "1321.T", "name": "Nikko Exchange Traded Fund Nikkei 225", "name_zh": "Nikko Exchange Traded Fund Nikkei 225", "name_en": "Nikko Exchange Traded Fund Nikkei 225", "category": "jp_etf", "yahoo_symbol": "1321.T"},
+        {"symbol": "1343.T", "name": "NEXT FUNDS REIT Index ETF", "name_zh": "NEXT FUNDS REIT Index ETF", "name_en": "NEXT FUNDS REIT Index ETF", "category": "jp_etf", "yahoo_symbol": "1343.T"},
     ]
 
 

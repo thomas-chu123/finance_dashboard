@@ -102,6 +102,7 @@ class TestMarketSymbols:
         """GET /api/market/symbols 應回傳 200 及分類結構."""
         tw_mock = [{"symbol": "0050.TW", "name": "元大台灣50"}]
         us_mock = [{"symbol": "VTI", "name": "Vanguard Total Stock"}]
+        jp_mock = [{"symbol": "1321.T", "name": "Nikko Nikkei 225 ETF"}]
         idx_mock = [{"symbol": "^GSPC", "name": "S&P 500"}]
 
         async def _tw():
@@ -110,9 +111,13 @@ class TestMarketSymbols:
         async def _us():
             return us_mock
 
+        async def _jp():
+            return jp_mock
+
         with (
             patch("app.routers.market.fetch_tw_etf_list", new=_tw),
             patch("app.routers.market.fetch_us_etf_list", new=_us),
+            patch("app.routers.market.fetch_jp_etf_list", new=_jp),
             patch("app.routers.market.get_index_list", return_value=idx_mock),
         ):
             resp = client.get("/api/market/symbols")
@@ -120,6 +125,7 @@ class TestMarketSymbols:
         data = resp.json()
         assert "tw_etf" in data
         assert "us_etf" in data
+        assert "jp_etf" in data
         assert "index" in data
 
     @allure.story("Symbol Catalog")

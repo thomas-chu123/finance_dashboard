@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from typing import List, Optional, Dict
-from ..services.market_data import get_historical_prices
+from ..services.market_data import get_historical_prices, get_symbol_currency
 from ..services.optimization_engine import run_optimization, _portfolio_performance
 from ..database import get_supabase
 from ..routers.users import get_user_id
@@ -14,6 +14,39 @@ TRADING_DAYS = 252
 RISK_FREE_RATE = 0.02
 
 router = APIRouter(prefix="/api/optimize", tags=["Optimize"])
+
+
+async def _fetch_prices_in_usd(symbols: List[str], start_date: str, end_date: str) -> pd.DataFrame:
+    """Fetch historical prices and convert TWD/JPY assets to USD for optimization."""
+    series_list = await asyncio.gather(*[
+        get_historical_prices(symbol, start_date, end_date)
+        for symbol in symbols
+    ])
+
+    price_data = {
+        symbol: series
+        for symbol, series in zip(symbols, series_list)
+        if not series.empty
+    }
+
+    fx_symbols = {"TWD": "TWD=X", "JPY": "JPY=X"}
+    fx_series = {}
+    for currency, fx_symbol in fx_symbols.items():
+        if any(get_symbol_currency(symbol) == currency for symbol in price_data):
+            fx = await get_historical_prices(fx_symbol, start_date, end_date)
+            if not fx.empty:
+                fx_series[currency] = fx
+
+    for symbol, series in list(price_data.items()):
+        currency = get_symbol_currency(symbol)
+        fx = fx_series.get(currency)
+        if fx is None or fx.empty:
+            continue
+        combined = pd.DataFrame({"price": series, "fx": fx}).ffill().bfill().dropna(how="all")
+        if not combined.empty:
+            price_data[symbol] = combined["price"] / combined["fx"]
+
+    return pd.DataFrame(price_data).ffill().bfill()
 
 class OptimizeRequest(BaseModel):
     symbols: List[str]
@@ -52,15 +85,7 @@ async def optimize_portfolio(req: OptimizeRequest):
     if len(req.symbols) > 15:
         raise HTTPException(status_code=400, detail="最多選擇 15 個標的進行最佳化。")
 
-    # Fetch historical data concurrently
-    tasks = [
-        get_historical_prices(symbol, req.start_date, req.end_date)
-        for symbol in req.symbols
-    ]
-    series_list = await asyncio.gather(*tasks)
-    
-    # Combine into a single DataFrame
-    df = pd.DataFrame({s.name: s for s in series_list if not s.empty})
+    df = await _fetch_prices_in_usd(req.symbols, req.start_date, req.end_date)
     df.dropna(inplace=True)
 
     if df.empty or len(df) < 30:
@@ -227,15 +252,7 @@ async def calculate_portfolio_performance(req: PortfolioPerformanceRequest):
     if len(req.symbols) < 2:
         raise HTTPException(status_code=400, detail="至少需要兩個以上的標的。")
     
-    # Fetch historical data concurrently
-    tasks = [
-        get_historical_prices(symbol, req.start_date, req.end_date)
-        for symbol in req.symbols
-    ]
-    series_list = await asyncio.gather(*tasks)
-    
-    # Combine into a single DataFrame
-    df = pd.DataFrame({s.name: s for s in series_list if not s.empty})
+    df = await _fetch_prices_in_usd(req.symbols, req.start_date, req.end_date)
     df.dropna(inplace=True)
 
     if df.empty or len(df) < 30:

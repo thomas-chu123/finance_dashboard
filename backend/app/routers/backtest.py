@@ -5,7 +5,7 @@ from app.models import BacktestRunRequest, BacktestSaveRequest, BacktestPortfoli
 from app.database import get_supabase
 from app.routers.users import get_user_id
 from app.services.backtest_engine import run_backtest
-from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, get_index_list, get_fund_list
+from app.services.market_data import fetch_tw_etf_list, fetch_us_etf_list, fetch_jp_etf_list, get_index_list, get_fund_list
 from fastapi_cache.decorator import cache
 
 router = APIRouter(prefix="/api/backtest", tags=["backtest"])
@@ -185,15 +185,17 @@ async def compare_portfolios(body: BacktestCompareRequest, authorization: str = 
 @router.get("/symbols")
 async def get_symbols():
     """Return available symbols for selection."""
-    tw_etfs, us_etfs, funds = await asyncio.gather(
+    tw_etfs, us_etfs, jp_etfs, funds = await asyncio.gather(
         fetch_tw_etf_list(),
         fetch_us_etf_list(),
+        fetch_jp_etf_list(),
         get_fund_list(),
     )
     indices = get_index_list()
     return {
         "tw_etf": tw_etfs,
         "us_etf": us_etfs,
+        "jp_etf": jp_etfs,
         "indices": indices,
         "funds": funds,
     }

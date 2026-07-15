@@ -15,6 +15,7 @@ export const useSearchStore = defineStore('search', () => {
     { label: '全部', value: null },
     { label: '台灣 ETF', value: 'tw_etf' },
     { label: '美股 ETF', value: 'us_etf' },
+    { label: '日本 ETF', value: 'jp_etf' },
     { label: '基金', value: 'fund' },
     { label: '指數', value: 'index' },
     { label: 'VIX', value: 'vix' },
