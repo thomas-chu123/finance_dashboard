@@ -102,9 +102,17 @@ docker-compose up
 測試：
 
 ```bash
-pytest tests/ -v --tb=short
-pytest tests/test_backtest_engine.py -v
-pytest tests/ --cov=app --cov-report=html
+venv/bin/pytest tests/ -v --tb=short
+venv/bin/pytest tests/test_backtest_engine.py -v
+venv/bin/pytest tests/ --cov=app --cov-report=html
+```
+
+pytest 安裝在專案根目錄的 `venv/`，應從專案根目錄執行 `venv/bin/pytest`。不要誤用 `backend/venv`，該虛擬環境目前未安裝 pytest。
+
+若目前 shell 的 `DEBUG` 環境變數是 `release` 等非布林值，Pydantic Settings 會在測試載入階段失敗。此時使用明確的布林值執行：
+
+```bash
+DEBUG=false venv/bin/pytest tests/ -v --tb=short
 ```
 
 前端建置：
@@ -207,6 +215,8 @@ JavaScript/Vue：
 
 ## 測試與驗證
 
+- pytest 必須優先使用專案根目錄的 `venv/bin/pytest`；不要僅因 `backend/venv` 找不到 pytest 就判定專案沒有安裝測試工具。
+- 測試載入若出現 `debug` 布林解析錯誤，先以 `DEBUG=false` 重跑，並將環境設定問題與程式測試失敗分開回報。
 - 後端邏輯變更後，至少執行相關 pytest。
 - 前端 UI 或 API client 變更後，至少執行 `npm run build`。
 - 跨前後端流程變更時，優先增加或更新整合測試。

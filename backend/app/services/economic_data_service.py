@@ -263,7 +263,7 @@ async def _fetch_ism_pmi(client: httpx.AsyncClient) -> dict[str, Any]:
             r"registered\s+\d+(?:\.\d+)?\s*percent.*?(\d+(?:\.\d+)?)\s+percentage points?\s+"
             r"(?:higher|lower).*?(?:in|than)\s+([A-Za-z]+)",
             text,
-            re.IGNORECASE,
+            re.IGNORECASE | re.DOTALL,
         )
         previous_value = None
         if previous_match:
@@ -271,7 +271,7 @@ async def _fetch_ism_pmi(client: httpx.AsyncClient) -> dict[str, Any]:
             direction_match = re.search(
                 r"registered\s+\d+(?:\.\d+)?\s*percent.*?percentage points?\s+(higher|lower)",
                 text,
-                re.IGNORECASE,
+                re.IGNORECASE | re.DOTALL,
             )
             if direction_match:
                 previous_value = value - delta if direction_match.group(1).lower() == "higher" else value + delta
