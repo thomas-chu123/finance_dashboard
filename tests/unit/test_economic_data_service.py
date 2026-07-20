@@ -21,7 +21,7 @@ async def test_bls_data_calculates_cpi_and_nonfarm_changes():
         "Results": {
             "series": [
                 {
-                    "seriesID": "CUUR0000SA0",
+                    "seriesID": "CUSR0000SA0",
                     "data": [
                         {"year": "2026", "period": "M06", "value": "332.0"},
                         {"year": "2026", "period": "M05", "value": "331.0"},
@@ -150,6 +150,18 @@ async def test_weekly_brief_fetches_economic_data_before_search_and_prompts_valu
         calls.append("economic_data")
         return [record]
 
+    async def fetch_market_signals():
+        calls.append("market_signals")
+        return [
+            {
+                "symbol": "^SOX",
+                "name": "費城半導體指數",
+                "price": 5500.0,
+                "prev_close": 5445.0,
+                "change_pct": 1.01,
+            }
+        ]
+
     async def search(*args, **kwargs):
         calls.append("search")
         return [{"title": "Fed event", "description": "rate", "url": "https://example.com"}]
@@ -157,15 +169,51 @@ async def test_weekly_brief_fetches_economic_data_before_search_and_prompts_valu
     generate = AsyncMock(return_value="含有 2026-06 PMI 53.3 指數的評測")
     with (
         patch("app.services.economic_data_service.fetch_weekly_economic_data", side_effect=fetch_data),
+        patch(
+            "app.services.news_briefing_service._fetch_weekly_market_signals",
+            side_effect=fetch_market_signals,
+        ),
         patch("app.services.searxng_service.search_news", side_effect=search),
         patch("app.services.ollama_service.generate_custom_brief", generate),
     ):
         news_items, summary = await _generate_weekly_finance_events()
 
-    assert calls == ["economic_data", "search"]
+    assert calls == ["economic_data", "market_signals", "search"]
     prompt = generate.await_args.args[0]
     assert "實際值 53.3 指數" in prompt
     assert "禁止只做" in prompt
+    assert "台股方向：偏多" in prompt
+    assert "費城半導體指數" in prompt
     assert news_items[0]["economic_data"]["value"] == 53.3
-    assert summary.startswith("【最新實際經濟數據】")
+    assert summary.startswith("【本週總判斷】")
+    assert "【原始數據】" in summary
     assert "53.3" in summary
+
+
+@pytest.mark.unit
+def test_weekly_assessment_produces_direction_and_confidence():
+    """結構化規則應輸出景氣、通膨、台股方向與可信度。"""
+    from app.services.news_briefing_service import _build_weekly_assessment
+
+    economic_data = [
+        {
+            "key": "cpi",
+            "year_over_year_pct": 2.3,
+            "month_over_month_pct": 0.1,
+        },
+        {"key": "pmi", "value": 52.0, "change": 0.8},
+        {"key": "nonfarm", "change": 150.0},
+    ]
+    market_signals = [
+        {"symbol": "TAIEX", "name": "台灣加權指數", "change_pct": 1.0},
+        {"symbol": "TSM", "name": "台積電 ADR", "change_pct": 1.5},
+        {"symbol": "^SOX", "name": "費城半導體指數", "change_pct": 1.2},
+        {"symbol": "^VIX", "name": "VIX 恐慌指數", "change_pct": -2.0},
+    ]
+
+    result = _build_weekly_assessment(economic_data, market_signals)
+
+    assert result["economy_state"] == "溫和擴張"
+    assert result["inflation_state"] == "通膨壓力降溫"
+    assert result["tw_direction"] == "偏多"
+    assert 1 <= result["confidence"] <= 90

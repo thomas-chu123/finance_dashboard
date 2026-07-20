@@ -25,7 +25,7 @@ ISM_PMI_URL = (
 )
 JINA_READER_URL = "https://r.jina.ai/{url}"
 
-BLS_CPI_SERIES = "CUUR0000SA0"
+BLS_CPI_SERIES = "CUSR0000SA0"
 BLS_NONFARM_SERIES = "CES0000000001"
 MACROMICRO_URLS = {
     "cpi": "https://www.macromicro.me/charts/10/cpi",
@@ -104,12 +104,12 @@ async def _fetch_bls_data(client: httpx.AsyncClient) -> dict[str, dict[str, Any]
         )
         result["cpi"] = _record(
             "cpi",
-            "美國 CPI（未季調）",
+            "美國 CPI（季調）",
             _period_to_date(latest["year"], latest["period"]),
             latest_value,
             "指數（1982–1984 年平均=100）",
             "BLS",
-            "https://data.bls.gov/timeseries/CUUR0000SA0&output_view=pct_12mths",
+            "https://data.bls.gov/timeseries/CUSR0000SA0&output_view=pct_12mths",
             previous_value=previous_value,
             month_over_month_pct=(latest_value / previous_value - 1) * 100,
             year_over_year_pct=(latest_value / year_ago - 1) * 100 if year_ago else None,
@@ -149,7 +149,7 @@ async def _fetch_fred_series(client: httpx.AsyncClient, series_id: str) -> list[
 
 
 async def _fetch_cpi_fred(client: httpx.AsyncClient) -> dict[str, Any]:
-    rows = await _fetch_fred_series(client, "CPIAUCNS")
+    rows = await _fetch_fred_series(client, "CPIAUCSL")
     if len(rows) < 2:
         raise ValueError("FRED CPI observations are insufficient")
     period, value = rows[0]
@@ -160,8 +160,8 @@ async def _fetch_cpi_fred(client: httpx.AsyncClient) -> dict[str, Any]:
         None,
     )
     return _record(
-        "cpi", "美國 CPI（未季調）", period[:7], value, "指數（1982–1984 年平均=100）", "FRED",
-        "https://fred.stlouisfed.org/series/CPIAUCNS", previous_value=previous_value,
+        "cpi", "美國 CPI（季調）", period[:7], value, "指數（1982–1984 年平均=100）", "FRED",
+        "https://fred.stlouisfed.org/series/CPIAUCSL", previous_value=previous_value,
         month_over_month_pct=(value / previous_value - 1) * 100,
         year_over_year_pct=(value / year_ago - 1) * 100 if year_ago else None,
     )

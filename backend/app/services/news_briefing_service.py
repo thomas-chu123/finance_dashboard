@@ -166,6 +166,159 @@ def _fmt_pct(value: float | None) -> str:
     return f"{sign}{value:.2f}%"
 
 
+async def _fetch_weekly_market_signals() -> list[dict]:
+    """取得判斷台股短線方向所需的跨市場即時訊號。"""
+    from app.services.market_data import get_quote_data
+
+    quote_specs = [
+        ("TAIEX", "index", "台灣加權指數"),
+        ("WTX&", "index", "台指期夜盤"),
+        ("TSM", "index", "台積電 ADR"),
+        ("^SOX", "index", "費城半導體指數"),
+        ("^VIX", "vix", "VIX 恐慌指數"),
+        ("TWD=X", "exchange", "USD/TWD"),
+    ]
+    results = await asyncio.gather(
+        *[get_quote_data(symbol, category) for symbol, category, _name in quote_specs],
+        return_exceptions=True,
+    )
+    signals = []
+    for (symbol, _category, name), result in zip(quote_specs, results):
+        if isinstance(result, Exception):
+            logger.warning("[WeeklyBrief] market signal failed symbol=%s: %s", symbol, result)
+            continue
+        price = result.get("price")
+        prev_close = result.get("prev_close")
+        change_pct = _pct_change(price, prev_close)
+        if price is None or change_pct is None:
+            continue
+        signals.append(
+            {
+                "symbol": symbol,
+                "name": name,
+                "price": price,
+                "prev_close": prev_close,
+                "change_pct": change_pct,
+            }
+        )
+    return signals
+
+
+def _format_weekly_market_signals(signals: list[dict]) -> str:
+    """將跨市場訊號整理為模型可核對的文字。"""
+    if not signals:
+        return "- 本次未成功取得跨市場行情。"
+    return "\n".join(
+        f"- {item['name']}（{item['symbol']}）：現值 {_fmt_num(item['price'], 3)}；"
+        f"前值 {_fmt_num(item['prev_close'], 3)}；單日漲跌 {_fmt_pct(item['change_pct'])}"
+        for item in signals
+    )
+
+
+def _build_weekly_assessment(
+    economic_data: list[dict], market_signals: list[dict]
+) -> dict[str, str | int]:
+    """以可重現規則先產生景氣、通膨與台股方向，避免交由模型猜測。"""
+    economic_by_key = {item.get("key"): item for item in economic_data}
+    economy_score = 0.0
+    reasons = []
+
+    pmi = economic_by_key.get("pmi")
+    if pmi:
+        pmi_value = float(pmi["value"])
+        pmi_change = pmi.get("change")
+        economy_score += 1.0 if pmi_value >= 50 else -1.0
+        if pmi_change is not None:
+            economy_score += 0.5 if pmi_change > 0 else -0.5
+        reasons.append(f"PMI {pmi_value:.1f}，{'仍在擴張區' if pmi_value >= 50 else '落在收縮區'}")
+
+    nonfarm = economic_by_key.get("nonfarm")
+    if nonfarm and nonfarm.get("change") is not None:
+        payroll_change = float(nonfarm["change"])
+        economy_score += 1.0 if payroll_change >= 100 else (-1.0 if payroll_change < 0 else 0.0)
+        reasons.append(f"非農就業較前期變動 {payroll_change:+.0f} 千人")
+
+    if economy_score >= 1.5:
+        economy_state = "溫和擴張"
+    elif economy_score <= -1.0:
+        economy_state = "成長動能偏弱"
+    else:
+        economy_state = "成長訊號分歧"
+
+    cpi = economic_by_key.get("cpi")
+    if cpi and cpi.get("year_over_year_pct") is not None:
+        cpi_yoy = float(cpi["year_over_year_pct"])
+        cpi_mom = cpi.get("month_over_month_pct")
+        if cpi_yoy <= 2.5 and (cpi_mom is None or cpi_mom <= 0.2):
+            inflation_state = "通膨壓力降溫"
+        elif cpi_yoy >= 3.5 or (cpi_mom is not None and cpi_mom >= 0.4):
+            inflation_state = "通膨壓力偏高"
+        else:
+            inflation_state = "通膨緩慢降溫"
+        reasons.append(f"CPI 年增率 {cpi_yoy:.2f}%")
+    else:
+        inflation_state = "通膨資料不足"
+
+    weights = {"TAIEX": 0.20, "WTX&": 0.20, "TSM": 0.20, "^SOX": 0.20, "^VIX": 0.10, "TWD=X": 0.10}
+    weighted_score = 0.0
+    available_weight = 0.0
+    directional_signals = []
+    for item in market_signals:
+        symbol = item["symbol"]
+        if symbol not in weights:
+            continue
+        raw_signal = max(-1.0, min(1.0, float(item["change_pct"]) / 1.5))
+        if symbol in {"^VIX", "TWD=X"}:
+            raw_signal *= -1
+        weight = weights[symbol]
+        weighted_score += raw_signal * weight
+        available_weight += weight
+        if abs(raw_signal) >= 0.15:
+            directional_signals.append(1 if raw_signal > 0 else -1)
+
+    normalized_score = weighted_score / available_weight if available_weight else 0.0
+    if normalized_score >= 0.15:
+        tw_direction = "偏多"
+    elif normalized_score <= -0.15:
+        tw_direction = "偏空"
+    else:
+        tw_direction = "震盪"
+
+    if directional_signals:
+        dominant = 1 if sum(directional_signals) >= 0 else -1
+        agreement = sum(signal == dominant for signal in directional_signals) / len(directional_signals)
+    else:
+        agreement = 0.0
+    coverage = available_weight / sum(weights.values())
+    confidence = round(min(90, coverage * 55 + agreement * 35))
+    market_reason = "、".join(
+        f"{item['name']} {_fmt_pct(item['change_pct'])}" for item in market_signals[:4]
+    ) or "跨市場行情不足"
+
+    return {
+        "economy_state": economy_state,
+        "inflation_state": inflation_state,
+        "tw_direction": tw_direction,
+        "confidence": confidence,
+        "data_coverage": f"{len(economic_data) + len(market_signals)}/10",
+        "macro_reason": "；".join(reasons) or "總體數據不足",
+        "market_reason": market_reason,
+    }
+
+
+def _format_weekly_assessment(assessment: dict[str, str | int]) -> str:
+    """建立固定置頂的週報結論區塊。"""
+    return (
+        "【本週總判斷】\n"
+        f"經濟狀態：{assessment['economy_state']}\n"
+        f"通膨狀態：{assessment['inflation_state']}\n"
+        f"台股方向：{assessment['tw_direction']}\n"
+        f"信心指數：{assessment['confidence']}/100\n"
+        f"資料完整度：{assessment['data_coverage']}\n"
+        f"判斷摘要：{assessment['macro_reason']}；{assessment['market_reason']}"
+    )
+
+
 async def _upsert_special_brief(
     sb,
     session_time: datetime,
@@ -192,7 +345,7 @@ async def _upsert_special_brief(
 
 
 async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
-    """先取得實際經濟數據，再結合本週事件搜尋結果交由 Ollama 評測。"""
+    """先建立可重現的景氣與台股判斷，再交由 Ollama 解釋本週事件。"""
     from app.services.economic_data_service import (
         fetch_weekly_economic_data,
         format_economic_data_for_prompt,
@@ -201,11 +354,17 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
     from app.services.ollama_service import generate_custom_brief
 
     taipei_today = (datetime.now(timezone.utc) + timedelta(hours=8)).date().isoformat()
-    economic_data = await fetch_weekly_economic_data()
+    economic_data, market_signals = await asyncio.gather(
+        fetch_weekly_economic_data(),
+        _fetch_weekly_market_signals(),
+    )
     economic_data_lines = format_economic_data_for_prompt(economic_data)
+    market_signal_lines = _format_weekly_market_signals(market_signals)
+    assessment = _build_weekly_assessment(economic_data, market_signals)
+    assessment_lines = _format_weekly_assessment(assessment)
     query = (
-        f"本週 財經 大事 預定 {taipei_today} FOMC 利率 央行 CPI PCE PMI GDP earnings calendar "
-        "economic calendar market events this week"
+        f"本週 財經 大事 台股 展望 {taipei_today} FOMC 利率 CPI PCE PMI GDP 台積電 費半 "
+        "外資 美債 殖利率 economic calendar market events this week"
     )
     searched_news = await searxng_search_news(query=query, count=5, time_range="week")
     if not searched_news:
@@ -216,8 +375,9 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         for idx, item in enumerate(searched_news[:5], start=1)
     )
     prompt = (
-        "你是財經事件編輯。請根據下方『已取得的實際經濟數據』與搜尋結果，"
-        "評測本週預計發生、會影響金融市場的五個財經大事。"
+        "你是台灣投資人使用的總體與市場策略編輯。程式已先依結構化數據產生"
+        "『本週總判斷』，你必須沿用該判斷，不得擅自改變經濟狀態、通膨狀態、"
+        "台股方向或信心指數。請解釋判斷依據與可能失效的條件。"
         "優先包含 FOMC、央行利率決議、通膨、就業、GDP、PMI、重要財報或地緣政治事件。"
         "禁止只做 CPI、非農、WTI 或 PMI 的名詞解釋。"
         "每個成功取得的指標都必須在正文中至少出現一次，並明確寫出期間、實際值與單位；"
@@ -225,18 +385,24 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         "不得修改、推測或補造數據區塊中的數值。"
         "若搜尋結果不足，請明確標示資料有限，不要捏造精確日期。\n\n"
         f"今天（台北時間）是 {taipei_today}。\n\n"
+        f"程式產生的本週總判斷：\n{assessment_lines}\n\n"
         f"已取得的實際經濟數據：\n{economic_data_lines}\n\n"
+        f"台股與跨市場訊號：\n{market_signal_lines}\n\n"
         f"SearXNG／備援搜尋結果：\n{source_lines or '- 沒有可用搜尋結果'}\n\n"
         "輸出繁體中文，格式：\n"
-        "【本週五大財經大事】\n"
-        "1. 事件：實際數據（期間、數值、單位、前值／變動）＋影響與市場觀察\n"
-        "...\n"
-        "【總結】一句話說明本週市場主軸。"
+        "【判斷依據】分成利多、利空與主要矛盾，每項都引用具體數值。\n"
+        "【台股傳導】說明費半、台積電 ADR、台指期、匯率或 VIX 如何傳導至台股。\n"
+        "【本週五大財經大事】每項說明事件、已知數據、影響及市場觀察。\n"
+        "【本週情境】分成基本情境、偏多條件與轉空條件，不得捏造點位。\n"
+        "【風險提醒】指出資料限制，且不得使用保證獲利語句。"
     )
     summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=900)
     if summary_text:
-        # 固定附上程式產生的數據區塊，避免模型漏寫或改寫任何實際數值。
-        summary_text = f"【最新實際經濟數據】\n{economic_data_lines}\n\n{summary_text}"
+        # 程式結論固定置頂，原始數據移至文末供核對。
+        summary_text = (
+            f"{assessment_lines}\n\n{summary_text}\n\n"
+            f"【原始數據】\n{economic_data_lines}\n{market_signal_lines}"
+        )
     else:
         bullets = []
         for idx, item in enumerate(searched_news[:5], start=1):
@@ -244,10 +410,15 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
             desc = item.get("description") or "請留意後續公布資訊。"
             bullets.append(f"{idx}. {title}：{desc[:90]}")
         summary_text = (
-            "【最新實際經濟數據】\n"
-            + economic_data_lines
-            + "\n\n【本週五大財經大事】\n"
+            assessment_lines
+            + "\n\n【判斷依據】\n"
+            + f"{assessment['macro_reason']}；{assessment['market_reason']}\n\n"
+            + "【本週五大財經大事】\n"
             + ("\n".join(bullets) if bullets else "搜尋資料暫時不足，請稍後重試。")
+            + "\n\n【原始數據】\n"
+            + economic_data_lines
+            + "\n"
+            + market_signal_lines
         )
     economic_news_items = [
         {
@@ -266,7 +437,17 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         }
         for item in economic_data
     ]
-    news_items = economic_news_items + searched_news
+    market_news_items = [
+        {
+            "title": f"{item['name']}：{_fmt_num(item['price'], 3)}（{_fmt_pct(item['change_pct'])}）",
+            "url": "",
+            "description": f"前值 {_fmt_num(item['prev_close'], 3)}；用於台股方向判斷",
+            "published_date": taipei_today,
+            "market_signal": item,
+        }
+        for item in market_signals
+    ]
+    news_items = economic_news_items + market_news_items + searched_news
     return news_items, summary_text
 
 
