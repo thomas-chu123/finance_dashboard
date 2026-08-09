@@ -184,9 +184,12 @@ async def test_weekly_brief_fetches_economic_data_before_search_and_prompts_valu
     assert "禁止只做" in prompt
     assert "台股方向：偏多" in prompt
     assert "費城半導體指數" in prompt
+    assert "不要輸出【本週總判斷】、【原始數據】或【本週情境】段落" in prompt
     assert news_items[0]["economic_data"]["value"] == 53.3
-    assert summary.startswith("【本週總判斷】")
-    assert "【原始數據】" in summary
+    assert summary == "含有 2026-06 PMI 53.3 指數的評測"
+    assert "【本週總判斷】" not in summary
+    assert "【原始數據】" not in summary
+    assert "【本週情境】" not in summary
     assert "53.3" in summary
 
 

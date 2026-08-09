@@ -393,32 +393,21 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         "【判斷依據】分成利多、利空與主要矛盾，每項都引用具體數值。\n"
         "【台股傳導】說明費半、台積電 ADR、台指期、匯率或 VIX 如何傳導至台股。\n"
         "【本週五大財經大事】每項說明事件、已知數據、影響及市場觀察。\n"
-        "【本週情境】分成基本情境、偏多條件與轉空條件，不得捏造點位。\n"
-        "【風險提醒】指出資料限制，且不得使用保證獲利語句。"
+        "【風險提醒】指出資料限制，且不得使用保證獲利語句。\n"
+        "不要輸出【本週總判斷】、【原始數據】或【本週情境】段落。"
     )
     summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=900)
-    if summary_text:
-        # 程式結論固定置頂，原始數據移至文末供核對。
-        summary_text = (
-            f"{assessment_lines}\n\n{summary_text}\n\n"
-            f"【原始數據】\n{economic_data_lines}\n{market_signal_lines}"
-        )
-    else:
+    if not summary_text:
         bullets = []
         for idx, item in enumerate(searched_news[:5], start=1):
             title = item.get("title") or "未命名事件"
             desc = item.get("description") or "請留意後續公布資訊。"
             bullets.append(f"{idx}. {title}：{desc[:90]}")
         summary_text = (
-            assessment_lines
-            + "\n\n【判斷依據】\n"
+            "【判斷依據】\n"
             + f"{assessment['macro_reason']}；{assessment['market_reason']}\n\n"
             + "【本週五大財經大事】\n"
             + ("\n".join(bullets) if bullets else "搜尋資料暫時不足，請稍後重試。")
-            + "\n\n【原始數據】\n"
-            + economic_data_lines
-            + "\n"
-            + market_signal_lines
         )
     economic_news_items = [
         {
