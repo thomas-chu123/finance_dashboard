@@ -391,9 +391,9 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         f"SearXNG／備援搜尋結果：\n{source_lines or '- 沒有可用搜尋結果'}\n\n"
         "輸出繁體中文，格式：\n"
         "【判斷依據】分成利多、利空與主要矛盾，每項都引用具體數值。\n"
-        "【台股傳導】說明費半、台積電 ADR、台指期、匯率或 VIX 如何傳導至台股。\n"
+#        "【台股傳導】說明費半、台積電 ADR、台指期、匯率或 VIX 如何傳導至台股。\n"
         "【本週五大財經大事】每項說明事件、已知數據、影響及市場觀察。\n"
-        "【風險提醒】指出資料限制，且不得使用保證獲利語句。\n"
+#        "【風險提醒】指出資料限制，且不得使用保證獲利語句。\n"
         "不要輸出【本週總判斷】、【原始數據】或【本週情境】段落。"
     )
     summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=900)
