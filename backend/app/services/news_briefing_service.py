@@ -345,7 +345,7 @@ async def _upsert_special_brief(
 
 
 async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
-    """先建立可重現的景氣與台股判斷，再交由 Ollama 解釋本週事件。"""
+    """產生本週影響美股與台股的五件重要財經事件。"""
     from app.services.economic_data_service import (
         fetch_weekly_economic_data,
         format_economic_data_for_prompt,
@@ -377,11 +377,9 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
     prompt = (
         "你是台灣投資人使用的總體與市場策略編輯。程式已先依結構化數據產生"
         "『本週總判斷』，你必須沿用該判斷，不得擅自改變經濟狀態、通膨狀態、"
-        "台股方向或信心指數。請解釋判斷依據與可能失效的條件。"
+        "台股方向或信心指數。這些資料只供你挑選與解釋事件，不必逐項重述。"
         "優先包含 FOMC、央行利率決議、通膨、就業、GDP、PMI、重要財報或地緣政治事件。"
         "禁止只做 CPI、非農、WTI 或 PMI 的名詞解釋。"
-        "每個成功取得的指標都必須在正文中至少出現一次，並明確寫出期間、實際值與單位；"
-        "有前值或變動率時也必須引用並說明市場意義。"
         "不得修改、推測或補造數據區塊中的數值。"
         "若搜尋結果不足，請明確標示資料有限，不要捏造精確日期。\n\n"
         f"今天（台北時間）是 {taipei_today}。\n\n"
@@ -389,14 +387,14 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
         f"已取得的實際經濟數據：\n{economic_data_lines}\n\n"
         f"台股與跨市場訊號：\n{market_signal_lines}\n\n"
         f"SearXNG／備援搜尋結果：\n{source_lines or '- 沒有可用搜尋結果'}\n\n"
-        "輸出繁體中文，格式：\n"
-        "【判斷依據】分成利多、利空與主要矛盾，每項都引用具體數值。\n"
-        "【台股傳導】說明費半、台積電 ADR、台指期、匯率或 VIX 如何傳導至台股。\n"
-        "【本週五大財經大事】每項說明事件、已知數據、影響及市場觀察。\n"
-        "【風險提醒】指出資料限制，且不得使用保證獲利語句。\n"
-        "不要輸出【本週總判斷】、【原始數據】或【本週情境】段落。"
+        "只輸出【本週五大財經大事】及編號 1 至 5，恰好五件，不要前言、結語或其他段落。\n"
+        "五件合計必須同時涵蓋本週已發生與預計發生的事件，並挑選對美股或台股影響最大的事件。\n"
+        "每件固定使用：〔已發生〕或〔預計發生〕事件名稱｜日期：日期或資料有限｜"
+        "影響：用一至兩句說明對美股與台股的影響；已公布的重要數值才引用實際值。\n"
+        "不要輸出【判斷依據】、【台股傳導】、【風險提醒】、【本週總判斷】、"
+        "【原始數據】或【本週情境】段落，也不得使用保證獲利語句。"
     )
-    summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=900)
+    summary_text = await generate_custom_brief(prompt, label="weekly_finance_events", num_predict=550)
     if not summary_text:
         bullets = []
         for idx, item in enumerate(searched_news[:5], start=1):
@@ -404,9 +402,7 @@ async def _generate_weekly_finance_events() -> tuple[list[dict], str]:
             desc = item.get("description") or "請留意後續公布資訊。"
             bullets.append(f"{idx}. {title}：{desc[:90]}")
         summary_text = (
-            "【判斷依據】\n"
-            + f"{assessment['macro_reason']}；{assessment['market_reason']}\n\n"
-            + "【本週五大財經大事】\n"
+            "【本週五大財經大事】\n"
             + ("\n".join(bullets) if bullets else "搜尋資料暫時不足，請稍後重試。")
         )
     economic_news_items = [
