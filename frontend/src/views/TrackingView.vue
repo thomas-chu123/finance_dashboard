@@ -1,15 +1,15 @@
 <template>
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">指數追蹤管理</h2>
+      <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">{{ t('tracking.title') }}</h2>
       <div v-if="!isMobile" class="flex gap-2">
         <button class="flex items-center justify-center px-4 py-2 text-zinc-600 dark:text-zinc-400 hover:text-[var(--text-primary)] hover:bg-[var(--input-bg)] rounded-xl transition-all text-sm font-bold" @click="async () => { console.log('Manual refresh triggered'); diagnosePageState(); await trackingStore.fetchAll(); console.log('Manual refresh completed'); }">
           <Loader2 class="w-4 h-4 mr-2" />
-          重新加載
+          {{ t('tracking.reload') }}
         </button>
         <button class="flex items-center justify-center px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20" @click="showAddModal = true">
           <Plus class="w-4 h-4 mr-2" />
-          新增追蹤
+          {{ t('tracking.add') }}
         </button>
       </div>
     </div>
@@ -29,7 +29,7 @@
         <button class="flex items-center px-3 py-1.5 text-sm font-bold text-zinc-500 hover:text-[var(--text-primary)] transition-colors" @click="fetchFundamentals" :disabled="loadingFundamentals">
           <Loader2 v-if="loadingFundamentals" class="w-4 h-4 mr-2 animate-spin text-brand-500" />
           <BarChart2 v-else class="w-4 h-4 mr-2" />
-          {{ loadingFundamentals ? '載入中...' : '載入台股基本面數據' }}
+          {{ loadingFundamentals ? t('tracking.loading') : t('tracking.loadFundamentals') }}
         </button>
       </div>
     </div>
@@ -39,7 +39,7 @@
       <div class="flex items-center justify-between p-4 border-b border-[var(--border-color)]">
         <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center">
           <TrendingUp class="w-5 h-5 mr-2 text-brand-500" />
-          台股基本面 (TWSE/TPEx)
+          {{ t('tracking.fundamentals') }} (TWSE/TPEx)
         </h3>
         <button class="p-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors" @click="fundamentalsData = {}">
           <X class="w-5 h-5" />
@@ -53,17 +53,17 @@
           </div>
           <div class="grid grid-cols-3 gap-2 text-sm">
             <div>
-              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">本益比</div>
+              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">{{ t('tracking.pe') }}</div>
               <div class="font-bold font-mono text-[var(--text-primary)]">{{ data.pe_ratio }}</div>
             </div>
             <div>
-              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">殖利率</div>
+              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">{{ t('tracking.yield') }}</div>
               <div class="font-bold font-mono text-brand-600 dark:text-brand-400">
                 {{ data.dividend_yield }}{{ data.dividend_yield !== 'N/A' ? '%' : '' }}
               </div>
             </div>
             <div>
-              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">淨值比</div>
+              <div class="text-zinc-500 font-bold text-[10px] uppercase tracking-wider mb-1">{{ t('tracking.pb') }}</div>
               <div class="font-bold font-mono text-[var(--text-primary)]">{{ data.pb_ratio }}</div>
             </div>
           </div>
@@ -87,40 +87,40 @@
       </div>
       <div v-else-if="!filteredItems.length" class="px-4 py-20 text-left text-zinc-500">
         <div class="text-4xl mb-4 opacity-50">📭</div>
-        <div class="text-lg">此類別尚無追蹤項目</div>
+        <div class="text-lg">{{ t('tracking.empty') }}</div>
       </div>
       <div v-else-if="!isMobile" class="overflow-x-auto">
         <table class="w-full text-left">
           <thead class="text-[10px] text-zinc-500 uppercase font-bold tracking-widest bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
             <tr class="text-xs text-zinc-500 dark:text-zinc-400 border-b border-[var(--border-color)]">
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('symbol')">
-                <div class="flex items-center gap-1">代碼 <ArrowUp v-if="sortColumn === 'symbol' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'symbol' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.symbol') }} <ArrowUp v-if="sortColumn === 'symbol' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'symbol' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('name')">
-                <div class="flex items-center gap-1">名稱 <ArrowUp v-if="sortColumn === 'name' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'name' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.name') }} <ArrowUp v-if="sortColumn === 'name' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'name' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('category')">
-                <div class="flex items-center gap-1">類別 <ArrowUp v-if="sortColumn === 'category' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'category' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.category') }} <ArrowUp v-if="sortColumn === 'category' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'category' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('current_price')">
-                <div class="flex items-center gap-1">目前價格 <ArrowUp v-if="sortColumn === 'current_price' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'current_price' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.currentPrice') }} <ArrowUp v-if="sortColumn === 'current_price' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'current_price' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('trigger_mode')">
-                <div class="flex items-center gap-1">觸發模式 <ArrowUp v-if="sortColumn === 'trigger_mode' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'trigger_mode' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.triggerMode') }} <ArrowUp v-if="sortColumn === 'trigger_mode' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'trigger_mode' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('trigger_price')">
-                <div class="flex items-center gap-1">價格觸發條件 <ArrowUp v-if="sortColumn === 'trigger_price' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'trigger_price' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.triggerCondition') }} <ArrowUp v-if="sortColumn === 'trigger_price' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'trigger_price' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('current_rsi')">
-                <div class="flex items-center gap-1">RSI 指標 <ArrowUp v-if="sortColumn === 'current_rsi' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'current_rsi' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.rsi') }} <ArrowUp v-if="sortColumn === 'current_rsi' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'current_rsi' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('notify_channel')">
-                <div class="flex items-center gap-1">通知方式 <ArrowUp v-if="sortColumn === 'notify_channel' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'notify_channel' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.notification') }} <ArrowUp v-if="sortColumn === 'notify_channel' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'notify_channel' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
               <th class="px-4 py-4 text-left font-medium whitespace-nowrap cursor-pointer hover:text-[var(--text-primary)] transition-colors" @click="handleSort('is_active')">
-                <div class="flex items-center gap-1">狀態 <ArrowUp v-if="sortColumn === 'is_active' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'is_active' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
+                <div class="flex items-center gap-1">{{ t('tracking.status') }} <ArrowUp v-if="sortColumn === 'is_active' && sortDirection === 'asc'" class="w-3 h-3 text-brand-500" /><ArrowDown v-else-if="sortColumn === 'is_active' && sortDirection === 'desc'" class="w-3 h-3 text-brand-500" /><ArrowUpDown v-else class="w-3 h-3 opacity-30" /></div>
               </th>
-              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">操作</th>
+              <th class="px-4 py-4 text-left font-medium whitespace-nowrap">{{ t('tracking.actions') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[var(--border-color)]">
@@ -497,6 +497,7 @@ import {
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import { useLocale } from '../composables/useLocale'
 import TriggerModeSelector from '../components/TriggerModeSelector.vue'
 import RSIParametersForm from '../components/RSIParametersForm.vue'
 import RSIMonitoringDashboard from '../components/RSIMonitoringDashboard.vue'
@@ -504,6 +505,7 @@ import RSIMonitoringDashboard from '../components/RSIMonitoringDashboard.vue'
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
 const { isMobile, isTablet, isDesktop } = useBreakpoint()
+const { t } = useLocale()
 const showAddModal = ref(false)
 const editItem = ref(null)
 const saving = ref(false)
@@ -517,17 +519,17 @@ const fundamentalsData = ref({})
 const loadingFundamentals = ref(false)
 const symbolCatalog = ref({})
 
-const categories = [
-  { value: 'all', label: '全部' },
+const categories = computed(() => [
+  { value: 'all', label: t('tracking.all') },
   { value: 'vix', label: 'VIX' },
-  { value: 'oil', label: '石油' },
-  { value: 'us_etf', label: '美國ETF' },
-  { value: 'tw_etf', label: '台灣ETF' },
-  { value: 'jp_etf', label: '日本ETF' },
-  { value: 'funds', label: '共同基金' },
-  { value: 'index', label: '指數' },
-  { value: 'exchange', label: '匯率' },
-]
+  { value: 'oil', label: t('tracking.oil') },
+  { value: 'us_etf', label: t('tracking.usEtf') },
+  { value: 'tw_etf', label: t('tracking.twEtf') },
+  { value: 'jp_etf', label: t('tracking.jpEtf') },
+  { value: 'funds', label: t('tracking.funds') },
+  { value: 'index', label: t('tracking.index') },
+  { value: 'exchange', label: t('tracking.exchange') },
+])
 
 const form = reactive({
   symbol: '', name: '', category: 'us_etf',
@@ -816,14 +818,14 @@ function inferCategory(symbol) {
 function categoryBadgeInfo(cat) {
   const map = {
     vix: { label: 'VIX', class: 'bg-rose-500 text-white border border-rose-600' },
-    oil: { label: '石油', class: 'bg-amber-500 text-white border border-amber-600' },
-    us_etf: { label: '美股', class: 'bg-blue-500 text-white border border-blue-600' },
-    tw_etf: { label: '台股', class: 'bg-purple-500 text-white border border-purple-600' },
-    jp_etf: { label: '日股', class: 'bg-red-500 text-white border border-red-600' },
-    funds: { label: '基金', class: 'bg-green-500 text-white border border-green-600' },
-    index: { label: '大盤', class: 'bg-violet-500 text-white border border-violet-600' },
-    crypto: { label: '加密', class: 'bg-brand-500 text-white border border-brand-600' },
-    exchange: { label: '匯率', class: 'bg-cyan-500 text-white border border-cyan-600' }
+    oil: { label: t('tracking.oil'), class: 'bg-amber-500 text-white border border-amber-600' },
+    us_etf: { label: t('tracking.stockUs'), class: 'bg-blue-500 text-white border border-blue-600' },
+    tw_etf: { label: t('tracking.stockTw'), class: 'bg-purple-500 text-white border border-purple-600' },
+    jp_etf: { label: t('tracking.stockJp'), class: 'bg-red-500 text-white border border-red-600' },
+    funds: { label: t('tracking.fund'), class: 'bg-green-500 text-white border border-green-600' },
+    index: { label: t('tracking.market'), class: 'bg-violet-500 text-white border border-violet-600' },
+    crypto: { label: t('tracking.crypto'), class: 'bg-brand-500 text-white border border-brand-600' },
+    exchange: { label: t('tracking.exchange'), class: 'bg-cyan-500 text-white border border-cyan-600' }
   }
   return map[cat] || { label: cat.toUpperCase(), class: 'bg-zinc-500 text-white border border-zinc-600' }
 }
@@ -835,10 +837,10 @@ function channelLabel(ch) {
 
 function triggerModeLabel(mode) {
   const map = {
-    price:  { label: '價格',     icon: '💰', class: 'bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/30' },
+    price:  { label: t('tracking.price'), icon: '💰', class: 'bg-yellow-50 text-yellow-700 border-yellow-300 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/30' },
     rsi:    { label: 'RSI',      icon: '📈', class: 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/30' },
-    both:   { label: '價格及RSI', icon: '⚡', class: 'bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30' },
-    either: { label: '價格或RSI', icon: '🔀', class: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30' }
+    both:   { label: t('tracking.priceAndRsi'), icon: '⚡', class: 'bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/30' },
+    either: { label: t('tracking.priceOrRsi'), icon: '🔀', class: 'bg-teal-50 text-teal-700 border-teal-300 dark:bg-teal-500/10 dark:text-teal-400 dark:border-teal-500/30' }
   }
   return map[mode] || map['price']
 }

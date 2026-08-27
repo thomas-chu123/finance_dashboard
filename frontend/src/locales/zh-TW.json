@@ -15,5 +15,6 @@
   },
   "account": { "logout": "登出", "defaultUser": "使用者" },
   "auth": { "dashboard": "金融儀表板", "login": "登入", "register": "註冊", "name": "姓名", "namePlaceholder": "您的姓名", "email": "電子郵件", "password": "密碼", "processing": "處理中...", "or": "或", "googleLogin": "使用 Google 登入", "forgotPassword": "忘記密碼？", "registerSuccess": "帳號建立成功，請登入！", "operationFailed": "操作失敗" },
+  "tracking": { "title": "指數追蹤管理", "reload": "重新載入", "add": "新增追蹤", "loadFundamentals": "載入台股基本面數據", "loading": "載入中...", "fundamentals": "台股基本面", "pe": "本益比", "yield": "殖利率", "pb": "淨值比", "empty": "此類別尚無追蹤項目", "symbol": "代碼", "name": "名稱", "category": "類別", "currentPrice": "目前價格", "triggerMode": "觸發模式", "triggerCondition": "價格觸發條件", "rsi": "RSI 指標", "notification": "通知方式", "status": "狀態", "actions": "操作", "breakAbove": "突破", "breakBelow": "跌破", "viewRsi": "檢視 RSI 詳情", "edit": "編輯", "testNotification": "測試通知", "delete": "刪除", "notSet": "尚未設定", "all": "全部", "oil": "石油", "usEtf": "美國 ETF", "twEtf": "台灣 ETF", "jpEtf": "日本 ETF", "funds": "共同基金", "index": "指數", "exchange": "匯率", "stockUs": "美股", "stockTw": "台股", "stockJp": "日股", "fund": "基金", "market": "大盤", "crypto": "加密貨幣", "price": "價格", "priceAndRsi": "價格及 RSI", "priceOrRsi": "價格或 RSI" },
   "mobile": { "tracking": "追蹤", "backtest": "回測", "optimize": "最佳化", "monteCarlo": "蒙地卡羅" }
 }
