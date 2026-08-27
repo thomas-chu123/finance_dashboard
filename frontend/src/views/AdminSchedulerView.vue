@@ -1,8 +1,8 @@
 <template>
   <div class="mt-6 space-y-6">
     <div class="space-y-2">
-      <h2 class="text-2xl font-bold text-[var(--text-primary)]">時程表管理</h2>
-      <p class="text-[var(--text-secondary)]">管理系統任務、暫停/恢復、立即執行</p>
+      <h2 class="text-2xl font-bold text-[var(--text-primary)]">{{ $t('pages.scheduler') }}</h2>
+      <p class="text-[var(--text-secondary)]">{{ $t('admin.schedulerDescription') }}</p>
     </div>
 
     <!-- Scheduler Jobs Table -->
@@ -21,12 +21,12 @@
         <tbody>
           <tr v-if="loading" class="border-b border-[var(--border-color)]">
             <td colspan="6" class="px-4 py-3 text-center text-[var(--text-secondary)]">
-              加載中...
+              {{ $t('dashboard.loading') }}
             </td>
           </tr>
           <tr v-else-if="jobs.length === 0" class="border-b border-[var(--border-color)]">
             <td colspan="6" class="px-4 py-3 text-center text-[var(--text-secondary)]">
-              沒有任務
+              {{ $t('admin.noJobs') }}
             </td>
           </tr>
           <tr v-for="job in jobs" :key="job.job_id" class="border-b border-[var(--border-color)] hover:bg-[var(--bg-secondary)]">
@@ -37,10 +37,10 @@
             <td class="px-4 py-3 text-[var(--text-secondary)] text-xs">{{ job.schedule_cron || '—' }}</td>
             <td class="px-4 py-3">
               <span v-if="job.is_enabled" class="inline-block px-2 py-1 rounded bg-green-500/20 text-green-600 dark:text-green-400 text-xs font-medium">
-                運行中
+                {{ $t('admin.running') }}
               </span>
               <span v-else class="inline-block px-2 py-1 rounded bg-gray-500/20 text-gray-600 dark:text-gray-400 text-xs font-medium">
-                已暫停
+                {{ $t('admin.paused') }}
               </span>
             </td>
             <td class="px-4 py-3 text-[var(--text-secondary)] text-xs">
@@ -53,20 +53,20 @@
                   @click="pauseJob(job.job_id)"
                   class="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-600 hover:bg-yellow-500/30 transition-colors"
                 >
-                  暫停
+                  {{ $t('admin.pause') }}
                 </button>
                 <button 
                   v-else
                   @click="resumeJob(job.job_id)"
                   class="px-2 py-1 rounded text-xs bg-green-500/20 text-green-600 hover:bg-green-500/30 transition-colors"
                 >
-                  恢復
+                  {{ $t('admin.resume') }}
                 </button>
                 <button 
                   @click="executeJob(job.job_id)"
                   class="px-2 py-1 rounded text-xs bg-blue-500/20 text-blue-600 hover:bg-blue-500/30 transition-colors"
                 >
-                  執行
+                  {{ $t('admin.run') }}
                 </button>
               </div>
             </td>
@@ -81,7 +81,7 @@
         @click="refreshJobs"
         class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
       >
-        重新加載任務
+        {{ $t('admin.reloadJobs') }}
       </button>
     </div>
   </div>

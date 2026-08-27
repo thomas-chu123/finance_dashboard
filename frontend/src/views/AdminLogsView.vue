@@ -1,7 +1,7 @@
 <template>
   <div class="mt-6 space-y-6">
     <div class="space-y-2">
-      <h2 class="text-2xl font-bold text-[var(--text-primary)]">日誌查看</h2>
+      <h2 class="text-2xl font-bold text-[var(--text-primary)]">{{ $t('pages.logs') }}</h2>
       <p class="text-[var(--text-secondary)]">實時查看系統、操作、應用日誌</p>
     </div>
 

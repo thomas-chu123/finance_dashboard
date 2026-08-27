@@ -2,9 +2,9 @@
   <div class="p-4 lg:p-6 space-y-6">
     <!-- 頁首 -->
     <div>
-      <h1 class="text-2xl font-bold text-[var(--text-primary)]">除權息日曆</h1>
+      <h1 class="text-2xl font-bold text-[var(--text-primary)]">{{ $t('pages.dividend') }}</h1>
       <p class="text-sm text-zinc-500 mt-1">
-        台股除權息行事曆，追蹤中的標的將於除息前 7 天與前 1 天自動發送提醒。
+        {{ $t('dividend.description') }}
       </p>
     </div>
 
@@ -21,10 +21,10 @@
           <div class="px-4 py-3 border-b border-[var(--border-color)] flex items-center justify-between">
             <h3 class="font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
               <CalendarClock :size="15" class="text-brand-500" />
-              30 天內除權息
+              {{ $t('dividend.upcoming') }}
             </h3>
             <span class="text-xs text-zinc-500 dark:text-zinc-400 border border-[var(--border-color)] px-2 py-0.5 rounded-full">
-              {{ upcomingTracked.length }} 支追蹤中
+              {{ upcomingTracked.length }} {{ $t('dividend.tracked') }}
             </span>
           </div>
 
@@ -35,7 +35,7 @@
 
           <!-- 空狀態 -->
           <div v-else-if="!store.upcomingItems.length" class="p-6 text-center text-zinc-400 text-sm">
-            未來 30 天內無除權息事件
+            {{ $t('dividend.none') }}
           </div>
 
           <!-- 資料列表 -->
@@ -44,7 +44,7 @@
             <template v-if="upcomingTracked.length">
               <div class="px-3 py-1.5 border-b border-[var(--border-color)]">
                 <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-                  追蹤中（將收到通知）
+                  {{ $t('dividend.trackedNotify') }}
                 </span>
               </div>
               <div
@@ -76,7 +76,7 @@
             <!-- 未追蹤的其他除息 -->
             <template v-if="upcomingUntracked.length">
               <div class="px-3 py-1.5 border-b border-[var(--border-color)]">
-                <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide">其他</span>
+                <span class="text-[11px] font-semibold text-zinc-500 uppercase tracking-wide">{{ $t('dividend.other') }}</span>
               </div>
               <div
                 v-for="item in upcomingUntracked.slice(0, 20)"
@@ -112,7 +112,7 @@
           <div class="flex items-start gap-2.5">
             <Bell :size="16" class="text-brand-500 flex-shrink-0 mt-0.5" />
             <div class="text-xs text-zinc-500 dark:text-zinc-400 space-y-1">
-              <p class="font-semibold">通知設定說明</p>
+            <p class="font-semibold">{{ $t('dividend.notice') }}</p>
               <p>系統會針對你在「<strong>指數追蹤</strong>」中設定的標的，</p>
               <p>在除息日前 <strong>7 天</strong>與前 <strong>1 天</strong>自動發送提醒。</p>
               <p>通知管道（Email / LINE）依各標的設定為準。</p>

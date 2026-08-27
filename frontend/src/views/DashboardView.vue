@@ -1,15 +1,15 @@
 <template>
   <div class="space-y-6">
     <div class="flex items-center justify-between mb-2">
-      <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">投資總覽</h2>
+      <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">{{ $t('pages.dashboard') }}</h2>
       <div class="flex items-center gap-2">
-        <span v-if="quotesLoading" class="text-xs text-zinc-500 animate-pulse">載入中...</span>
+        <span v-if="quotesLoading" class="text-xs text-zinc-500 animate-pulse">{{ $t('dashboard.loading') }}</span>
         <span v-else class="text-xs text-zinc-500">{{ quotesLastUpdated }}</span>
-        <button class="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800" @click="fetchQuotes" title="重新整理">
+        <button class="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800" @click="fetchQuotes" :title="$t('dashboard.refresh')">
           <RefreshCcw :size="16" />
         </button>
         <button @click="openQuoteModal" class="bg-[var(--input-bg)] text-[var(--text-primary)] border border-[var(--border-color)] text-xs font-bold py-2 px-3 rounded-lg hover:opacity-80 transition-opacity flex items-center gap-1">
-          <Settings :size="14" /> 自訂指數
+          <Settings :size="14" /> {{ $t('dashboard.customize') }}
         </button>
       </div>
     </div>
@@ -74,9 +74,9 @@
             data-card-id="tracking-table"
           >
             <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
-              <h3 class="font-bold text-lg text-[var(--text-primary)]">📊 追蹤中的指數</h3>
+              <h3 class="font-bold text-lg text-[var(--text-primary)]">📊 {{ $t('dashboard.tracking') }}</h3>
               <router-link to="/tracking" class="text-xs text-brand-600 dark:text-brand-400 font-bold hover:underline flex items-center gap-1">
-                查看全部 <ChevronRight :size="14" />
+                {{ $t('dashboard.viewAll') }} <ChevronRight :size="14" />
               </router-link>
             </div>
 
@@ -85,7 +85,7 @@
               <input
                 v-model="trackingSearchQuery"
                 type="text"
-                placeholder="搜尋代碼、名稱..."
+                :placeholder="$t('dashboard.search')"
                 class="w-full px-3 py-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-brand-500 transition-colors"
               />
             </div>
@@ -93,11 +93,11 @@
             <div class="overflow-x-auto">
               <div v-if="trackingStore.loading" class="p-12 flex justify-center"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div></div>
               <div v-else-if="!trackingStore.items.length" class="p-4 py-12 text-left text-zinc-500">
-                尚未追蹤任何指數 · <router-link to="/tracking" class="text-brand-500 hover:underline">立即新增</router-link>
+                {{ $t('tracking.empty') }} · <router-link to="/tracking" class="text-brand-500 hover:underline">{{ $t('dashboard.addNow') }}</router-link>
               </div>
               <div v-else-if="!filteredTrackingItems.length" class="p-4 py-12 text-left text-zinc-500">
                 <div class="text-4xl mb-4 opacity-50">🔍</div>
-                <div class="text-lg">無符合的搜尋結果</div>
+                <div class="text-lg">{{ $t('dashboard.noResults') }}</div>
               </div>
               <div v-else class="min-w-[400px] sm:min-w-[700px]">
                 <div class="grid grid-cols-4 sm:grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">

@@ -21,6 +21,7 @@ import {
 import { vTooltip } from './directives/vTooltip'
 import './assets/main.css'
 import './assets/tooltip-smart.css'
+import { translate } from './composables/useLocale'
 
 use([
   CanvasRenderer,
@@ -93,6 +94,7 @@ const initialApiBase = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV
 console.log('Frontend initialized. API Base:', initialApiBase)
 
 const app = createApp(App)
+app.config.globalProperties.$t = translate
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)

@@ -5,8 +5,8 @@
         <MessageCircle class="w-6 h-6 text-brand-500" />
       </div>
       <div>
-        <h1 class="text-2xl font-bold text-[var(--text-primary)]">LINE 通知設定</h1>
-        <p class="text-sm text-[var(--text-muted)] mt-1">透過 LINE 接收即時投資提醒，掌握市場脈動</p>
+        <h1 class="text-2xl font-bold text-[var(--text-primary)]">{{ $t('pages.line') }}</h1>
+        <p class="text-sm text-[var(--text-muted)] mt-1">{{ $t('line.description') }}</p>
       </div>
     </div>
 
@@ -17,14 +17,14 @@
         <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center gap-2 bg-[var(--bg-sidebar)]/50">
           <CheckCircle2 v-if="isBound" class="w-5 h-5 text-brand-500" />
           <Loader2 v-else class="w-5 h-5 text-amber-500 animate-spin" />
-          <h3>目前狀態</h3>
+          <h3>{{ $t('line.status') }}</h3>
         </div>
         <div class="p-6">
           <span v-if="isBound" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-500 border border-brand-500/20">
-            <CheckCircle2 class="w-3.5 h-3.5" />已綁定
+            <CheckCircle2 class="w-3.5 h-3.5" />{{ $t('line.bound') }}
           </span>
           <div v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-amber-500/10 text-amber-500 mb-4 gap-1.5 border border-amber-500/20">
-            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>未綁定
+            <div class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>{{ $t('line.unbound') }}
           </div>
           <p v-if="isBound" class="text-[var(--text-muted)] text-sm leading-relaxed">
             您的帳號已成功連結至 LINE。您將會收到價格觸發通知。
@@ -44,7 +44,7 @@
       <div class="glass-card rounded-2xl overflow-hidden transition-all shadow-sm hover:shadow-md md:row-span-2">
         <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center gap-2 bg-[var(--bg-sidebar)]/50">
           <LinkIcon class="w-5 h-5 text-brand-500" />
-          <h3>綁定步驟</h3>
+          <h3>{{ $t('line.steps') }}</h3>
         </div>
         <div class="p-6">
           <div class="flex gap-4 mb-8">
@@ -66,7 +66,7 @@
               >
                 <Loader2 v-if="loadingCode" class="w-4 h-4 animate-spin" />
                 <RefreshCcw v-else class="w-4 h-4" />
-                {{ loadingCode ? '生成中...' : '生成綁定碼' }}
+                {{ loadingCode ? $t('line.generating') : $t('line.generate') }}
               </button>
             </div>
           </div>
@@ -95,7 +95,7 @@
       <div class="glass-card rounded-2xl overflow-hidden transition-all shadow-sm hover:shadow-md text-center">
         <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center gap-2 bg-[var(--bg-sidebar)]/50">
           <QrCode class="w-5 h-5 text-brand-500" />
-          <h3>掃描加入與綁定</h3>
+          <h3>{{ $t('line.qr') }}</h3>
         </div>
         <div class="p-8 flex flex-col items-center justify-center">
           <qrcode-vue

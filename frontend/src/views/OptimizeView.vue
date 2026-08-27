@@ -2,7 +2,7 @@
   <div>
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div>
-        <h2 class="text-xl font-bold text-[var(--text-primary)]">投資組合最佳化</h2>
+        <h2 class="text-xl font-bold text-[var(--text-primary)]">{{ $t('pages.optimize') }}</h2>
         <div class="text-xs sm:text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
       </div>
       <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
@@ -12,7 +12,7 @@
               ? 'bg-brand-500 border-brand-500 text-white'
               : 'bg-[var(--bg-sidebar)] border-[var(--border-color)] text-muted hover:text-[var(--text-primary)]']"
           @click="showSaved = false">
-          <Dna class="w-4 h-4 mr-2" />開始最佳化
+          <Dna class="w-4 h-4 mr-2" />{{ $t('analysis.startOptimize') }}
         </button>
         <button
           :class="['flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm border whitespace-nowrap',
@@ -22,7 +22,7 @@
           @click="showSaved = true; loadingSaved = true; loadSavedPortfolios()"
           :disabled="loadingSaved">
           <FolderOpen class="w-4 h-4 mr-2" />
-          已儲存 {{ loadingSaved ? '(加載中...)' : '' }}
+          {{ $t('analysis.saved') }} {{ loadingSaved ? '(Loading...)' : '' }}
         </button>
       </div>
     </div>
@@ -35,14 +35,14 @@
           class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg transition-colors"
           @click="showSaved = false; results = null">
           <ArrowLeft class="w-4 h-4" />
-          返回設定
+          {{ $t('analysis.backToSettings') }}
         </button>
       </div>
       <div v-if="loadingSaved" style="padding:48px;text-align:center;color:var(--text-muted);">
         <div class="inline-flex items-center justify-center w-12 h-12 mx-auto mb-3 rounded-full bg-brand-500/10 animate-pulse">
           <FolderOpen class="w-6 h-6 text-brand-500" />
         </div>
-        加載組合中...
+        {{ $t('analysis.loadingPortfolio') }}
       </div>
       <div v-else-if="!savedPortfolios.length" style="padding:48px;text-align:center;color:var(--text-muted);">
         <FolderOpen class="w-12 h-12 mx-auto text-gray-400 mb-3" />
@@ -57,7 +57,7 @@
               <div class="text-sm text-muted">{{ p.start_date }} → {{ p.end_date }}</div>
             </div>
             <div class="flex items-center gap-2">
-              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" @click="loadSaved(p)">載入</button>
+              <button class="flex items-center px-3 py-1.5 text-sm font-medium text-muted hover:text-brand-500 dark:hover:text-brand-400 transition-colors rounded-lg" @click="loadSaved(p)">{{ $t('analysis.load') }}</button>
               <button class="p-1.5 text-muted hover:text-rose-600 dark:hover:text-rose-400 transition-colors rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20" @click="deleteSaved(p.id)"><Trash2 class="w-4 h-4" /></button>
             </div>
           </div>
@@ -152,7 +152,7 @@
             <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
               <Target class="w-5 h-5 text-brand-500" />
             </div>
-            <h3 class="font-bold text-[var(--text-primary)]">配置資產</h3>
+              <h3 class="font-bold text-[var(--text-primary)]">{{ $t('analysis.configureAssets') }}</h3>
           </div>
           <div class="p-5">
             <div class="space-y-4">
@@ -168,7 +168,7 @@
                 <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" :size="16" />
                 <input v-model="symbolSearch" type="text" 
                   class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]"
-                  placeholder="搜尋及點選資產..." 
+                  :placeholder="$t('analysis.searchAssets')"
                   @keydown.enter="addSearchSymbol" />
               </div>
 
@@ -220,7 +220,7 @@
               <FolderOpen class="w-5 h-5 text-brand-500" />
             </div>
             <div class="flex-1 flex items-center justify-between">
-              <h3 class="font-bold text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</h3>
+              <h3 class="font-bold text-[var(--text-primary)]">{{ $t('analysis.selectedAssets') }} ({{ selectedItems.length }}/10)</h3>
               <div class="text-xs font-bold px-2 py-1 rounded-md" :class="totalWeight === 100 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
                 總權重: {{ totalWeight }}%
               </div>
@@ -268,7 +268,7 @@
         <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
           <Play class="w-5 h-5 text-brand-500" />
         </div>
-        <h3 class="font-bold text-[var(--text-primary)]">執行操作</h3>
+        <h3 class="font-bold text-[var(--text-primary)]">{{ $t('analysis.runActions') }}</h3>
       </div>
       <div class="p-5 flex flex-col gap-3">
         <!-- 平均分配 & 儲存組合 row -->

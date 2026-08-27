@@ -2,8 +2,8 @@
   <div class="p-6 space-y-6">
     <!-- Header -->
     <div class="space-y-2">
-      <h1 class="text-3xl font-bold text-[var(--text-primary)]">管理者面板</h1>
-      <p class="text-[var(--text-secondary)]">系統管理、用戶管理、任務控制</p>
+      <h1 class="text-3xl font-bold text-[var(--text-primary)]">{{ $t('pages.admin') }}</h1>
+      <p class="text-[var(--text-secondary)]">{{ $t('admin.description') }}</p>
     </div>
 
     <!-- Navigation Cards -->
@@ -17,8 +17,8 @@
             <Users class="text-blue-500" :size="24" />
           </div>
           <div>
-            <h3 class="font-semibold text-[var(--text-primary)]">用戶管理</h3>
-            <p class="text-xs text-[var(--text-secondary)]">編輯、刪除、權限管理</p>
+            <h3 class="font-semibold text-[var(--text-primary)]">{{ $t('pages.adminUsers') }}</h3>
+            <p class="text-xs text-[var(--text-secondary)]">{{ $t('admin.userDescription') }}</p>
           </div>
         </div>
       </router-link>
@@ -32,8 +32,8 @@
             <Clock class="text-purple-500" :size="24" />
           </div>
           <div>
-            <h3 class="font-semibold text-[var(--text-primary)]">時程表管理</h3>
-            <p class="text-xs text-[var(--text-secondary)]">暫停、恢復、執行任務</p>
+            <h3 class="font-semibold text-[var(--text-primary)]">{{ $t('pages.scheduler') }}</h3>
+            <p class="text-xs text-[var(--text-secondary)]">{{ $t('admin.schedulerDescription') }}</p>
           </div>
         </div>
       </router-link>
@@ -47,8 +47,8 @@
             <FileText class="text-green-500" :size="24" />
           </div>
           <div>
-            <h3 class="font-semibold text-[var(--text-primary)]">日誌查看</h3>
-            <p class="text-xs text-[var(--text-secondary)]">審計、系統、後端日誌</p>
+            <h3 class="font-semibold text-[var(--text-primary)]">{{ $t('pages.logs') }}</h3>
+            <p class="text-xs text-[var(--text-secondary)]">{{ $t('admin.logsDescription') }}</p>
           </div>
         </div>
       </router-link>
@@ -62,8 +62,8 @@
             <BarChart3 class="text-orange-500" :size="24" />
           </div>
           <div>
-            <h3 class="font-semibold text-[var(--text-primary)]">系統監控</h3>
-            <p class="text-xs text-[var(--text-secondary)]">統計資訊、系統狀態</p>
+            <h3 class="font-semibold text-[var(--text-primary)]">{{ $t('pages.stats') }}</h3>
+            <p class="text-xs text-[var(--text-secondary)]">{{ $t('admin.statsDescription') }}</p>
           </div>
         </div>
       </router-link>

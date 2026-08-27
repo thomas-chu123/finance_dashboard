@@ -1,8 +1,8 @@
 <template>
   <div class="mt-6 space-y-6">
     <div class="space-y-2">
-      <h2 class="text-2xl font-bold text-[var(--text-primary)]">用戶管理</h2>
-      <p class="text-[var(--text-secondary)]">編輯、刪除、修改密碼和管理員權限</p>
+      <h2 class="text-2xl font-bold text-[var(--text-primary)]">{{ $t('pages.adminUsers') }}</h2>
+      <p class="text-[var(--text-secondary)]">{{ $t('admin.userDescription') }}</p>
     </div>
 
     <!-- Search Bar -->
@@ -10,14 +10,14 @@
       <input 
         v-model="searchQuery"
         type="text" 
-        placeholder="搜尋用戶名稱或郵件..."
+        :placeholder="$t('dashboard.search')"
         class="flex-1 px-4 py-2 rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:outline-none focus:border-blue-500"
       />
       <button 
         @click="refreshUsers"
         class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
       >
-        重新加載
+        {{ $t('dashboard.refresh') }}
       </button>
     </div>
 
@@ -36,12 +36,12 @@
         <tbody>
           <tr v-if="loading" class="border-b border-[var(--border-color)]">
             <td colspan="5" class="px-4 py-3 text-center text-[var(--text-secondary)]">
-              加載中...
+              {{ $t('dashboard.loading') }}
             </td>
           </tr>
           <tr v-else-if="filteredUsers.length === 0" class="border-b border-[var(--border-color)]">
             <td colspan="5" class="px-4 py-3 text-center text-[var(--text-secondary)]">
-              沒有用戶
+              {{ $t('account.noUsers') }}
             </td>
           </tr>
           <tr v-for="user in filteredUsers" :key="user.id" class="border-b border-[var(--border-color)] hover:bg-[var(--bg-secondary)]">

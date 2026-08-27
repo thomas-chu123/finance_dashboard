@@ -2,7 +2,7 @@
   <div class="max-w-2xl mx-auto p-4 sm:p-0">
     <!-- Page Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">使用說明</h1>
+      <h1 class="text-3xl font-bold text-[var(--text-primary)] mb-2">{{ $t('pages.guide') }}</h1>
       <p class="text-zinc-600 dark:text-zinc-400">瞭解 NEXUS 的主要功能與使用方式</p>
     </div>
 

@@ -36,3 +36,5 @@ export function useLocale() {
 
   return { locale, supportedLocales, languageName, setLocale, t }
 }
+
+export const translate = (key) => getValue(messages[locale.value], key) ?? getValue(messages[DEFAULT_LOCALE], key) ?? key

@@ -1,21 +1,21 @@
 <template>
   <div>
     <div class="flex flex-row items-center justify-between gap-4 mb-6 sm:mb-12">
-      <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">🔔 通知記錄</h2>
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">🔔 {{ $t('pages.notifications') }}</h2>
       <button
         class="btn btn-outline btn-sm flex items-center gap-2"
         @click="refresh"
         :disabled="loading"
       >
         <RefreshCcw :size="14" :class="loading ? 'animate-spin' : ''" />
-        <span class="hidden sm:inline">重新整理</span>
+        <span class="hidden sm:inline">{{ $t('dashboard.refresh') }}</span>
       </button>
     </div>
 
     <div class="glass-card rounded-2xl overflow-hidden">
       <div class="p-6 border-b border-[var(--border-color)] flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <h3 class="font-bold text-lg text-[var(--text-primary)]">所有通知記錄</h3>
+          <h3 class="font-bold text-lg text-[var(--text-primary)]">{{ $t('pages.notifications') }}</h3>
           <span class="px-2 py-0.5 bg-brand-500/10 text-brand-600 dark:text-brand-400 text-xs font-bold rounded-full">
             {{ trackingStore.alertLogs.length }} 筆
           </span>
@@ -31,7 +31,7 @@
         <!-- 無資料 -->
         <div v-else-if="!trackingStore.alertLogs.length" class="p-4 py-16 text-center text-zinc-500">
           <Bell :size="40" class="mx-auto mb-3 opacity-30" />
-          <p>尚無通知記錄</p>
+          <p>{{ $t('analysis.noSaved') }}</p>
         </div>
 
         <!-- 資料表格 -->

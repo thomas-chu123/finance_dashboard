@@ -1,19 +1,19 @@
 <template>
   <div>
     <div class="flex flex-row items-center justify-between gap-4 mb-6 sm:mb-12">
-      <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">使用者管理</h2>
+      <h2 class="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">{{ $t('pages.users') }}</h2>
     </div>
 
     <!-- My profile -->
     <div class="glass-card mb-6">
       <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-        <h3>我的設定</h3>
+        <h3>{{ $t('account.settings') }}</h3>
         <button class="btn btn-primary btn-sm" @click="saveProfile" :disabled="profileSaving">
           <template v-if="profileSaving">
-            <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />儲存中...
+            <Loader2 class="w-4 h-4 mr-2 inline animate-spin" />{{ $t('analysis.saving') }}
           </template>
           <template v-else>
-            <Save class="w-4 h-4 mr-2 inline" />儲存
+            <Save class="w-4 h-4 mr-2 inline" />{{ $t('analysis.save') }}
           </template>
         </button>
       </div>
@@ -23,13 +23,13 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div class="space-y-1 mb-4">
-            <label class="block text-sm font-medium text-[var(--text-muted)]">顯示姓名</label>
+            <label class="block text-sm font-medium text-[var(--text-muted)]">{{ $t('account.displayName') }}</label>
             <input v-model="profileForm.display_name" type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" />
           </div>
           <div class="space-y-1 mb-4">
             <label class="block text-sm font-medium text-[var(--text-muted)]">LINE User ID</label>
             <div class="flex items-center gap-2">
-              <input v-model="profileForm.line_user_id" type="text" class="flex-1 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" placeholder="未連結" disabled />
+              <input v-model="profileForm.line_user_id" type="text" class="flex-1 bg-[var(--input-bg)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-lg focus:ring-brand-500 focus:border-brand-500 block p-2.5" :placeholder="$t('line.unbound')" disabled />
               <span v-if="profileForm.line_user_id" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-500/10 text-brand-500 border border-brand-500/20 whitespace-nowrap">已綁定</span>
             </div>
           </div>
@@ -192,5 +192,3 @@ onMounted(async () => {
   await loadUsers()
 })
 </script>
-
-
