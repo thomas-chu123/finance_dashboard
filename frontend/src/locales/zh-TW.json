@@ -1,0 +1,19 @@
+{
+  "language": { "label": "語言", "zhTW": "繁體中文", "en": "English", "ja": "日本語" },
+  "navigation": {
+    "main": "主選單", "system": "系統", "admin": "管理者",
+    "dashboard": "總覽", "briefing": "AI 市場早報", "dividendCalendar": "除權息日曆",
+    "tracking": "指數追蹤", "backtest": "回測管理", "optimize": "投資組合最佳化",
+    "monteCarlo": "蒙地卡羅模擬", "users": "使用者管理", "notifications": "通知記錄",
+    "line": "LINE 通知", "guide": "使用說明", "adminPanel": "管理者面板"
+  },
+  "header": {
+    "searchPlaceholder": "搜尋名稱、代碼或資產... (Cmd/Ctrl + K)", "lightMode": "切換為淺色模式",
+    "darkMode": "切換為深色模式", "disableNotifications": "關閉全部追蹤通知",
+    "enableNotifications": "開啟全部追蹤通知", "marketStatus": "市場狀態", "marketOpen": "開市",
+    "closeMenu": "關閉選單", "expandMenu": "展開選單", "collapseMenu": "收合選單"
+  },
+  "account": { "logout": "登出", "defaultUser": "使用者" },
+  "auth": { "dashboard": "金融儀表板", "login": "登入", "register": "註冊", "name": "姓名", "namePlaceholder": "您的姓名", "email": "電子郵件", "password": "密碼", "processing": "處理中...", "or": "或", "googleLogin": "使用 Google 登入", "forgotPassword": "忘記密碼？", "registerSuccess": "帳號建立成功，請登入！", "operationFailed": "操作失敗" },
+  "mobile": { "tracking": "追蹤", "backtest": "回測", "optimize": "最佳化", "monteCarlo": "蒙地卡羅" }
+}

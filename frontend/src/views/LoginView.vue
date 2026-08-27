@@ -1,11 +1,17 @@
 <template>
   <div class="min-h-screen flex items-center justify-center relative overflow-hidden bg-[var(--bg-secondary)] transition-colors duration-300 p-4">
+    <div class="absolute right-4 top-4 z-20 flex items-center gap-1 rounded-xl border border-[var(--border-color)] bg-[var(--bg-primary)] p-1 shadow-sm">
+      <Globe2 :size="17" class="mx-1 text-zinc-500" :aria-label="t('language.label')" />
+      <button v-for="item in supportedLocales" :key="item.code" type="button" class="rounded-lg px-2 py-1 text-xs font-medium" :class="locale === item.code ? 'bg-brand-500 text-white' : 'text-[var(--text-secondary)] hover:bg-zinc-100 dark:hover:bg-zinc-800'" @click="setLocale(item.code)">
+        {{ item.code === 'zh-TW' ? '中' : item.code === 'en' ? 'EN' : '日' }}
+      </button>
+    </div>
     <div class="relative z-10 w-full max-w-[420px] bg-[var(--bg-primary)] rounded-[24px] p-10 border border-[var(--border-color)] shadow-[0_10px_25px_rgba(0,0,0,0.05)] text-center">
       <!-- Brand Header -->
       <div class="mb-8">
         <div class="w-14 h-14 bg-[#00D084] rounded-full flex justify-center items-center mx-auto mb-4 text-white text-2xl font-bold shadow-[0_4px_12px_rgba(0,208,132,0.2)]">N</div>
         <h1 class="m-0 text-[28px] font-bold tracking-wider text-[#00D084]">NEXUS</h1>
-        <p class="mt-1 text-[var(--text-secondary)] text-sm font-medium">Finance Dashboard</p>
+        <p class="mt-1 text-[var(--text-secondary)] text-sm font-medium">{{ t('auth.dashboard') }}</p>
       </div>
 
       <!-- Tab Group (Segmented Control) -->
@@ -13,40 +19,40 @@
         <button 
           :class="['flex-1 py-2.5 text-[15px] font-semibold rounded-lg transition-all duration-300', mode === 'login' ? 'bg-[var(--bg-primary)] text-[#00D084] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-[var(--border-color)]' : 'text-[var(--text-secondary)] hover:text-[#00D084]']" 
           @click="mode = 'login'"
-        >登入</button>
+        >{{ t('auth.login') }}</button>
         <button 
           :class="['flex-1 py-2.5 text-[15px] font-semibold rounded-lg transition-all duration-300', mode === 'register' ? 'bg-[var(--bg-primary)] text-[#00D084] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-[var(--border-color)]' : 'text-[var(--text-secondary)] hover:text-[#00D084]']" 
           @click="mode = 'register'"
-        >註冊</button>
+        >{{ t('auth.register') }}</button>
       </div>
 
       <div v-if="error" class="bg-rose-500/10 text-rose-500 p-3 rounded-xl mb-6 text-sm font-bold border border-rose-500/20 flex items-center justify-center text-center">{{ error }}</div>
 
       <form @submit.prevent="handleSubmit" class="flex flex-col">
         <div v-if="mode === 'register'" class="mb-5 text-left">
-          <label class="block text-sm font-semibold mb-2 text-[var(--text-primary)]">姓名</label>
-          <input v-model="form.displayName" type="text" class="w-full p-3 border-[1.5px] border-[var(--border-color)] rounded-xl text-base box-border transition-all bg-[var(--input-bg)] outline-none focus:border-[#00D084] focus:shadow-[0_0_0_4px_rgba(0,208,132,0.1)] text-[var(--text-primary)]" placeholder="您的姓名" />
+          <label class="block text-sm font-semibold mb-2 text-[var(--text-primary)]">{{ t('auth.name') }}</label>
+          <input v-model="form.displayName" type="text" class="w-full p-3 border-[1.5px] border-[var(--border-color)] rounded-xl text-base box-border transition-all bg-[var(--input-bg)] outline-none focus:border-[#00D084] focus:shadow-[0_0_0_4px_rgba(0,208,132,0.1)] text-[var(--text-primary)]" :placeholder="t('auth.namePlaceholder')" />
         </div>
 
         <div class="mb-5 text-left">
-          <label class="block text-sm font-semibold mb-2 text-[var(--text-primary)]">電子郵件</label>
+          <label class="block text-sm font-semibold mb-2 text-[var(--text-primary)]">{{ t('auth.email') }}</label>
           <input v-model="form.email" type="email" class="w-full p-3 border-[1.5px] border-[var(--border-color)] rounded-xl text-base box-border transition-all bg-[var(--input-bg)] outline-none focus:border-[#00D084] focus:shadow-[0_0_0_4px_rgba(0,208,132,0.1)] text-[var(--text-primary)]" placeholder="example@email.com" required />
         </div>
 
         <div class="mb-8 text-left">
-          <label class="block text-sm font-semibold mb-2 text-[var(--text-primary)]">密碼</label>
+          <label class="block text-sm font-semibold mb-2 text-[var(--text-primary)]">{{ t('auth.password') }}</label>
           <input v-model="form.password" type="password" class="w-full p-3 border-[1.5px] border-[var(--border-color)] rounded-xl text-base box-border transition-all bg-[var(--input-bg)] outline-none focus:border-[#00D084] focus:shadow-[0_0_0_4px_rgba(0,208,132,0.1)] text-[var(--text-primary)]" placeholder="••••••••" required minlength="6" />
         </div>
 
         <button type="submit" class="w-full flex h-[52px] items-center justify-center gap-2 bg-[#00df81] hover:bg-[#00c974] text-white font-bold text-[17px] rounded-2xl transition-all shadow-[0_4px_20px_rgba(0,223,129,0.35)] hover:shadow-[0_4px_25px_rgba(0,223,129,0.5)] select-none" :disabled="loading">
           <Loader2 v-if="loading" class="w-5 h-5 animate-spin" />
-          {{ loading ? '處理中...' : (mode === 'login' ? '登入' : '註冊') }}
+          {{ loading ? t('auth.processing') : (mode === 'login' ? t('auth.login') : t('auth.register')) }}
         </button>
 
         <!-- Divider -->
         <div class="flex items-center my-6">
           <div class="flex-1 h-[1px] bg-[var(--border-color)]"></div>
-          <span class="px-3 text-xs font-bold text-[var(--text-secondary)]">或</span>
+          <span class="px-3 text-xs font-bold text-[var(--text-secondary)]">{{ t('auth.or') }}</span>
           <div class="flex-1 h-[1px] bg-[var(--border-color)]"></div>
         </div>
 
@@ -63,12 +69,12 @@
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          使用 Google 登入
+          {{ t('auth.googleLogin') }}
         </button>
       </form>
 
       <div class="mt-5 text-[13px] text-[var(--text-secondary)]">
-        <button @click="showForgotPassword = true" class="text-[#00D084] no-underline hover:underline bg-none border-none cursor-pointer p-0">忘記密碼？</button>
+        <button @click="showForgotPassword = true" class="text-[#00D084] no-underline hover:underline bg-none border-none cursor-pointer p-0">{{ t('auth.forgotPassword') }}</button>
       </div>
     </div>
 
@@ -84,14 +90,16 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { Activity, Loader2 } from 'lucide-vue-next'
+import { Activity, Globe2, Loader2 } from 'lucide-vue-next'
 import axios from 'axios'
 import oauthAPI from '../api/oauth'
 import ForgotPasswordModal from '../components/ForgotPasswordModal.vue'
+import { useLocale } from '../composables/useLocale'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const { locale, supportedLocales, setLocale, t } = useLocale()
 const mode = ref('login')
 const loading = ref(false)
 const error = ref('')
@@ -109,10 +117,10 @@ async function handleSubmit() {
       await auth.register(form.email, form.password, form.displayName)
       mode.value = 'login'
       error.value = ''
-      alert('帳號建立成功，請登入！')
+      alert(t('auth.registerSuccess'))
     }
   } catch (e) {
-    error.value = e.response?.data?.detail || e.message || '操作失敗'
+    error.value = e.response?.data?.detail || e.message || t('auth.operationFailed')
   } finally {
     loading.value = false
   }

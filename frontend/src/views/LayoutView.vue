@@ -32,7 +32,7 @@
           <button 
             @click="closeSidebar"
             class="lg:hidden p-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors ml-auto flex-shrink-0"
-            title="關閉菜單"
+            :title="t('header.closeMenu')"
           >
             <X :size="20" />
           </button>
@@ -41,7 +41,7 @@
           <button 
             @click="toggleSidebarCollapse"
             class="hidden lg:p-1 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors ml-auto flex-shrink-0"
-            :title="isSidebarCollapsed ? 'Expand Menu' : 'Collapse Menu'"
+            :title="isSidebarCollapsed ? t('header.expandMenu') : t('header.collapseMenu')"
           >
             <component :is="isSidebarCollapsed ? ChevronRight : ChevronLeft" :size="18" />
           </button>
@@ -49,72 +49,72 @@
 
         <!-- Navigation -->
         <nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-2 -mr-2">
-          <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2">主選單</div>
+          <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2">{{ t('navigation.main') }}</div>
           
-          <router-link to="/" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="總覽" @click="handleMenuItemClick('/')">
+          <router-link to="/" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.dashboard')" @click="handleMenuItemClick('/')">
             <LayoutDashboard :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">總覽</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.dashboard') }}</span>
           </router-link>
 
-          <router-link to="/briefing" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/briefing' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="AI 市場早報" @click="handleMenuItemClick('/briefing')">
+          <router-link to="/briefing" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/briefing' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.briefing')" @click="handleMenuItemClick('/briefing')">
             <Newspaper :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/briefing' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">AI 市場早報</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.briefing') }}</span>
           </router-link>
 
-          <router-link to="/dividend-calendar" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/dividend-calendar' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="除權息日曆" @click="handleMenuItemClick('/dividend-calendar')">
+          <router-link to="/dividend-calendar" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/dividend-calendar' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.dividendCalendar')" @click="handleMenuItemClick('/dividend-calendar')">
             <CalendarDays :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/dividend-calendar' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">除權息日曆</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.dividendCalendar') }}</span>
           </router-link>
 
-          <router-link to="/tracking" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/tracking' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="指數追蹤" @click="handleMenuItemClick('/tracking')">
+          <router-link to="/tracking" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/tracking' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.tracking')" @click="handleMenuItemClick('/tracking')">
             <TrendingUp :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/tracking' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">指數追蹤</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.tracking') }}</span>
           </router-link>
 
-          <router-link to="/backtest" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/backtest' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="回測管理" @click="handleMenuItemClick('/backtest')">
+          <router-link to="/backtest" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/backtest' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.backtest')" @click="handleMenuItemClick('/backtest')">
             <RefreshCcw :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/backtest' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">回測管理</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.backtest') }}</span>
           </router-link>
 
-          <router-link to="/optimize" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/optimize' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="投資組合最佳化" @click="handleMenuItemClick('/optimize')">
+          <router-link to="/optimize" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/optimize' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.optimize')" @click="handleMenuItemClick('/optimize')">
             <Target :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/optimize' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">投資組合最佳化</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.optimize') }}</span>
           </router-link>
 
-          <router-link to="/monte-carlo" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/monte-carlo' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="蒙地卡羅模擬" @click="handleMenuItemClick('/monte-carlo')">
+          <router-link to="/monte-carlo" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/monte-carlo' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.monteCarlo')" @click="handleMenuItemClick('/monte-carlo')">
             <Dice5 :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/monte-carlo' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">蒙地卡羅模擬</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.monteCarlo') }}</span>
           </router-link>
 
-          <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">系統</div>
+          <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">{{ t('navigation.system') }}</div>
           
-          <router-link to="/users" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/users' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="使用者管理" @click="handleMenuItemClick('/users')">
+          <router-link to="/users" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/users' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.users')" @click="handleMenuItemClick('/users')">
             <Users :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/users' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用者管理</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.users') }}</span>
           </router-link>
 
-          <router-link to="/notifications" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/notifications' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="通知記錄" @click="handleMenuItemClick('/notifications')">
+          <router-link to="/notifications" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/notifications' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.notifications')" @click="handleMenuItemClick('/notifications')">
             <Bell :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/notifications' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">通知記錄</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.notifications') }}</span>
           </router-link>
 
-          <router-link to="/line" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/line' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="LINE 通知" @click="handleMenuItemClick('/line')">
+          <router-link to="/line" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/line' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.line')" @click="handleMenuItemClick('/line')">
             <MessageCircle :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/line' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">LINE 通知</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.line') }}</span>
           </router-link>
 
-          <router-link to="/guide" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/guide' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="使用說明" @click="handleMenuItemClick('/guide')">
+          <router-link to="/guide" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path === '/guide' ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.guide')" @click="handleMenuItemClick('/guide')">
             <FileQuestion :size="20" :class="['flex-shrink-0 transition-colors', $route.path === '/guide' ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">使用說明</span>
+            <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.guide') }}</span>
           </router-link>
 
           <!-- 管理者功能菜單 - 僅對管理員顯示 -->
           <template v-if="isAdmin">
-            <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">管理者</div>
+            <div v-if="!isSidebarCollapsed" class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-3 mb-2 mt-6">{{ t('navigation.admin') }}</div>
             
-            <router-link to="/admin" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path.startsWith('/admin') ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" title="管理者面板" @click="handleMenuItemClick('/admin')">
+            <router-link to="/admin" :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group cursor-pointer', isSidebarCollapsed ? 'justify-center' : 'w-full', $route.path.startsWith('/admin') ? 'bg-brand-500/10 text-brand-500 dark:text-brand-400' : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50']" :title="t('navigation.adminPanel')" @click="handleMenuItemClick('/admin')">
               <Shield :size="20" :class="['flex-shrink-0 transition-colors', $route.path.startsWith('/admin') ? 'text-brand-500 dark:text-brand-400' : 'group-hover:text-zinc-900 dark:group-hover:text-zinc-200']" />
-              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">管理者面板</span>
+              <span v-if="!isSidebarCollapsed" class="font-medium text-sm">{{ t('navigation.adminPanel') }}</span>
             </router-link>
           </template>
         </nav>
@@ -126,7 +126,7 @@
             </div>
             <div class="flex flex-col flex-1 truncate">
               <span class="text-sm font-semibold text-[var(--text-primary)] truncate">{{ userName }}</span>
-              <button @click="handleLogout" class="text-[10px] text-rose-500 text-left hover:underline">登出 (Logout)</button>
+              <button @click="handleLogout" class="text-[10px] text-rose-500 text-left hover:underline">{{ t('account.logout') }}</button>
             </div>
           </div>
           <div v-else class="flex justify-center">
@@ -160,7 +160,7 @@
             <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" :size="16" />
             <input 
               type="text" 
-              placeholder="搜尋名稱、代碼或資產... (Cmd/Ctrl + K)" 
+              :placeholder="t('header.searchPlaceholder')"
               readonly
               class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)] cursor-pointer"
             />
@@ -171,24 +171,49 @@
           <button 
             @click="toggleDark()"
             class="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
-            :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
+            :title="isDark ? t('header.lightMode') : t('header.darkMode')"
           >
             <component :is="isDark ? Sun : Moon" :size="20" />
           </button>
+          <div class="relative">
+            <button
+              type="button"
+              class="p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              :title="t('language.label')"
+              :aria-label="t('language.label')"
+              :aria-expanded="isLanguageMenuOpen"
+              @click="isLanguageMenuOpen = !isLanguageMenuOpen"
+            >
+              <Globe2 :size="20" />
+            </button>
+            <div v-if="isLanguageMenuOpen" class="absolute right-0 top-full mt-2 w-36 rounded-xl border border-[var(--border-color)] bg-[var(--bg-header)] p-1 shadow-xl z-50">
+              <button
+                v-for="item in supportedLocales"
+                :key="item.code"
+                type="button"
+                class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                :class="locale === item.code ? 'text-brand-500 font-semibold' : 'text-[var(--text-primary)]'"
+                @click="selectLocale(item.code)"
+              >
+                {{ t(item.labelKey) }}
+                <Check v-if="locale === item.code" :size="16" />
+              </button>
+            </div>
+          </div>
           <button 
             @click="auth.toggleGlobalNotify()"
             class="relative p-2 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors"
-            :title="auth.profile?.global_notify !== false ? '關閉全部追蹤通知' : '開啟全部追蹤通知'"
+            :title="auth.profile?.global_notify !== false ? t('header.disableNotifications') : t('header.enableNotifications')"
           >
             <component :is="auth.profile?.global_notify !== false ? Bell : BellOff" :size="20" />
             <span v-if="auth.profile?.global_notify !== false" class="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-[var(--bg-header)]"></span>
           </button>
           <div class="h-8 w-[1px] bg-[var(--border-color)] mx-1 sm:mx-2"></div>
           <div class="flex flex-col items-end">
-            <span class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest">Market Status</span>
+            <span class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest">{{ t('header.marketStatus') }}</span>
             <div class="flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></span>
-              <span class="text-xs font-bold text-brand-500">OPEN</span>
+              <span class="text-xs font-bold text-brand-500">{{ t('header.marketOpen') }}</span>
             </div>
           </div>
         </div>
@@ -227,9 +252,11 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTheme } from '../composables/useTheme'
 import { useBreakpoint } from '../composables/useBreakpoint'
+import { useLocale } from '../composables/useLocale'
 import GlobalSearchModal from '../components/GlobalSearchModal.vue'
 import { 
   Globe, 
+  Globe2,
   LayoutDashboard, 
   Newspaper,
   CalendarDays,
@@ -252,29 +279,37 @@ import {
   Clock,
   FileText,
   BarChart3,
-  Dice5
+  Dice5,
+  Check
 } from 'lucide-vue-next'
 
 const router = useRouter()
 const auth = useAuthStore()
 const { isDark, toggleDark } = useTheme()
 const { isMobile, isTablet, isDesktop, isLargeScreen } = useBreakpoint()
+const { locale, supportedLocales, setLocale, t } = useLocale()
 
 const isSidebarOpen = ref(true)
 const isSidebarCollapsed = ref(false)
+const isLanguageMenuOpen = ref(false)
 const globalSearchModalRef = ref(null)
 
-const userName = computed(() => auth.profile?.display_name || auth.email || 'User')
+const userName = computed(() => auth.profile?.display_name || auth.email || t('account.defaultUser'))
 const userInitials = computed(() => userName.value.charAt(0).toUpperCase())
 const isAdmin = computed(() => auth.isAdmin)
 
-const mobileNavItems = [
-  { path: '/', label: '總覽', icon: LayoutDashboard },
-  { path: '/tracking', label: '追蹤', icon: TrendingUp },
-  { path: '/backtest', label: '回測', icon: RefreshCcw },
-  { path: '/optimize', label: '最佳化', icon: Target },
-  { path: '/monte-carlo', label: '蒙地卡羅', icon: Dice5 },
-]
+const mobileNavItems = computed(() => [
+  { path: '/', label: t('navigation.dashboard'), icon: LayoutDashboard },
+  { path: '/tracking', label: t('mobile.tracking'), icon: TrendingUp },
+  { path: '/backtest', label: t('mobile.backtest'), icon: RefreshCcw },
+  { path: '/optimize', label: t('mobile.optimize'), icon: Target },
+  { path: '/monte-carlo', label: t('mobile.monteCarlo'), icon: Dice5 },
+])
+
+function selectLocale(nextLocale) {
+  setLocale(nextLocale)
+  isLanguageMenuOpen.value = false
+}
 
 // 打開搜尋Modal
 function toggleSearchModal() {

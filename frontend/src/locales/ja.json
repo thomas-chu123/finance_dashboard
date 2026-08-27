@@ -1,0 +1,19 @@
+{
+  "language": { "label": "言語", "zhTW": "繁體中文", "en": "English", "ja": "日本語" },
+  "navigation": {
+    "main": "メインメニュー", "system": "システム", "admin": "管理",
+    "dashboard": "ダッシュボード", "briefing": "AIマーケットブリーフィング", "dividendCalendar": "配当カレンダー",
+    "tracking": "指数トラッキング", "backtest": "バックテスト", "optimize": "ポートフォリオ最適化",
+    "monteCarlo": "モンテカルロ・シミュレーション", "users": "ユーザー管理", "notifications": "通知ログ",
+    "line": "LINE通知", "guide": "利用ガイド", "adminPanel": "管理パネル"
+  },
+  "header": {
+    "searchPlaceholder": "名称、ティッカー、資産を検索... (Cmd/Ctrl + K)", "lightMode": "ライトモードに切替",
+    "darkMode": "ダークモードに切替", "disableNotifications": "すべての追跡通知をオフ",
+    "enableNotifications": "すべての追跡通知をオン", "marketStatus": "市場状況", "marketOpen": "取引中",
+    "closeMenu": "メニューを閉じる", "expandMenu": "メニューを展開", "collapseMenu": "メニューを折りたたむ"
+  },
+  "account": { "logout": "ログアウト", "defaultUser": "ユーザー" },
+  "auth": { "dashboard": "金融ダッシュボード", "login": "ログイン", "register": "登録", "name": "氏名", "namePlaceholder": "お名前", "email": "メールアドレス", "password": "パスワード", "processing": "処理中...", "or": "または", "googleLogin": "Googleでログイン", "forgotPassword": "パスワードをお忘れですか？", "registerSuccess": "アカウントを作成しました。ログインしてください。", "operationFailed": "操作に失敗しました" },
+  "mobile": { "tracking": "追跡", "backtest": "バックテスト", "optimize": "最適化", "monteCarlo": "モンテカルロ" }
+}
