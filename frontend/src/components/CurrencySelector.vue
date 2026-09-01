@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-2 bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-lg p-2">
-    <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">計價:</span>
+    <span class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('currency.label') }}:</span>
     
     <button
       v-for="curr in ['USD', 'TWD']"
@@ -18,7 +18,7 @@
     <!-- 幣值提示icon（可選，如需進階提示時使用） -->
     <div v-if="showHint" class="flex items-center gap-1 ml-auto text-xs text-[var(--text-secondary)]">
       <span v-if="preference.displayCurrency === 'TWD'" class="text-amber-500">
-        ※ 已按匯率轉換
+        ※ {{ $t('currency.converted') }}
       </span>
     </div>
   </div>

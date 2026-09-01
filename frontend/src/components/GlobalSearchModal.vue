@@ -16,7 +16,7 @@
             ref="inputRef"
             v-model="query"
             type="text"
-            placeholder="搜尋指數、基金代碼或名稱..."
+            :placeholder="$t('search.placeholder')"
             class="flex-1 ml-3 bg-transparent outline-none text-[var(--text-primary)] placeholder-zinc-500 font-medium"
             @keydown.arrow-down="moveDown"
             @keydown.arrow-up="moveUp"
@@ -30,7 +30,7 @@
             @click="handleSearch"
             :disabled="!query.trim() || searchStore.isLoading"
           >
-            搜尋
+            {{ $t('search.submit') }}
           </button>
         </div>
         
@@ -65,13 +65,13 @@
 
           <!-- 空提示（用戶還沒輸入或已修改搜尋詞但還沒按搜尋） -->
           <div v-else-if="!query || !hasSearched" class="p-8 text-center text-[var(--text-secondary)]">
-            <p class="text-sm">輸入關鍵字後按「搜尋」開始查詢</p>
-            <p class="text-xs mt-2 text-zinc-500">支持符號、中文名稱或英文名稱</p>
+            <p class="text-sm">{{ $t('search.enterHint') }}</p>
+            <p class="text-xs mt-2 text-zinc-500">{{ $t('search.supportHint') }}</p>
           </div>
 
           <!-- 無結果（用戶已按搜尋，但沒有結果） -->
           <div v-else-if="hasSearched && !searchStore.results.length" class="p-4 text-center text-[var(--text-secondary)]">
-            <p class="text-sm">找不到相符的結果</p>
+            <p class="text-sm">{{ $t('search.noResults') }}</p>
           </div>
 
           <!-- 搜尋結果清單 -->

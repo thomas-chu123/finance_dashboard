@@ -3,7 +3,7 @@
     <div class="bg-[var(--bg-primary)] rounded-lg shadow-lg max-w-md w-full mx-4">
       <!-- Header -->
       <div class="p-4 border-b border-[var(--border-color)]">
-        <h3 class="text-lg font-semibold text-[var(--text-primary)]">重設密碼</h3>
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">{{ $t('auth.resetPassword') }}</h3>
       </div>
 
       <!-- Body -->
@@ -73,7 +73,7 @@
           @click="close"
           class="px-4 py-2 rounded border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
         >
-          取消
+          {{ $t('analysis.cancel') }}
         </button>
         <button
           @click="resetPassword"

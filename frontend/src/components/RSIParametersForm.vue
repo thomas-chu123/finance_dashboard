@@ -5,7 +5,7 @@
       <label class="block text-sm font-bold text-[var(--text-primary)] mb-2">
         <span class="flex items-center">
           <span class="text-base mr-2">📊</span>
-          RSI 週期 (天數)
+          {{ $t('rsi.period') }}
         </span>
       </label>
       <div class="flex gap-2 items-center">
@@ -22,7 +22,7 @@
         </div>
       </div>
       <p class="mt-1 text-xs text-zinc-500">
-        標準值：14 天 (較敏感: 7-9, 一般: 14, 較遲鈍: 21-50)
+        {{ $t('rsi.periodHint') }}
       </p>
     </div>
 
@@ -31,7 +31,7 @@
       <label class="block text-sm font-bold text-[var(--text-primary)] mb-2">
         <span class="flex items-center">
           <span class="text-red-500 text-base mr-2">🔴</span>
-          超賣閾值 (低於)
+          {{ $t('rsi.oversold') }}
         </span>
       </label>
       <div class="flex gap-2 items-center">
@@ -48,7 +48,7 @@
         </div>
       </div>
       <p class="mt-1 text-xs text-zinc-500">
-        RSI 低於此值時視為超賣狀態 (標準: 30)
+        {{ $t('rsi.oversoldHint') }}
       </p>
     </div>
 
@@ -57,7 +57,7 @@
       <label class="block text-sm font-bold text-[var(--text-primary)] mb-2">
         <span class="flex items-center">
           <span class="text-green-500 text-base mr-2">🟢</span>
-          超買閾值 (高於)
+          {{ $t('rsi.overbought') }}
         </span>
       </label>
       <div class="flex gap-2 items-center">
@@ -74,7 +74,7 @@
         </div>
       </div>
       <p class="mt-1 text-xs text-zinc-500">
-        RSI 高於此值時視為超買狀態 (標準: 70)
+        {{ $t('rsi.overboughtHint') }}
       </p>
     </div>
 

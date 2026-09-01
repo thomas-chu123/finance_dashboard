@@ -44,7 +44,7 @@
 
       <!-- 無結果 -->
       <div v-else-if="!results.length" class="p-3 text-center">
-        <p class="text-xs text-[var(--text-secondary)]">無搜尋結果</p>
+        <p class="text-xs text-[var(--text-secondary)]">{{ $t('search.noResults') }}</p>
       </div>
 
       <!-- 結果清單 -->

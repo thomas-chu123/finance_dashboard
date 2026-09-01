@@ -3,7 +3,7 @@
     <div class="bg-[var(--bg-primary)] rounded-lg shadow-lg max-w-md w-full mx-4">
       <!-- Header -->
       <div class="p-4 border-b border-[var(--border-color)]">
-        <h3 class="text-lg font-semibold text-[var(--text-primary)]">編輯使用者</h3>
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">{{ $t('account.editUser') }}</h3>
       </div>
 
       <!-- Body -->
@@ -18,7 +18,7 @@
         <!-- Display Name -->
         <div>
           <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            名稱
+            {{ $t('account.name') }}
           </label>
           <input
             v-model="formData.display_name"
@@ -37,7 +37,7 @@
             class="w-4 h-4 rounded border-[var(--border-color)] text-blue-600 focus:ring-0 cursor-pointer"
           />
           <label for="is_admin" class="text-sm font-medium text-[var(--text-primary)] cursor-pointer">
-            管理員權限
+            {{ $t('account.adminPermission') }}
           </label>
         </div>
 
@@ -64,14 +64,14 @@
           @click="close"
           class="px-4 py-2 rounded border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors"
         >
-          取消
+          {{ $t('analysis.cancel') }}
         </button>
         <button
           @click="saveChanges"
           :disabled="isSaving"
           class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
         >
-          {{ isSaving ? '保存中...' : '保存' }}
+          {{ isSaving ? $t('analysis.saving') : $t('analysis.save') }}
         </button>
       </div>
     </div>

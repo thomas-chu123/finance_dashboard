@@ -3,8 +3,8 @@
     <div class="bg-[var(--bg-primary)] rounded-2xl shadow-lg max-w-md w-full border border-[var(--border-color)]">
       <!-- Header -->
       <div class="p-6 border-b border-[var(--border-color)]">
-        <h3 class="text-lg font-semibold text-[var(--text-primary)]">重設密碼</h3>
-        <p class="text-sm text-[var(--text-secondary)] mt-1">輸入您的信箱以重設密碼</p>
+        <h3 class="text-lg font-semibold text-[var(--text-primary)]">{{ $t('auth.resetPassword') }}</h3>
+        <p class="text-sm text-[var(--text-secondary)] mt-1">{{ $t('auth.resetHint') }}</p>
       </div>
 
       <!-- Body -->
@@ -26,7 +26,7 @@
         <!-- Step 1: Email -->
         <div v-if="currentStep === 'email'">
           <label class="block text-sm font-medium text-[var(--text-primary)] mb-2">
-            電子郵件 <span class="text-rose-500">*</span>
+            {{ $t('auth.email') }} <span class="text-rose-500">*</span>
           </label>
           <input
             v-model="email"
@@ -89,7 +89,7 @@
           class="px-4 py-2 rounded-lg border border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors font-medium text-sm"
           :disabled="isLoading"
         >
-          取消
+              {{ $t('analysis.cancel') }}
         </button>
         <button
           v-if="currentStep === 'email'"
