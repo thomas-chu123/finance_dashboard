@@ -102,37 +102,37 @@
               <div v-else class="min-w-[400px] sm:min-w-[700px]">
                 <div class="grid grid-cols-4 sm:grid-cols-7 p-4 bg-[var(--bg-sidebar)]/50 text-[10px] uppercase font-bold tracking-widest text-zinc-500 border-b border-[var(--border-color)]">
                   <div class="col-span-1 cursor-pointer hover:text-[var(--text-primary)] transition-colors flex items-center gap-1" @click="handleSort('symbol')">
-                    代碼
+                    {{ $t('tracking.symbol') }}
                     <ArrowUp v-if="sortColumn === 'symbol' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
                     <ArrowDown v-else-if="sortColumn === 'symbol' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
                     <ArrowUpDown v-else :size="12" class="opacity-30" />
                   </div>
                   <div class="col-span-2 cursor-pointer hover:text-[var(--text-primary)] transition-colors flex items-center gap-1" @click="handleSort('name')">
-                    名稱 <span class="hidden sm:inline">/ 類別</span>
+                    {{ $t('tracking.name') }} <span class="hidden sm:inline">/ {{ $t('tracking.category') }}</span>
                     <ArrowUp v-if="sortColumn === 'name' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
                     <ArrowDown v-else-if="sortColumn === 'name' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
                     <ArrowUpDown v-else :size="12" class="opacity-30" />
                   </div>
                   <div class="col-span-1 cursor-pointer hover:text-[var(--text-primary)] transition-colors flex items-center gap-1" @click="handleSort('current_price')">
-                    目前價格
+                    {{ $t('tracking.currentPrice') }}
                     <ArrowUp v-if="sortColumn === 'current_price' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
                     <ArrowDown v-else-if="sortColumn === 'current_price' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
                     <ArrowUpDown v-else :size="12" class="opacity-30" />
                   </div>
                   <div class="col-span-1 hidden sm:flex cursor-pointer hover:text-[var(--text-primary)] transition-colors items-center gap-1" @click="handleSort('trigger_price')">
-                    價格門檻
+                    {{ $t('dashboard.triggerPrice') }}
                     <ArrowUp v-if="sortColumn === 'trigger_price' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
                     <ArrowDown v-else-if="sortColumn === 'trigger_price' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
                     <ArrowUpDown v-else :size="12" class="opacity-30" />
                   </div>
                   <div class="col-span-1 hidden sm:flex cursor-pointer hover:text-[var(--text-primary)] transition-colors items-center gap-1" @click="handleSort('current_rsi')">
-                    RSI 指標
+                    {{ $t('tracking.rsi') }}
                     <ArrowUp v-if="sortColumn === 'current_rsi' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
                     <ArrowDown v-else-if="sortColumn === 'current_rsi' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
                     <ArrowUpDown v-else :size="12" class="opacity-30" />
                   </div>
                   <div class="col-span-1 hidden sm:flex cursor-pointer hover:text-[var(--text-primary)] transition-colors items-center gap-1" @click="handleSort('is_active')">
-                    狀態
+                    {{ $t('tracking.status') }}
                     <ArrowUp v-if="sortColumn === 'is_active' && sortDirection === 'asc'" :size="12" class="text-brand-500" />
                     <ArrowDown v-else-if="sortColumn === 'is_active' && sortDirection === 'desc'" :size="12" class="text-brand-500" />
                     <ArrowUpDown v-else :size="12" class="opacity-30" />
@@ -169,7 +169,7 @@
                   </div>
                   <div class="col-span-1 hidden sm:block">
                     <span :class="['px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider', item.is_active ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400']">
-                      {{ item.is_active ? '啟用' : '停用' }}
+                      {{ item.is_active ? $t('dashboard.enabled') : $t('dashboard.disabled') }}
                     </span>
                   </div>
                 </div>
@@ -198,19 +198,19 @@
           data-card-id="status-sidebar"
         >
           <h3 class="text-sm font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-            <Activity :size="16" /> 系統運作狀態
+            <Activity :size="16" /> {{ $t('dashboard.systemStatus') }}
           </h3>
           
           <div class="grid grid-cols-2 gap-4 mb-6">
             <div class="flex flex-col gap-1 p-4 bg-[var(--input-bg)] rounded-xl border border-[var(--border-color)]">
-              <span class="text-xs text-zinc-500 font-bold">追蹤數量</span>
+              <span class="text-xs text-zinc-500 font-bold">{{ $t('dashboard.trackedCount') }}</span>
               <span class="text-2xl font-bold font-mono text-[var(--text-primary)]">{{ trackingStore.items.length }}</span>
-              <span class="text-[10px] text-brand-500 font-bold">{{ activeCount }} 啟用中</span>
+              <span class="text-[10px] text-brand-500 font-bold">{{ activeCount }} {{ $t('dashboard.active') }}</span>
             </div>
             <div class="flex flex-col gap-1 p-4 bg-[var(--input-bg)] rounded-xl border border-[var(--border-color)]">
-              <span class="text-xs text-zinc-500 font-bold">通知記錄</span>
+              <span class="text-xs text-zinc-500 font-bold">{{ $t('dashboard.notificationHistory') }}</span>
               <span class="text-2xl font-bold font-mono text-[var(--text-primary)]">{{ trackingStore.alertLogs.length }}</span>
-              <span class="text-[10px] text-zinc-400 font-bold">近 50 筆</span>
+              <span class="text-[10px] text-zinc-400 font-bold">{{ $t('dashboard.recentRecords') }}</span>
             </div>
           </div>
 
@@ -218,25 +218,25 @@
             <div class="flex items-center justify-between p-3 bg-[var(--input-bg)] rounded-lg border border-[var(--border-color)]">
               <div class="flex items-center gap-2">
                 <Mail :size="16" class="text-zinc-400" />
-                <span class="text-sm font-bold text-[var(--text-primary)]">Email 通知</span>
+                <span class="text-sm font-bold text-[var(--text-primary)]">{{ $t('dashboard.emailNotifications') }}</span>
               </div>
               <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_email ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-white dark:bg-white text-zinc-950 dark:text-zinc-950']">
-                {{ auth.profile?.notify_email ? '已啟用' : '停用' }}
+                {{ auth.profile?.notify_email ? $t('dashboard.enabled') : $t('dashboard.disabled') }}
               </span>
             </div>
             <div class="flex items-center justify-between p-3 bg-[var(--input-bg)] rounded-lg border border-[var(--border-color)]">
               <div class="flex items-center gap-2">
                 <MessageCircle :size="16" class="text-zinc-400" />
-                <span class="text-sm font-bold text-[var(--text-primary)]">LINE 通知</span>
+                <span class="text-sm font-bold text-[var(--text-primary)]">{{ $t('dashboard.lineNotifications') }}</span>
               </div>
               <span :class="['text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded', auth.profile?.notify_line ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400' : 'bg-white dark:bg-white text-zinc-950 dark:text-zinc-950']">
-                {{ auth.profile?.notify_line ? '已啟用' : '停用' }}
+                {{ auth.profile?.notify_line ? $t('dashboard.enabled') : $t('dashboard.disabled') }}
               </span>
             </div>
           </div>
           
           <router-link to="/line" class="block w-full mt-6 py-3 border border-[var(--border-color)] rounded-xl text-xs font-bold text-center text-zinc-500 dark:text-zinc-400 hover:bg-[var(--input-bg)] transition-colors">
-            前往設定通知
+            {{ $t('dashboard.notificationSettings') }}
           </router-link>
         </div>
 
@@ -249,7 +249,7 @@
       <div class="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-2xl shadow-2xl w-[860px] max-w-[96vw] max-h-[90vh] flex flex-col">
         <!-- Header -->
         <div class="flex items-center justify-between p-4 px-6 border-b border-[var(--border-color)] shrink-0">
-          <h3 class="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><Settings :size="18" /> 自訂面板指數</h3>
+          <h3 class="font-bold text-lg text-[var(--text-primary)] flex items-center gap-2"><Settings :size="18" /> {{ $t('dashboard.customizeModalTitle') }}</h3>
           <button class="p-1 rounded-md text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-[var(--text-primary)] transition-colors" @click="showQuoteModal = false">
             <X :size="18" />
           </button>
@@ -266,7 +266,7 @@
                 v-for="tab in categoryTabs" :key="tab.key"
                 :class="['px-4 py-1.5 rounded-full border text-sm font-bold transition-colors', activeTab === tab.key ? 'bg-brand-500 border-brand-500 text-white' : 'border-[var(--border-color)] text-zinc-500 hover:border-brand-500 hover:text-brand-500']"
                 @click="activeTab = tab.key; quoteSearch = ''"
-              >{{ tab.label }}</button>
+              >{{ $t(tab.labelKey) }}</button>
             </div>
 
             <!-- Search -->
@@ -274,7 +274,7 @@
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" :size="14" />
               <input
                 type="text" class="w-full bg-[var(--input-bg)] border border-[var(--border-color)] rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-500/50 transition-colors text-[var(--text-primary)]" v-model="quoteSearch"
-                :placeholder="'搜尋 ' + currentTabLabel + ' 代碼或名稱...'"
+                :placeholder="$t('dashboard.search')"
               />
             </div>
 
@@ -297,16 +297,16 @@
                   class="p-1 rounded text-brand-600 hover:bg-brand-500/10 font-bold shrink-0"
                   @click="addQuote(item)"
                 ><Plus :size="16" /></button>
-                <span v-else class="text-xs text-zinc-500 font-bold shrink-0 flex items-center gap-1"><Check :size="16" />已加入</span>
+                <span v-else class="text-xs text-zinc-500 font-bold shrink-0 flex items-center gap-1"><Check :size="16" />{{ $t('dashboard.added') }}</span>
               </div>
-              <div v-if="!filteredCurrentTab.length" class="text-center text-zinc-500 p-8 text-sm">無符合結果</div>
+              <div v-if="!filteredCurrentTab.length" class="text-center text-zinc-500 p-8 text-sm">{{ $t('dashboard.noResults') }}</div>
             </div>
           </div>
 
           <!-- RIGHT: Selected list -->
           <div class="md:col-span-1 flex flex-col border border-brand-500/30 rounded-xl overflow-hidden min-h-0">
             <div class="flex items-center justify-between p-3 border-b border-[var(--border-color)] bg-brand-500/5 shrink-0">
-              <span class="font-bold text-sm text-[var(--text-primary)]">已顯示指數</span>
+              <span class="font-bold text-sm text-[var(--text-primary)]">{{ $t('dashboard.selectedIndices') }}</span>
               <span class="bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ selectedQuotes.length }}</span>
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar bg-[var(--bg-sidebar)]/50">
@@ -319,31 +319,31 @@
                   <span class="text-[10px] text-zinc-500 truncate">{{ item.name }}</span>
                 </div>
                 <div class="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity shrink-0">
-                  <button class="text-zinc-400 hover:text-brand-500 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed" @click="moveQuote(idx, -1)" :disabled="idx === 0" title="上移">
+                  <button class="text-zinc-400 hover:text-brand-500 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed" @click="moveQuote(idx, -1)" :disabled="idx === 0" :title="$t('dashboard.moveUp')">
                     <ArrowUp :size="14" />
                   </button>
-                  <button class="text-zinc-400 hover:text-brand-500 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed" @click="moveQuote(idx, 1)" :disabled="idx === selectedQuotes.length - 1" title="下移">
+                  <button class="text-zinc-400 hover:text-brand-500 p-1 rounded transition-colors disabled:opacity-20 disabled:cursor-not-allowed" @click="moveQuote(idx, 1)" :disabled="idx === selectedQuotes.length - 1" :title="$t('dashboard.moveDown')">
                     <ArrowDown :size="14" />
                   </button>
-                  <button class="text-rose-400 hover:text-rose-600 p-1 rounded transition-colors" @click="removeQuote(idx)" title="移除">
+                  <button class="text-rose-400 hover:text-rose-600 p-1 rounded transition-colors" @click="removeQuote(idx)" :title="$t('dashboard.remove')">
                     <X :size="14" />
                   </button>
                 </div>
               </div>
-              <div v-if="!selectedQuotes.length" class="text-center text-zinc-500 p-8 text-xs">尚未加入任何標的</div>
+              <div v-if="!selectedQuotes.length" class="text-center text-zinc-500 p-8 text-xs">{{ $t('dashboard.noSelectedIndices') }}</div>
             </div>
             <div class="text-[10px] text-zinc-400 p-2 text-center bg-[var(--bg-main)]/30 border-t border-[var(--border-color)]">
-              💡 提示：您可以在首頁直接拖曳卡片來變更順序
+              💡 {{ $t('dashboard.dragHint') }}
             </div>
           </div>
         </div>
 
         <!-- Footer -->
         <div class="p-4 px-6 border-t border-[var(--border-color)] flex items-center justify-end gap-3 bg-[var(--bg-header)] shrink-0">
-          <button class="px-4 py-2 text-sm font-bold text-zinc-500 hover:text-[var(--text-primary)] transition-colors" @click="showQuoteModal = false">取消</button>
+          <button class="px-4 py-2 text-sm font-bold text-zinc-500 hover:text-[var(--text-primary)] transition-colors" @click="showQuoteModal = false">{{ $t('analysis.cancel') }}</button>
           <button class="px-6 py-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-brand-500/20 flex items-center gap-2" @click="saveQuotes" :disabled="savingQuotes">
             <div v-if="savingQuotes" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            儲存追蹤清單
+            {{ $t('dashboard.saveTrackingList') }}
           </button>
         </div>
       </div>
@@ -361,6 +361,7 @@ import { useDashboardStore } from '../stores/dashboard'
 import { useDragDrop } from '../composables/useDragDrop'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import preferencesAPI from '../api/preferences'
+import { useLocale } from '../composables/useLocale'
 import {
   TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-vue-next'
@@ -368,6 +369,7 @@ import {
 const auth = useAuthStore()
 const trackingStore = useTrackingStore()
 const dashboardStore = useDashboardStore()
+const { locale, t } = useLocale()
 
 // Main dashboard cards drag & drop
 const { handleDragStart, handleDragEnd, handleDragEnter, handleDragOver, handleDragLeave, handleDrop, dragOverIndex, isDragging } = useDragDrop()
@@ -427,7 +429,11 @@ async function handleQuoteDropTarget(event, toIndex) {
 
 const quotes = ref([])
 const quotesLoading = ref(false)
-const quotesLastUpdated = ref('')
+const quotesUpdatedAt = ref(null)
+const quotesLastUpdated = computed(() => {
+  if (!quotesUpdatedAt.value) return ''
+  return `${quotesUpdatedAt.value.toLocaleTimeString(locale.value, { timeZone: 'Asia/Taipei' })} ${t('dashboard.updated')}`
+})
 const symbolCatalog = ref({})  // 從後端加載的符號目錄
 let quotesTimer = null
 
@@ -451,13 +457,11 @@ const selectedQuotes = ref([])
 const activeTab = ref('us_etf')
 
 const categoryTabs = [
-  { key: 'us_etf', label: '美國ETF' },
-  { key: 'tw_etf', label: '台灣ETF' },
-  { key: 'jp_etf', label: '日本ETF' },
-  { key: 'index',  label: '指數/原物料' },
+  { key: 'us_etf', labelKey: 'tracking.usEtf' },
+  { key: 'tw_etf', labelKey: 'tracking.twEtf' },
+  { key: 'jp_etf', labelKey: 'tracking.jpEtf' },
+  { key: 'index', labelKey: 'dashboard.indicesAndCommodities' },
 ]
-
-const currentTabLabel = computed(() => categoryTabs.find(t => t.key === activeTab.value)?.label || '')
 
 const filteredCurrentTab = computed(() => {
   const q = quoteSearch.value.toLowerCase()
@@ -513,7 +517,7 @@ async function saveQuotes() {
     await fetchQuotes()
   } catch (e) {
     console.error('Failed to save quotes', e)
-    alert('儲存失敗，請重試')
+    alert(t('dashboard.saveFailed'))
   } finally {
     savingQuotes.value = false
   }
@@ -567,14 +571,10 @@ const filteredTrackingItems = computed(() => {
   return result
 })
 
-function formatDate(d) {
-  return new Date(d).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
-}
-
 function formatPrice(p) {
-  if (p === null || p === undefined) return 'N/A'
+  if (p === null || p === undefined) return t('dashboard.notAvailable')
   return parseFloat(p) >= 1000
-    ? parseFloat(p).toLocaleString('en-US', { maximumFractionDigits: 2 })
+    ? parseFloat(p).toLocaleString(locale.value, { maximumFractionDigits: 2 })
     : parseFloat(p).toFixed(2)
 }
 
@@ -590,7 +590,7 @@ async function fetchQuotes() {
     })
     const res = await axios.post(`${API_BASE}/api/market/quotes`, metas)
     quotes.value = res.data
-    quotesLastUpdated.value = new Date().toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei' }) + ' 更新'
+    quotesUpdatedAt.value = new Date()
     console.debug('[DashboardView.fetchQuotes] Success:', { count: res.data.length, lastUpdated: quotesLastUpdated.value })
   } catch (e) {
     console.error('[DashboardView.fetchQuotes] Error:', e.message, e.response?.status, e.response?.data)

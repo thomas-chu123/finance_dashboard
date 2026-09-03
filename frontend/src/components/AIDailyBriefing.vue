@@ -3,7 +3,7 @@
     <!-- 標題列 -->
     <div class="border-b border-[var(--border-color)] pb-4 mb-5 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <h3 class="font-bold text-lg text-[var(--text-primary)]">🤖 AI 市場早報</h3>
+        <h3 class="font-bold text-lg text-[var(--text-primary)]">🤖 {{ $t('pages.briefing') }}</h3>
         <span v-if="briefingStore.sessionTime" class="text-[11px] font-medium text-brand-700 dark:text-brand-400 bg-brand-500/10 rounded-md px-2 py-0.5">
           {{ formattedSessionTime }}
         </span>
@@ -12,7 +12,7 @@
         @click="handleRefresh"
         :disabled="refreshing || briefingStore.loading"
         class="p-1.5 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40"
-        title="手動刷新早報"
+        :title="$t('briefing.refresh')"
       >
         <svg :class="['w-4 h-4', (refreshing || briefingStore.loading) ? 'animate-spin' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -29,7 +29,7 @@
     <div v-else-if="briefingStore.error" class="flex items-start gap-2 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
       <span class="text-red-500 text-lg">⚠️</span>
       <div>
-        <p class="text-sm font-medium text-red-700 dark:text-red-400">早報載入失敗</p>
+        <p class="text-sm font-medium text-red-700 dark:text-red-400">{{ $t('briefing.loadFailed') }}</p>
         <p class="text-xs text-red-500 dark:text-red-500 mt-0.5">{{ briefingStore.error }}</p>
       </div>
     </div>
@@ -37,8 +37,8 @@
     <!-- 無資料 -->
     <div v-else-if="!briefingStore.items.length" class="py-10 text-center text-zinc-500 text-sm">
       <p class="text-2xl mb-2">📰</p>
-      <p>尚無早報資料</p>
-      <p class="text-xs mt-1">排程於每日 08:00、13:00、18:00 自動生成</p>
+      <p>{{ $t('briefing.empty') }}</p>
+      <p class="text-xs mt-1">{{ $t('briefing.schedule') }}</p>
     </div>
 
     <!-- 早報列表 -->
@@ -60,7 +60,7 @@
           <span
             v-if="item.status === 'failed'"
             class="shrink-0 text-[10px] px-1.5 py-0.5 rounded border border-red-400 dark:border-red-500 text-red-500 dark:text-red-400 font-medium"
-          >生成失敗</span>
+          >{{ $t('briefing.generationFailed') }}</span>
         </div>
 
         <!-- AI 摘要 -->
@@ -70,7 +70,7 @@
             class="briefing-summary text-sm text-[var(--text-primary)] leading-relaxed"
             v-html="renderSummary(item.summary_text)"
           ></div>
-          <p v-else class="text-sm text-zinc-400 italic">無摘要</p>
+          <p v-else class="text-sm text-zinc-400 italic">{{ $t('briefing.noSummary') }}</p>
         </div>
 
         <!-- 展開/收合新聞清單 -->
@@ -79,7 +79,7 @@
             @click="toggleNews(item.symbol)"
             class="w-full flex items-center justify-between px-4 py-2 text-xs text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
           >
-            <span>📰 相關新聞（{{ item.news_json.length }} 則）</span>
+            <span>📰 {{ $t('briefing.relatedNews') }}（{{ item.news_json.length }} {{ $t('briefing.articles') }}）</span>
             <svg :class="['w-3 h-3 transition-transform', expandedSymbols.has(item.symbol) ? 'rotate-180' : '']" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -108,15 +108,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useBriefingStore } from '../stores/briefing'
+import { useLocale } from '../composables/useLocale'
 
 const briefingStore = useBriefingStore()
+const { locale, t } = useLocale()
 const expandedSymbols = ref(new Set())
 const refreshing = ref(false)
 
 const formattedSessionTime = computed(() => {
   if (!briefingStore.sessionTime) return ''
   const d = new Date(briefingStore.sessionTime)
-  return d.toLocaleString('zh-TW', {
+  return d.toLocaleString(locale.value, {
     timeZone: 'Asia/Taipei',
     month: '2-digit',
     day: '2-digit',
@@ -136,14 +138,14 @@ function toggleNews(symbol) {
 }
 
 function displaySymbol(item) {
-  if (item.symbol === 'AI_WEEK') return '本週'
-  if (item.symbol === 'AI_TW_FCST') return '台股'
+  if (item.symbol === 'AI_WEEK') return t('briefing.thisWeek')
+  if (item.symbol === 'AI_TW_FCST') return t('briefing.taiwanStocks')
   return item.symbol
 }
 
 function displayName(item) {
-  if (item.symbol === 'AI_WEEK') return '一週財經大事'
-  if (item.symbol === 'AI_TW_FCST') return '當日台股大盤風向與指數預測'
+  if (item.symbol === 'AI_WEEK') return t('briefing.weeklyMarketEvents')
+  if (item.symbol === 'AI_TW_FCST') return t('briefing.taiwanMarketForecast')
   return item.symbol_name || item.symbol
 }
 

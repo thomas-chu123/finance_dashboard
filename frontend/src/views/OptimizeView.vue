@@ -3,7 +3,7 @@
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
       <div>
         <h2 class="text-xl font-bold text-[var(--text-primary)]">{{ $t('pages.optimize') }}</h2>
-        <div class="text-xs sm:text-sm text-[var(--text-muted)]">基於 Markowitz 效率前緣理論尋找最佳權重分配</div>
+        <div class="text-xs sm:text-sm text-[var(--text-muted)]">{{ $t('optimize.description') }}</div>
       </div>
       <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 w-[calc(100%+2rem)] sm:w-auto">
         <button
@@ -160,7 +160,7 @@
               <div class="flex gap-2 overflow-x-auto scrollbar-none pb-1 premium-tab-container">
                 <button v-for="t in symbolTypes" :key="t.value"
                   :class="['premium-tab', symbolType === t.value ? 'active' : '']"
-                  @click="symbolType = t.value; loadSymbols()">{{ t.label }}</button>
+                  @click="symbolType = t.value; loadSymbols()">{{ $t(t.labelKey) }}</button>
               </div>
 
               <!-- Quick symbol search -->
@@ -222,13 +222,13 @@
             <div class="flex-1 flex items-center justify-between">
               <h3 class="font-bold text-[var(--text-primary)]">{{ $t('analysis.selectedAssets') }} ({{ selectedItems.length }}/10)</h3>
               <div class="text-xs font-bold px-2 py-1 rounded-md" :class="totalWeight === 100 ? 'bg-brand-500/10 text-brand-600' : 'bg-rose-500/10 text-rose-600'">
-                總權重: {{ totalWeight }}%
+                {{ $t('analysis.totalWeight') }}: {{ totalWeight }}%
               </div>
             </div>
           </div>
           <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
             <div v-if="!selectedItems.length" style="color:var(--text-muted);font-size:0.875rem;padding:12px 0;">
-              請從左側選擇資產
+              {{ $t('analysis.selectAssetsPrompt') }}
             </div>
             <div v-for="item in selectedItems" :key="item.symbol" class="p-4 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl mb-3 shadow-sm">
               <div class="flex items-center justify-between mb-3">
@@ -329,7 +329,7 @@
             <FolderOpen class="w-4 h-4 text-brand-500" />
             <span class="font-bold text-sm text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</span>
           </div>
-          <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">總權重: {{ totalWeight }}%</span>
+          <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">{{ $t('analysis.totalWeight') }}: {{ totalWeight }}%</span>
         </div>
         <div class="flex flex-wrap gap-2 p-3">
           <div v-for="item in selectedItems" :key="item.symbol" class="flex items-center gap-2 px-3 py-2 bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-lg min-w-[140px]">
@@ -520,12 +520,12 @@ const customPortfolioPerf = ref(null)  // 自定義權重組合的性能指標
 const calcPerfLoading = ref(false)  // 計算性能中的加載狀態
 
 const symbolTypes = [
-  { value: 'us_etf', label: '美國ETF' },
-  { value: 'tw_etf', label: '台灣ETF' },
-  { value: 'jp_etf', label: '日本ETF' },
-  { value: 'indices', label: '指數/原物料' },
-  { value: 'crypto', label: '加密貨幣' },
-  { value: 'funds', label: '共同基金' },
+  { value: 'us_etf', labelKey: 'tracking.usEtf' },
+  { value: 'tw_etf', labelKey: 'tracking.twEtf' },
+  { value: 'jp_etf', labelKey: 'tracking.jpEtf' },
+  { value: 'indices', labelKey: 'dashboard.indicesAndCommodities' },
+  { value: 'crypto', labelKey: 'tracking.crypto' },
+  { value: 'funds', labelKey: 'tracking.funds' },
 ]
 
 const optConfig = reactive({

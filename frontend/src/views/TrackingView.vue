@@ -286,9 +286,9 @@
 
       <!-- Stats Footer -->
       <div v-if="trackingStore.items.length > 0" class="px-4 py-3 bg-[var(--bg-sidebar)]/50 border-t border-[var(--border-color)] text-sm text-zinc-500">
-        <span>共計 <span class="font-bold text-[var(--text-primary)]">{{ trackingStore.items.length }}</span> 個追蹤項目</span>
+        <span>{{ $t('tracking.total') }} <span class="font-bold text-[var(--text-primary)]">{{ trackingStore.items.length }}</span> {{ $t('tracking.trackedItems') }}</span>
         <span class="mx-2">•</span>
-        <span>篩選結果: <span class="font-bold text-[var(--text-primary)]">{{ filteredItems.length }}</span> 個</span>
+        <span>{{ $t('tracking.filteredResults') }}: <span class="font-bold text-[var(--text-primary)]">{{ filteredItems.length }}</span> {{ $t('tracking.items') }}</span>
       </div>
     </div>
 
