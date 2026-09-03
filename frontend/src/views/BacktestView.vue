@@ -201,7 +201,7 @@
                     @click="toggleSymbol(s)">
                     <div class="flex flex-col min-w-0">
                       <span class="font-bold text-sm text-[var(--text-primary)] truncate">{{ s.symbol }}</span>
-                      <span class="text-[10px] text-[var(--text-secondary)] font-medium truncate uppercase tracking-wider">{{ s.name }}</span>
+                      <span class="text-[10px] text-[var(--text-secondary)] font-medium truncate uppercase tracking-wider">{{ localizedName(s) }}</span>
                     </div>
                     <div class="w-6 h-6 rounded-full flex items-center justify-center transition-colors" :class="isSelected(s.symbol) ? 'bg-brand-500 text-white' : 'bg-brand-500/20 text-brand-600 dark:bg-brand-500/30 dark:text-brand-400'">
                       <Plus v-if="!isSelected(s.symbol)" class="w-3.5 h-3.5" />
@@ -629,6 +629,7 @@ import { metricsDefinitions } from '../utils/metricsDefinitions'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 import CurrencySelector from '../components/CurrencySelector.vue'
+import { localizedName } from '../composables/useLocale'
 
 import ShareImageButton from '../components/ShareImageButton.vue'
 
@@ -676,7 +677,7 @@ const btConfig = reactive({
 const filteredSymbols = computed(() => {
   const q = symbolSearch.value.toLowerCase()
   return availableSymbols.value.filter(s =>
-    !q || s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q)
+    !q || s.symbol.toLowerCase().includes(q) || localizedName(s).toLowerCase().includes(q)
   )
 })
 

@@ -868,7 +868,8 @@ async def fetch_jp_etf_list() -> list[dict]:
         return {
             "symbol": yahoo_symbol,
             "name": name,
-            "name_zh": name,
+            "name_zh": row.get("name_ja") or name,
+            "name_ja": row.get("name_ja") or name,
             "name_en": name,
             "category": "jp_etf",
             "yahoo_symbol": yahoo_symbol,
@@ -882,7 +883,7 @@ async def fetch_jp_etf_list() -> list[dict]:
         page_size = 1000
         start = 0
         while True:
-            res = sb.table("jp_etf_list").select("symbol, name").order("symbol").range(start, start + page_size - 1).execute()
+            res = sb.table("jp_etf_list").select("symbol, name, name_ja").order("symbol").range(start, start + page_size - 1).execute()
             if not res.data:
                 break
             all_rows.extend(res.data)
@@ -901,7 +902,7 @@ async def fetch_jp_etf_list() -> list[dict]:
         await sync_jp_etf_list()
         from app.database import get_supabase
         sb = get_supabase()
-        res = sb.table("jp_etf_list").select("symbol, name").order("symbol").execute()
+        res = sb.table("jp_etf_list").select("symbol, name, name_ja").order("symbol").execute()
         if res.data:
             return [_format_row(row) for row in res.data]
     except Exception as e:
@@ -909,9 +910,9 @@ async def fetch_jp_etf_list() -> list[dict]:
 
     logger.warning("[MarketData] Returning minimal hardcoded JP ETF fallback.")
     return [
-        {"symbol": "1308.T", "name": "Nikko Exchange Traded Index Fund TOPIX", "name_zh": "Nikko Exchange Traded Index Fund TOPIX", "name_en": "Nikko Exchange Traded Index Fund TOPIX", "category": "jp_etf", "yahoo_symbol": "1308.T"},
-        {"symbol": "1321.T", "name": "Nikko Exchange Traded Fund Nikkei 225", "name_zh": "Nikko Exchange Traded Fund Nikkei 225", "name_en": "Nikko Exchange Traded Fund Nikkei 225", "category": "jp_etf", "yahoo_symbol": "1321.T"},
-        {"symbol": "1343.T", "name": "NEXT FUNDS REIT Index ETF", "name_zh": "NEXT FUNDS REIT Index ETF", "name_en": "NEXT FUNDS REIT Index ETF", "category": "jp_etf", "yahoo_symbol": "1343.T"},
+        {"symbol": "1308.T", "name": "Nikko Exchange Traded Index Fund TOPIX", "name_zh": "TOPIX連動型上場投資信託", "name_ja": "TOPIX連動型上場投資信託", "name_en": "Nikko Exchange Traded Index Fund TOPIX", "category": "jp_etf", "yahoo_symbol": "1308.T"},
+        {"symbol": "1321.T", "name": "Nikko Exchange Traded Fund Nikkei 225", "name_zh": "日経225連動型上場投資信託", "name_ja": "日経225連動型上場投資信託", "name_en": "Nikko Exchange Traded Fund Nikkei 225", "category": "jp_etf", "yahoo_symbol": "1321.T"},
+        {"symbol": "1343.T", "name": "NEXT FUNDS REIT Index ETF", "name_zh": "NEXT FUNDS 東証REIT指数連動型上場投信", "name_ja": "NEXT FUNDS 東証REIT指数連動型上場投信", "name_en": "NEXT FUNDS REIT Index ETF", "category": "jp_etf", "yahoo_symbol": "1343.T"},
     ]
 
 

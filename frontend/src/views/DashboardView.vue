@@ -361,7 +361,7 @@ import { useDashboardStore } from '../stores/dashboard'
 import { useDragDrop } from '../composables/useDragDrop'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import preferencesAPI from '../api/preferences'
-import { useLocale } from '../composables/useLocale'
+import { useLocale, localizedName } from '../composables/useLocale'
 import {
   TrendingUp, TrendingDown, Minus, RefreshCcw, Settings, ChevronRight, X, Activity, Mail, MessageCircle, Search, Plus, Check, ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-vue-next'
@@ -494,7 +494,7 @@ async function openQuoteModal() {
 
 function addQuote(item) {
   if (!selectedQuotes.value.some(q => q.symbol === item.symbol)) {
-    selectedQuotes.value.push({ symbol: item.symbol, name: item.name, category: item.category })
+    selectedQuotes.value.push({ symbol: item.symbol, name: localizedName(item), category: item.category })
   }
 }
 

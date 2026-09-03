@@ -357,7 +357,7 @@
                 <div v-if="showSymbolDropdown && filteredSymbols.length" class="absolute z-10 w-full mt-1 bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-auto">
                   <div v-for="s in filteredSymbols" :key="s.symbol" class="px-4 py-2 hover:bg-[var(--bg-sidebar)] cursor-pointer border-b border-[var(--border-color)] last:border-0" @click="selectSymbol(s)">
                     <div class="font-bold text-[var(--text-primary)]">{{ s.symbol }}</div>
-                    <div class="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">{{ s.name }}</div>
+                    <div class="text-xs font-medium text-zinc-500 dark:text-zinc-400 truncate">{{ localizedName(s) }}</div>
                   </div>
                 </div>
               </div>
@@ -497,7 +497,7 @@ import {
 import { useAuthStore, API_BASE_URL as API_BASE } from '../stores/auth'
 import { useTrackingStore } from '../stores/tracking'
 import { useBreakpoint } from '../composables/useBreakpoint'
-import { useLocale } from '../composables/useLocale'
+import { useLocale, localizedName } from '../composables/useLocale'
 import TriggerModeSelector from '../components/TriggerModeSelector.vue'
 import RSIParametersForm from '../components/RSIParametersForm.vue'
 import RSIMonitoringDashboard from '../components/RSIMonitoringDashboard.vue'
@@ -645,7 +645,7 @@ async function fetchPrice(symbol, category) {
 
 function selectSymbol(s) {
   form.symbol = s.symbol
-  form.name = s.name || s.name_zh || s.name_en || s.symbol
+  form.name = localizedName(s)
   symbolSearch.value = s.symbol
   showSymbolDropdown.value = false
   // 清除之前的防抖計時器
@@ -741,7 +741,7 @@ function onSymbolInput() {
         || (form.category === 'jp_etf' && (jpSymbol === normalizedInput || jpYahooSymbol === normalizedInput))
     })
     if (match) {
-      form.name = match.name || match.name_zh || match.name_en || match.symbol
+      form.name = localizedName(match)
       fetchPrice(match.symbol, form.category).catch(err => {
         console.error('[TrackingView] 獲取價格失敗:', err)
         // 不要中斷用戶流程，只是記錄錯誤

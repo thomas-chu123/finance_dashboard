@@ -38,3 +38,14 @@ export function useLocale() {
 }
 
 export const translate = (key) => getValue(messages[locale.value], key) ?? getValue(messages[DEFAULT_LOCALE], key) ?? key
+
+/** Return an asset name appropriate for the active UI language. */
+export const localizedName = (item) => {
+  if (!item) return ''
+  if (item.category === 'jp_etf') {
+    return locale.value === 'en'
+      ? (item.name_en || item.name || item.name_ja || item.symbol)
+      : (item.name_ja || item.name_zh || item.name || item.name_en || item.symbol)
+  }
+  return item.name || item.name_en || item.name_zh || item.name_ja || item.symbol || ''
+}

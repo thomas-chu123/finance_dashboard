@@ -16,13 +16,14 @@ from app.database import get_supabase
 logger = logging.getLogger(__name__)
 
 JPX_ETF_URL = "https://www.jpx.co.jp/english/equities/products/etfs/issues/01.html"
+JPX_ETF_JA_URL = "https://www.jpx.co.jp/markets/etfs/issues/01.html"
 HEADERS = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 }
 
 
-def _parse_jpx_etf_table(html: str) -> list[dict]:
+def _parse_jpx_etf_table(html: str, language: str = "en") -> list[dict]:
     """Parse the JPX ETF issues table into normalized records."""
     soup = BeautifulSoup(html, "html.parser")
     header_map = None
@@ -35,7 +36,8 @@ def _parse_jpx_etf_table(html: str) -> list[dict]:
 
         headers = [cell.get_text(" ", strip=True) for cell in rows[0].find_all(["th", "td"])]
         candidate_map = {header: idx for idx, header in enumerate(headers)}
-        if {"Code", "Fund Name"}.issubset(candidate_map):
+        required_headers = {"Code", "Fund Name"} if language == "en" else {"コード", "銘柄名"}
+        if required_headers.issubset(candidate_map):
             header_map = candidate_map
             data_rows = rows[1:]
             break
@@ -52,21 +54,29 @@ def _parse_jpx_etf_table(html: str) -> list[dict]:
         if len(cells) <= max(header_map.values()):
             continue
 
-        raw_code = cells[header_map["Code"]]
+        code_header = "Code" if language == "en" else "コード"
+        name_header = "Fund Name" if language == "en" else "銘柄名"
+        raw_code = cells[header_map[code_header]]
         symbol = "".join(ch for ch in raw_code if ch.isdigit())
-        fund_name = cells[header_map["Fund Name"]]
+        fund_name = cells[header_map[name_header]]
 
         if not symbol or not fund_name or symbol in seen_symbols:
             continue
 
-        records.append({
+        record = {
             "symbol": symbol,
             "name": fund_name,
-            "index_name": cells[header_map["Index"]] if "Index" in header_map else "",
-            "management_company": cells[header_map["Management Company"]] if "Management Company" in header_map else "",
-            "trading_unit": cells[header_map["Trading Unit"]] if "Trading Unit" in header_map else "",
             "updated_at": now,
-        })
+        }
+        if language == "en":
+            record.update({
+                "index_name": cells[header_map["Index"]] if "Index" in header_map else "",
+                "management_company": cells[header_map["Management Company"]] if "Management Company" in header_map else "",
+                "trading_unit": cells[header_map["Trading Unit"]] if "Trading Unit" in header_map else "",
+            })
+        else:
+            record["name_ja"] = fund_name
+        records.append(record)
         seen_symbols.add(symbol)
 
     return records
@@ -82,9 +92,23 @@ async def sync_jp_etf_list() -> int:
     logger.info("[JP ETF Sync] Starting ETF list sync from JPX...")
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(JPX_ETF_URL, headers=HEADERS)
+            resp, ja_resp = await asyncio.gather(
+                client.get(JPX_ETF_URL, headers=HEADERS),
+                client.get(JPX_ETF_JA_URL, headers=HEADERS),
+                return_exceptions=True,
+            )
+            if isinstance(resp, Exception):
+                raise resp
             resp.raise_for_status()
             records = await asyncio.to_thread(_parse_jpx_etf_table, resp.text)
+            # JPX's Japanese page supplies the localized fund names. If it is
+            # unavailable, English records remain usable as a fallback.
+            if not isinstance(ja_resp, Exception) and ja_resp.is_success:
+                ja_records = await asyncio.to_thread(_parse_jpx_etf_table, ja_resp.text, "ja")
+                ja_by_symbol = {row["symbol"]: row["name_ja"] for row in ja_records}
+                for row in records:
+                    if row["symbol"] in ja_by_symbol:
+                        row["name_ja"] = ja_by_symbol[row["symbol"]]
     except Exception as e:
         logger.error(f"[JP ETF Sync] Failed to fetch or parse JPX ETF list: {e}")
         raise
