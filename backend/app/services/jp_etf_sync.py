@@ -36,8 +36,16 @@ def _parse_jpx_etf_table(html: str, language: str = "en") -> list[dict]:
 
         headers = [cell.get_text(" ", strip=True) for cell in rows[0].find_all(["th", "td"])]
         candidate_map = {header: idx for idx, header in enumerate(headers)}
-        required_headers = {"Code", "Fund Name"} if language == "en" else {"コード", "銘柄名"}
-        if required_headers.issubset(candidate_map):
+        if language == "en":
+            has_required_headers = {"Code", "Fund Name"}.issubset(candidate_map)
+        else:
+            # JPX has used both 「コード」/「銘柄名」 and 「銘柄コード」
+            # variants on the Japanese page over time.
+            has_required_headers = (
+                any("コード" in header for header in candidate_map)
+                and any("銘柄名" in header or header == "名称" for header in candidate_map)
+            )
+        if has_required_headers:
             header_map = candidate_map
             data_rows = rows[1:]
             break
@@ -54,8 +62,11 @@ def _parse_jpx_etf_table(html: str, language: str = "en") -> list[dict]:
         if len(cells) <= max(header_map.values()):
             continue
 
-        code_header = "Code" if language == "en" else "コード"
-        name_header = "Fund Name" if language == "en" else "銘柄名"
+        if language == "en":
+            code_header, name_header = "Code", "Fund Name"
+        else:
+            code_header = next(header for header in header_map if "コード" in header)
+            name_header = next(header for header in header_map if "銘柄名" in header or header == "名称")
         raw_code = cells[header_map[code_header]]
         symbol = "".join(ch for ch in raw_code if ch.isdigit())
         fund_name = cells[header_map[name_header]]
@@ -104,11 +115,14 @@ async def sync_jp_etf_list() -> int:
             # JPX's Japanese page supplies the localized fund names. If it is
             # unavailable, English records remain usable as a fallback.
             if not isinstance(ja_resp, Exception) and ja_resp.is_success:
-                ja_records = await asyncio.to_thread(_parse_jpx_etf_table, ja_resp.text, "ja")
-                ja_by_symbol = {row["symbol"]: row["name_ja"] for row in ja_records}
-                for row in records:
-                    if row["symbol"] in ja_by_symbol:
-                        row["name_ja"] = ja_by_symbol[row["symbol"]]
+                try:
+                    ja_records = await asyncio.to_thread(_parse_jpx_etf_table, ja_resp.text, "ja")
+                    ja_by_symbol = {row["symbol"]: row["name_ja"] for row in ja_records}
+                    for row in records:
+                        if row["symbol"] in ja_by_symbol:
+                            row["name_ja"] = ja_by_symbol[row["symbol"]]
+                except Exception as e:
+                    logger.warning(f"[JP ETF Sync] Japanese JPX table could not be parsed; using English names: {e}")
     except Exception as e:
         logger.error(f"[JP ETF Sync] Failed to fetch or parse JPX ETF list: {e}")
         raise
