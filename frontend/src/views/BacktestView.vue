@@ -377,7 +377,7 @@
           <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-brand-500/5">
             <div class="flex items-center gap-2">
               <FolderOpen class="w-4 h-4 text-brand-500" />
-              <span class="font-bold text-sm text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</span>
+              <span class="font-bold text-sm text-[var(--text-primary)]">{{ $t('backtestResults.selectedAssets') }} ({{ selectedItems.length }}/10)</span>
             </div>
             <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">{{ $t('analysis.totalWeight') }}: {{ totalWeight }}%</span>
           </div>
@@ -397,15 +397,15 @@
           <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
             <div class="grid grid-cols-3 gap-3 text-sm">
               <div>
-                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">時間範圍</div>
+                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('backtestResults.dateRange') }}</div>
                 <div class="font-mono text-xs text-[var(--text-primary)]">{{ btConfig.start_date }} → {{ btConfig.end_date }}</div>
               </div>
               <div>
-                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">初始金額</div>
+                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('backtestResults.initialAmount') }}</div>
                 <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ (btConfig.initial_amount || 0).toLocaleString() }}</div>
               </div>
               <div>
-                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">幣種</div>
+                <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('backtestResults.currency') }}</div>
                 <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.displayCurrency }}</div>
               </div>
             </div>
@@ -414,7 +414,7 @@
         <!-- ✅ 只有在有計算結果時才顯示結果區域 -->
         <div v-if="results" class="flex items-center mb-4">
           <h3 class="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-            回測結果 
+            {{ $t('backtestResults.results') }}
             <span class="text-sm font-normal text-muted">({{ results.date_range?.start }} → {{ results.date_range?.end }})</span>
           </h3>
         </div>
@@ -504,7 +504,7 @@
         <div v-if="results" class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-12">
           <!-- Portfolio growth chart -->
           <div class="glass-card">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>資產成長曲線 (Portfolio Growth)</h3></div>
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>{{ $t('backtestResults.portfolioGrowth') }}</h3></div>
             <div class="p-3 sm:p-4" :style="{ height: isMobile ? '280px' : '400px' }">
               <v-chart :option="growthChartOption" autoresize style="height:100%;" />
             </div>
@@ -512,7 +512,7 @@
 
           <!-- Annual returns -->
           <div class="glass-card">
-            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>年度報酬率</h3></div>
+            <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>{{ $t('backtestResults.annualReturns') }}</h3></div>
             <div class="p-3 sm:p-4" style="height:260px;">
               <v-chart :option="annualReturnChartOption" autoresize style="height:100%;" />
             </div>
@@ -521,11 +521,11 @@
 
         <!-- Asset contributions -->
         <div class="glass-card mb-2">
-          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>各資產貢獻度分析</h3><span class="text-xs text-muted font-normal">基於絕對收益計算貢獻度</span></div>
+          <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between"><h3>{{ $t('backtestResults.assetContribution') }}</h3><span class="text-xs text-muted font-normal">{{ $t('backtestResults.contributionNote') }}</span></div>
           <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
               <thead class="text-xs text-muted uppercase bg-[var(--bg-sidebar)]/50 border-b border-[var(--border-color)]">
-                <tr class="text-muted"><th class="px-6 py-4 font-medium">代碼</th><th class="px-6 py-4 font-medium">名稱</th><th class="px-6 py-4 font-medium">初始權重</th><th class="px-6 py-4 font-medium">初始投入</th><th class="px-6 py-4 font-medium">期末值</th><th class="px-6 py-4 font-medium">絕對收益</th><th class="px-6 py-4 font-medium">報酬率</th><th class="px-6 py-4 font-medium">收益貢獻%</th></tr>
+                <tr class="text-muted"><th class="px-6 py-4 font-medium">{{ $t('backtestResults.symbol') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.name') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.initialWeight') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.initialInvestment') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.endingValue') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.absoluteGain') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.returnRate') }}</th><th class="px-6 py-4 font-medium">{{ $t('backtestResults.contributionPercent') }}</th></tr>
               </thead>
               <tbody class="divide-y divide-[var(--border-color)]/20">
                 <tr v-for="(contrib, symbol) in (results.asset_contributions || {})" :key="symbol">
@@ -546,8 +546,8 @@
         <!-- Drawdown chart -->
         <div class="glass-card mb-6" v-if="results.drawdown_series">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-            <h3>回撤曲線 (Drawdown)</h3>
-            <span class="text-sm text-muted">最大回撤：<span class="text-brand-600 fw-600">{{ results?.metrics?.max_drawdown ?? '--' }}%</span></span>
+            <h3>{{ $t('backtestResults.drawdown') }}</h3>
+            <span class="text-sm text-muted">{{ $t('backtestResults.maxDrawdown') }}：<span class="text-brand-600 fw-600">{{ results?.metrics?.max_drawdown ?? '--' }}%</span></span>
           </div>
           <div class="p-4 sm:p-6" style="height:240px;">
             <v-chart :option="drawdownChartOption" autoresize style="height:100%;" />
@@ -557,7 +557,7 @@
         <!-- Monthly Returns Heatmap -->
         <div class="glass-card mb-6" v-if="results.monthly_returns">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-            <h3>月度報酬率熱力圖</h3>
+            <h3>{{ $t('backtestResults.monthlyHeatmap') }}</h3>
           </div>
           <div class="p-4 sm:p-6" style="height:320px;">
             <v-chart :option="monthlyReturnsHeatmapOption" autoresize style="height:100%;" />
@@ -567,8 +567,8 @@
         <!-- Correlation heatmap -->
         <div class="glass-card" v-if="results.correlation_matrix && results.available_symbols?.length > 1">
           <div class="p-4 border-b border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-            <h3>相關性熱力圖</h3>
-            <span class="text-xs text-muted">1.0 = 完全正相關 · -1.0 = 完全負相關</span>
+            <h3>{{ $t('backtestResults.correlationHeatmap') }}</h3>
+            <span class="text-xs text-muted">{{ $t('backtestResults.correlationHint') }}</span>
           </div>
           <div class="p-4 sm:p-6" style="height:320px;">
             <v-chart :option="correlationHeatmapOption" autoresize style="height:100%;" />
@@ -579,10 +579,10 @@
         <!-- 操作 buttons 置底 -->
         <div class="flex justify-center gap-3 mt-6">
           <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking">
-            <Target class="w-4 h-4 mr-2" />加入追蹤
+            <Target class="w-4 h-4 mr-2" />{{ $t('analysis.addTracking') }}
           </button>
           <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
-            <Save class="w-4 h-4 mr-2" />儲存回測
+            <Save class="w-4 h-4 mr-2" />{{ $t('analysis.saveBacktest') }}
           </button>
           <ShareImageButton
             v-if="results"
@@ -629,7 +629,7 @@ import { metricsDefinitions } from '../utils/metricsDefinitions'
 import { FolderOpen, Trash2, Activity, BarChart3, Rocket, Play, Scale, Save, Check, X, Loader2, ArrowLeft, Search, Plus, Target } from 'lucide-vue-next'
 import BacktestCompareTab from '../components/BacktestCompareTab.vue'
 import CurrencySelector from '../components/CurrencySelector.vue'
-import { localizedName } from '../composables/useLocale'
+import { localizedName, translate } from '../composables/useLocale'
 
 import ShareImageButton from '../components/ShareImageButton.vue'
 
@@ -845,7 +845,7 @@ const growthChartOption = computed(() => {
   const values = dates.map(d => parseFloat(results.value.portfolio_value_series[d]))
 
   const series = [{ 
-    name: '投資組合',
+    name: translate('backtestResults.portfolio'),
     data: values, 
     type: 'line', 
     smooth: true, 
@@ -862,7 +862,7 @@ const growthChartOption = computed(() => {
     } 
   }]
 
-  const benchmarkLabel = `參考曲線-${benchmarkSymbol.value}`
+  const benchmarkLabel = `${translate('backtestResults.benchmark')}-${benchmarkSymbol.value}`
 
   // Add benchmark if available
   if (results.value?.benchmark_value_series && Object.keys(results.value.benchmark_value_series).length > 0) {
@@ -895,7 +895,7 @@ const growthChartOption = computed(() => {
       orient: 'horizontal',
       icon: 'roundRect',
       data: [
-        { name: '投資組合', textStyle: { color: '#2563eb', fontWeight: 'bold' } },
+        { name: translate('backtestResults.portfolio'), textStyle: { color: '#2563eb', fontWeight: 'bold' } },
         { name: benchmarkLabel, textStyle: { color: '#10b981', fontWeight: 'bold' } }
       ]
     },
@@ -917,7 +917,7 @@ const growthChartOption = computed(() => {
     yAxis: { 
       type: 'value', // Changed back to value for better tick density ($150k etc)
       scale: true,
-      name: 'Portfolio Balance ($)',
+      name: `${translate('backtestResults.balance')} ($)`,
       nameLocation: 'middle',
       nameGap: 60,
       splitNumber: 8, // More ticks
@@ -977,7 +977,7 @@ const drawdownChartOption = computed(() => {
       axisLine: { lineStyle: { color: '#30363d' } }
     },
     yAxis: { type: 'value', axisLabel: { formatter: v => v + '%', color: '#8b949e' }, splitLine: { lineStyle: { color: '#21262d' } }, max: 0 },
-    tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${p[0].axisValue}<br/>回撤：${p[0].value}%` },
+    tooltip: { trigger: 'axis', backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${p[0].axisValue}<br/>${translate('backtestResults.drawdown')}：${p[0].value}%` },
     series: [{
       data: vals, type: 'line', smooth: true, symbol: 'none',
       lineStyle: { color: '#3fb950', width: 1.5 },
@@ -1009,7 +1009,7 @@ const correlationHeatmapOption = computed(() => {
       inRange: { color: ['#f85149', '#21262d', '#3fb950'] },
       textStyle: { color: '#8b949e' }, precision: 2
     },
-    tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${syms[p.value[1]]} vs ${syms[p.value[0]]}<br/>相關係數：${p.value[2]}` },
+    tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${syms[p.value[1]]} vs ${syms[p.value[0]]}<br/>${translate('backtestResults.correlation')}：${p.value[2]}` },
     series: [{ type: 'heatmap', data, label: { show: syms.length <= 6, color: '#e6edf3', fontSize: 11 } }]
   }
 })
@@ -1053,7 +1053,7 @@ const monthlyReturnsHeatmapOption = computed(() => {
       inRange: { color: ['#3fb950', '#161b22', '#e74c3c'] },
       textStyle: { color: '#8b949e' }, formatter: v => v + '%'
     },
-    tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${years[p.value[0]]} ${months[p.value[1]]}<br/>報酬：${p.value[2]}%` },
+    tooltip: { backgroundColor: '#161b22', borderColor: '#30363d', textStyle: { color: '#e6edf3' }, formatter: p => `${years[p.value[0]]} ${months[p.value[1]]}<br/>${translate('backtestResults.returnLabel')}：${p.value[2]}%` },
     series: [{ 
       type: 'heatmap', 
       data, 

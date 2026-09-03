@@ -327,7 +327,7 @@
         <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-brand-500/5">
           <div class="flex items-center gap-2">
             <FolderOpen class="w-4 h-4 text-brand-500" />
-            <span class="font-bold text-sm text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</span>
+            <span class="font-bold text-sm text-[var(--text-primary)]">{{ $t('optimizeResults.selectedAssets') }} ({{ selectedItems.length }}/10)</span>
           </div>
           <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">{{ $t('analysis.totalWeight') }}: {{ totalWeight }}%</span>
         </div>
@@ -347,43 +347,43 @@
         <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
           <div class="grid grid-cols-3 gap-3 text-sm">
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">時間範圍</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('optimizeResults.dateRange') }}</div>
               <div class="font-mono text-xs text-[var(--text-primary)]">{{ optConfig.start_date }} → {{ optConfig.end_date }}</div>
             </div>
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">分析期間</div>
-              <div class="font-mono text-xs text-[var(--text-primary)]">{{ calculateDays(optConfig.start_date, optConfig.end_date) }} 天</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('optimizeResults.analysisPeriod') }}</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ calculateDays(optConfig.start_date, optConfig.end_date) }} {{ $t('optimizeResults.days') }}</div>
             </div>
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">幣種</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('optimizeResults.currency') }}</div>
               <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.displayCurrency }}</div>
             </div>
           </div>
         </div>
       </div>
-      <h3 class="mb-2">最佳化分析結果</h3>
+      <h3 class="mb-2">{{ $t('optimizeResults.results') }}</h3>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
         <!-- Max Sharpe Portfolio -->
         <div class="glass-card" style="border: 3px solid #f85149;">
           <div class="p-4 border-b-2 border-[#f85149] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(248, 81, 73, 0.08);">
             <div class="optimize-header w-full">
-              <h3 class="text-brand-500"><Trophy class="w-5 h-5 mr-2 inline" />最大夏普值組合 (Max Sharpe)</h3>
-              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">使用此權重回測</button>
+              <h3 class="text-brand-500"><Trophy class="w-5 h-5 mr-2 inline" />{{ $t('optimizeResults.maxSharpe') }} (Max Sharpe)</h3>
+              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.max_sharpe)">{{ $t('optimizeResults.backtestWithWeights') }}</button>
             </div>
           </div>
           <div class="p-3 sm:p-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
-                <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
+                <div class="text-xs text-[var(--text-muted)]">{{ $t('optimizeResults.expectedAnnualReturn') }}</div>
                 <div class="fw-600 text-rose-600">{{ (results.max_sharpe.return * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-[var(--text-muted)]">年化波動率</div>
+                <div class="text-xs text-[var(--text-muted)]">{{ $t('optimizeResults.annualVolatility') }}</div>
                 <div class="font-semibold text-[var(--text-primary)]">{{ (results.max_sharpe.volatility * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-[var(--text-muted)]">夏普值</div>
+                <div class="text-xs text-[var(--text-muted)]">{{ $t('optimizeResults.sharpe') }}</div>
                 <div class="fw-600 text-accent">{{ results.max_sharpe.sharpe.toFixed(3) }}</div>
               </div>
             </div>
@@ -397,22 +397,22 @@
         <div class="glass-card" style="border: 3px solid #3fb950;">
           <div class="p-4 border-b-2 border-[#3fb950] font-semibold text-[var(--text-primary)] flex items-center justify-between" style="background:rgba(63, 185, 80, 0.12);">
              <div class="optimize-header w-full">
-              <h3 class="text-brand-600"><Shield class="w-5 h-5 mr-2 inline" />最小波動率組合 (Min Volatility)</h3>
-              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">使用此權重回測</button>
+              <h3 class="text-brand-600"><Shield class="w-5 h-5 mr-2 inline" />{{ $t('optimizeResults.minVolatility') }} (Min Volatility)</h3>
+              <button class="px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] hover:text-brand-500 transition-colors rounded-lg" @click="exportToBacktest(results.min_volatility)">{{ $t('optimizeResults.backtestWithWeights') }}</button>
             </div>
           </div>
           <div class="p-3 sm:p-4">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
               <div>
-                <div class="text-xs text-[var(--text-muted)]">預期年化報酬</div>
+                <div class="text-xs text-[var(--text-muted)]">{{ $t('optimizeResults.expectedAnnualReturn') }}</div>
                 <div class="fw-600 text-rose-600">{{ (results.min_volatility.return * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-[var(--text-muted)]">年化波動率</div>
+                <div class="text-xs text-[var(--text-muted)]">{{ $t('optimizeResults.annualVolatility') }}</div>
                 <div class="font-semibold text-[var(--text-primary)]">{{ (results.min_volatility.volatility * 100).toFixed(2) }}%</div>
               </div>
               <div>
-                <div class="text-xs text-[var(--text-muted)]">夏普值</div>
+                <div class="text-xs text-[var(--text-muted)]">{{ $t('optimizeResults.sharpe') }}</div>
                 <div class="fw-600 text-accent">{{ results.min_volatility.sharpe.toFixed(3) }}</div>
               </div>
             </div>
@@ -426,8 +426,8 @@
       <!-- Efficient Frontier Chart -->
       <div class="glass-card mb-2">
         <div class="p-4 border-b-2 border-[var(--border-color)] font-semibold text-[var(--text-primary)] flex items-center justify-between">
-          <h3>效率前緣 (Efficient Frontier)</h3>
-          <span class="text-sm text-[var(--text-muted)]">顯示在相同風險下能產生的最高預期報酬</span>
+          <h3>{{ $t('optimizeResults.efficientFrontier') }} (Efficient Frontier)</h3>
+          <span class="text-sm text-[var(--text-muted)]">{{ $t('optimizeResults.frontierHint') }}</span>
         </div>
         <div class="p-3 sm:p-4" :style="{ height: isMobile ? '280px' : '380px' }">
           <v-chart :option="efficientFrontierOption" autoresize />
@@ -439,10 +439,10 @@
       <!-- 底部操作按鈕 -->
       <div class="flex justify-center gap-3 mt-4">
         <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking" :disabled="!selectedItems.length">
-          <Target class="w-4 h-4 mr-2" />加入追蹤
+          <Target class="w-4 h-4 mr-2" />{{ $t('analysis.addTracking') }}
         </button>
         <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true" :disabled="!selectedItems.length">
-          <Save class="w-4 h-4 mr-2" />儲存最佳化
+          <Save class="w-4 h-4 mr-2" />{{ $t('analysis.savePlan') }}
         </button>
         <ShareImageButton
           result-type="optimize"
@@ -488,7 +488,7 @@ import { usePreferenceStore } from '../stores/preference'
 import { useTrackingStore } from '../stores/tracking'
 import { useBreakpoint } from '../composables/useBreakpoint'
 import CurrencySelector from '../components/CurrencySelector.vue'
-import { localizedName } from '../composables/useLocale'
+import { localizedName, translate } from '../composables/useLocale'
 import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
@@ -755,12 +755,12 @@ const efficientFrontierOption = computed(() => {
       backgroundColor: 'rgba(22, 27, 34, 0.9)', 
       borderColor: 'rgba(48, 54, 61, 0.8)', 
       textStyle: { color: '#e6edf3' },
-      formatter: p => `風險 (波動率): ${p[0].value[0]}%<br/>預期報酬: ${p[0].value[1]}%` 
+      formatter: p => `${translate('optimizeResults.riskVolatility')}: ${p[0].value[0]}%<br/>${translate('optimizeResults.expectedReturn')}: ${p[0].value[1]}%`
     },
     grid: { left: 50, right: 30, top: 40, bottom: 40 },
     xAxis: { 
       type: 'value', 
-      name: '風險 (年化波動率 %)',
+      name: translate('optimizeResults.riskVolatility'),
       nameLocation: 'middle',
       nameGap: 25,
       axisLabel: { color: '#8b949e', show: !isMobile.value },
@@ -769,7 +769,7 @@ const efficientFrontierOption = computed(() => {
     },
     yAxis: { 
       type: 'value', 
-      name: '預期報酬 (%)',
+      name: translate('optimizeResults.expectedReturn'),
       nameLocation: 'middle',
       nameGap: 40,
       axisLabel: { color: '#8b949e', show: !isMobile.value },
@@ -791,7 +791,7 @@ const efficientFrontierOption = computed(() => {
     },
     series: [
       {
-        name: '效率前緣',
+        name: translate('optimizeResults.efficientFrontier'),
         type: 'line',
         smooth: true,
         symbol: 'none',
@@ -799,7 +799,7 @@ const efficientFrontierOption = computed(() => {
         data: frontierPoints
       },
       {
-        name: '個別資產',
+        name: translate('optimizeResults.asset'),
         type: 'scatter',
         symbolSize: 8,
         itemStyle: { color: '#8b949e', opacity: 0.6 },
@@ -812,7 +812,7 @@ const efficientFrontierOption = computed(() => {
           distance: 5
         },
         data: assetPoints,
-        tooltip: { formatter: p => `資產: ${p.name}<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
+        tooltip: { formatter: p => `${translate('optimizeResults.asset')}: ${p.name}<br/>${translate('optimizeResults.volatility')}: ${p.value[0]}%<br/>${translate('optimizeResults.returnRate')}: ${p.value[1]}%` }
       },
       {
         name: 'Max Sharpe 圓圈',
@@ -829,7 +829,7 @@ const efficientFrontierOption = computed(() => {
         tooltip: { show: false }
       },
       {
-        name: 'Max Sharpe',
+        name: translate('optimizeResults.sharpeShort'),
         type: 'scatter',
         symbolSize: 14,
         itemStyle: { color: '#f85149', borderColor: '#fff', borderWidth: 2 },
@@ -838,11 +838,11 @@ const efficientFrontierOption = computed(() => {
           position: 'top',
           color: '#f85149',
           fontWeight: 'bold',
-          formatter: '🏆 Max Sharpe',
+          formatter: `🏆 ${translate('optimizeResults.sharpeShort')}`,
           distance: 10
         },
         data: [maxSharpePoint],
-        tooltip: { formatter: p => `🏆 最大夏普點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
+        tooltip: { formatter: p => `🏆 ${translate('optimizeResults.maxSharpePoint')}<br/>${translate('optimizeResults.volatility')}: ${p.value[0]}%<br/>${translate('optimizeResults.returnRate')}: ${p.value[1]}%` }
       },
       {
         name: 'Min Volatility 圓圈',
@@ -859,7 +859,7 @@ const efficientFrontierOption = computed(() => {
         tooltip: { show: false }
       },
       {
-        name: 'Min Volatility',
+        name: translate('optimizeResults.minVolShort'),
         type: 'scatter',
         symbolSize: 14,
         itemStyle: { color: '#3fb950', borderColor: '#fff', borderWidth: 2 },
@@ -868,15 +868,15 @@ const efficientFrontierOption = computed(() => {
           position: 'bottom',
           color: '#3fb950',
           fontWeight: 'bold',
-          formatter: '🛡️ Min Vol',
+          formatter: `🛡️ ${translate('optimizeResults.minVolShort')}`,
           distance: 10
         },
         data: [minVolPoint],
-        tooltip: { formatter: p => `🛡️ 最小波動點<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%` }
+        tooltip: { formatter: p => `🛡️ ${translate('optimizeResults.minVolatilityPoint')}<br/>${translate('optimizeResults.volatility')}: ${p.value[0]}%<br/>${translate('optimizeResults.returnRate')}: ${p.value[1]}%` }
       },
       // ✅ 自定義組合點（使用者手動調整的權重）
       customPortfolioPerf.value ? {
-        name: '您的投資組合',
+        name: translate('optimizeResults.portfolio'),
         type: 'scatter',
         symbolSize: 16,
         itemStyle: { color: '#a371f7', borderColor: '#fff', borderWidth: 2 },
@@ -885,14 +885,14 @@ const efficientFrontierOption = computed(() => {
           position: 'left',
           color: '#a371f7',
           fontWeight: 'bold',
-          formatter: '📊 您的組合',
+          formatter: `📊 ${translate('optimizeResults.portfolio')}`,
           distance: 10
         },
         data: [[
           (customPortfolioPerf.value.volatility).toFixed(2),
           (customPortfolioPerf.value.return).toFixed(2)
         ]],
-        tooltip: { formatter: p => `📊 您的投資組合<br/>波動: ${p.value[0]}%<br/>報酬: ${p.value[1]}%<br/>夏普比: ${customPortfolioPerf.value.sharpe_ratio.toFixed(4)}` }
+        tooltip: { formatter: p => `📊 ${translate('optimizeResults.portfolio')}<br/>${translate('optimizeResults.volatility')}: ${p.value[0]}%<br/>${translate('optimizeResults.returnRate')}: ${p.value[1]}%<br/>${translate('optimizeResults.sharpe')}: ${customPortfolioPerf.value.sharpe_ratio.toFixed(4)}` }
       } : null
     ].filter(s => s !== null)
   }

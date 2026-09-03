@@ -381,7 +381,7 @@
         <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)] bg-brand-500/5">
           <div class="flex items-center gap-2">
             <FolderOpen class="w-4 h-4 text-brand-500" />
-            <span class="font-bold text-sm text-[var(--text-primary)]">已選資產 ({{ selectedItems.length }}/10)</span>
+            <span class="font-bold text-sm text-[var(--text-primary)]">{{ $t('monteCarloResults.selectedAssets') }} ({{ selectedItems.length }}/10)</span>
           </div>
           <span class="text-xs font-bold px-2 py-1 rounded-md bg-brand-500/10 text-brand-600">{{ $t('analysis.totalWeight') }}: {{ totalWeight }}%</span>
         </div>
@@ -401,34 +401,34 @@
         <div class="border-t border-[var(--border-color)] px-4 py-3 bg-[var(--bg-main)]/30">
           <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">初始金額</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.initialAmount') }}</div>
               <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ (config.initial_amount || 0).toLocaleString() }}</div>
             </div>
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">模擬年數</div>
-              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.years }} 年</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.years') }}</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.years }} {{ $t('monteCarloResults.years') }}</div>
             </div>
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">模擬次數</div>
-              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.simulations.toLocaleString() }} 次</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.simulations') }}</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.simulations.toLocaleString() }}</div>
             </div>
             <div>
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">幣種</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.currency') }}</div>
               <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.displayCurrency }}</div>
             </div>
           </div>
           <div v-if="config.annual_contribution > 0 || config.annual_withdrawal > 0" class="grid grid-cols-2 gap-3 text-sm mt-3 pt-3 border-t border-[var(--border-color)]/50">
             <div v-if="config.annual_contribution > 0">
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">年投入金額</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.annualContribution') }}</div>
               <div class="font-mono text-xs text-[var(--text-primary)]">{{ preference.currencySymbol }}{{ (config.annual_contribution || 0).toLocaleString() }}</div>
             </div>
             <div v-if="config.annual_withdrawal > 0">
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">年取百分比</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.annualWithdrawal') }}</div>
               <div class="font-mono text-xs text-[var(--text-primary)]">{{ config.annual_withdrawal.toFixed(2) }}%</div>
             </div>
             <div v-if="config.adjust_for_inflation">
-              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">通膨調整</div>
-              <div class="font-mono text-xs text-[var(--text-primary)]">已啟用 ({{ config.inflation_mean.toFixed(2) }}%)</div>
+              <div class="text-[10px] text-muted uppercase tracking-wider font-bold mb-1">{{ $t('monteCarloResults.inflationAdjustment') }}</div>
+              <div class="font-mono text-xs text-[var(--text-primary)]">{{ $t('monteCarloResults.enabled') }} ({{ config.inflation_mean.toFixed(2) }}%)</div>
             </div>
           </div>
         </div>
@@ -437,28 +437,28 @@
       <div class="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
         <div class="glass-card bg-brand-500/10 border-brand-500/20">
           <div class="p-6 text-center">
-            <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">投資成功率</h4>
+            <h4 class="text-xs font-bold text-brand-600 uppercase tracking-widest mb-1">{{ $t('monteCarloResults.successRate') }}</h4>
             <div class="text-5xl font-black text-brand-500 tracking-tighter">
               {{ (results.summary.success_rate * 100).toFixed(1) }}<span class="text-2xl">%</span>
             </div>
-            <p class="text-[10px] text-brand-600 font-medium mt-2">模擬達成保本目標 (終值 ≥ 初始投入) 的比例</p>
+            <p class="text-[10px] text-brand-600 font-medium mt-2">{{ $t('monteCarloResults.successHint') }}</p>
           </div>
         </div>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="glass-card p-4">
-            <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">預期中位數</h4>
+            <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">{{ $t('monteCarloResults.median') }}</h4>
             <div class="text-lg font-bold text-[var(--text-primary)] truncate">
               ${{ formatNumber(results.summary.median_end_balance) }}
             </div>
-            <div class="text-[10px] text-zinc-500">第 50 百分位數</div>
+            <div class="text-[10px] text-zinc-500">{{ $t('monteCarloResults.p50') }}</div>
           </div>
           <div class="glass-card p-4">
-            <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">最悲觀情況</h4>
+            <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">{{ $t('monteCarloResults.worstCase') }}</h4>
             <div class="text-lg font-bold text-rose-500 truncate">
               ${{ formatNumber(results.summary.p10_end_balance) }}
             </div>
-            <div class="text-[10px] text-zinc-500">第 10 百分位數 (P10)</div>
+            <div class="text-[10px] text-zinc-500">{{ $t('monteCarloResults.p10') }}</div>
           </div>
         </div>
 
@@ -468,9 +468,9 @@
               <History class="w-5 h-5 text-brand-500" />
             </div>
             <div>
-              <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">樣本數據範圍</h4>
+              <h4 class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{{ $t('monteCarloResults.historyRange') }}</h4>
               <div class="text-sm font-bold text-[var(--text-primary)]">
-                使用過去 {{ results.history_years }} 年歷史數據
+                {{ $t('monteCarloResults.historyUsed').replace('{years}', results.history_years) }}
               </div>
             </div>
           </div>
@@ -481,15 +481,15 @@
       <div class="grid grid-cols-1 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
         <div class="premium-card overflow-hidden">
           <div class="premium-header flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <h3 class="font-bold text-[var(--text-primary)]">資產增長隨機路徑百分位 (Percentile Paths)</h3>
+            <h3 class="font-bold text-[var(--text-primary)]">{{ $t('monteCarloResults.percentilePaths') }} (Percentile Paths)</h3>
             <div class="flex flex-wrap items-center gap-3 sm:gap-4">
               <div class="flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
-                <span class="text-[10px] font-bold text-[var(--text-secondary)]">P50 (中位數)</span>
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">{{ $t('monteCarloResults.medianLegend') }}</span>
               </div>
               <div class="flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-zinc-400"></span>
-                <span class="text-[10px] font-bold text-[var(--text-secondary)]">P10 - P90 區間</span>
+                <span class="text-[10px] font-bold text-[var(--text-secondary)]">{{ $t('monteCarloResults.rangeLegend') }}</span>
               </div>
             </div>
           </div>
@@ -508,10 +508,10 @@
     <!-- 底部操作按鈕 -->
     <div v-if="results && !showSaved" class="flex gap-3 mt-8 justify-center mb-4">
       <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="addAllToTracking" :disabled="!selectedItems.length">
-        <Target class="w-4 h-4 mr-2" />加入追蹤
+        <Target class="w-4 h-4 mr-2" />{{ $t('analysis.addTracking') }}
       </button>
       <button class="flex items-center justify-center px-4 py-2 text-sm font-medium bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-all shadow-sm" @click="showSaveModal = true">
-        <Save class="w-4 h-4 mr-2" />儲存模擬結果
+        <Save class="w-4 h-4 mr-2" />{{ $t('analysis.saveResult') }}
       </button>
       <ShareImageButton
         result-type="monte_carlo"
@@ -556,7 +556,7 @@ import {
   Loader2, BarChart3, AlertTriangle, History, FolderOpen, Trash2, ArrowLeft, Save
 } from 'lucide-vue-next'
 import CurrencySelector from '../components/CurrencySelector.vue'
-import { localizedName } from '../composables/useLocale'
+import { localizedName, translate } from '../composables/useLocale'
 import ShareImageButton from '../components/ShareImageButton.vue'
 
 const auth = useAuthStore()
@@ -759,7 +759,7 @@ const pathChartOption = computed(() => {
     },
     series: [
       {
-        name: 'P90 (樂觀)',
+        name: translate('monteCarloResults.optimistic'),
         type: 'line',
         data: results.value.percentile_paths.p90,
         symbol: 'none',
@@ -775,7 +775,7 @@ const pathChartOption = computed(() => {
         itemStyle: { color: '#cbd5e1' }
       },
       {
-        name: 'P50 (中位數)',
+        name: translate('monteCarloResults.medianLegend'),
         type: 'line',
         data: results.value.percentile_paths.p50,
         symbol: 'none',
@@ -791,7 +791,7 @@ const pathChartOption = computed(() => {
         itemStyle: { color: '#fb923c' }
       },
       {
-        name: 'P10 (悲觀)',
+        name: translate('monteCarloResults.pessimistic'),
         type: 'line',
         data: results.value.percentile_paths.p10,
         symbol: 'none',
