@@ -17,6 +17,7 @@ from app.services.backtest_engine import (
     run_backtest,
     RISK_FREE_RATE,
 )
+from app.services.market_data import _repair_japan_etf_split_prices
 
 
 # ── 測試資料工廠 ─────────────────────────────────────────────────────────────
@@ -124,6 +125,38 @@ class TestBacktestPureFunctions:
         var = _var_historical(returns, confidence=0.95)
         cvar = _cvar(returns, confidence=0.95)
         assert cvar <= var
+
+
+@allure.epic("市場資料")
+@allure.feature("日本 ETF 分割調整")
+@pytest.mark.unit
+class TestJapanEtfSplitPriceRepair:
+    """驗證 Yahoo 漏列 2558.T／2559.T 分割資訊時的價格修復。"""
+
+    def test_repairs_missing_ten_for_one_split_and_isolated_bad_tick(self):
+        """分割前價格與分割後錯置單日價格都應轉為同一單位。"""
+        prices = pd.Series(
+            [34900.0, 3477.0, 340.4, 3424.0],
+            index=pd.to_datetime(["2026-06-04", "2026-06-05", "2026-06-08", "2026-06-09"]),
+        )
+
+        repaired = _repair_japan_etf_split_prices("2558.T", prices)
+
+        assert repaired.iloc[0] == pytest.approx(3490.0)
+        assert repaired.iloc[1] == pytest.approx(3477.0)
+        assert repaired.iloc[2] == pytest.approx(3404.0)
+        assert repaired.iloc[3] == pytest.approx(3424.0)
+
+    def test_leaves_already_adjusted_history_unchanged(self):
+        """Yahoo 補回正確分割資料後，不得再次將歷史價格除以倍率。"""
+        prices = pd.Series(
+            [3490.0, 3477.0, 3424.0],
+            index=pd.to_datetime(["2026-06-04", "2026-06-05", "2026-06-09"]),
+        )
+
+        repaired = _repair_japan_etf_split_prices("2558.T", prices)
+
+        pd.testing.assert_series_equal(repaired, prices.astype(float))
 
 
 # ── 整合測試（mock get_historical_prices）────────────────────────────────────

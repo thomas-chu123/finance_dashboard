@@ -205,6 +205,14 @@ SYMBOL_CATALOG = {
 
 TW_SUFFIXES = {".TW", ".TWO", ".TW0"}
 
+# Yahoo Finance 在部分日本 ETF 的受益權分割發生後，可能未及時回填
+# ``Stock Splits`` 欄位，也可能出現單日錯置一個分割倍率的價格。下列事件
+# 以交易所實際反映分割價格的日期為準；僅在資料確實仍未還原時才套用。
+JAPAN_ETF_SPLIT_EVENTS = {
+    "2558.T": {"effective_date": "2026-06-05", "ratio": 10.0},
+    "2559.T": {"effective_date": "2026-06-05", "ratio": 10.0},
+}
+
 
 def _to_yf_symbol(symbol: str) -> str:
     """Convert symbol to yfinance format."""
@@ -230,6 +238,60 @@ def _is_japan_etf(symbol: str) -> bool:
     """Detect if a symbol is a Japan ETF using Yahoo Finance .T mapping."""
     upper = symbol.upper()
     return upper.endswith(".T") and upper[:-2].isdigit() and len(upper[:-2]) == 4
+
+
+def _repair_japan_etf_split_prices(symbol: str, prices: pd.Series) -> pd.Series:
+    """修復 Yahoo 漏列分割事件造成的日本 ETF 還原價格斷點。
+
+    僅處理已驗證的受益權分割。若分割日前最後價格與分割日價格相差約一個
+    分割倍率，會將分割日前價格還原至拆分後單位；同時修復被錯置一個倍率、
+    且前後交易日皆可佐證的孤立異常值。
+
+    Args:
+        symbol: Yahoo 格式的商品代碼。
+        prices: 已依交易所當地日期正規化的收盤價序列。
+
+    Returns:
+        分割調整後的收盤價序列；不符合異常型態時保持原值。
+    """
+    event = JAPAN_ETF_SPLIT_EVENTS.get(symbol.upper())
+    if not event or prices.empty:
+        return prices
+
+    repaired = prices.astype(float).copy()
+    effective_date = pd.Timestamp(event["effective_date"])
+    ratio = event["ratio"]
+    pre_split = repaired.loc[repaired.index < effective_date]
+    on_or_after_split = repaired.loc[repaired.index >= effective_date]
+
+    # 若 Yahoo 日後已正確補回分割，前後價格不會相差約 1:ratio，不可重複調整。
+    if not pre_split.empty and not on_or_after_split.empty:
+        pre_close = pre_split.iloc[-1]
+        split_close = on_or_after_split.iloc[0]
+        observed_ratio = pre_close / split_close if split_close else np.nan
+        if ratio * 0.8 <= observed_ratio <= ratio * 1.2:
+            repaired.loc[repaired.index < effective_date] /= ratio
+            logger.warning(
+                "[MarketData] Repaired missing %s-for-1 split adjustment for %s on %s",
+                int(ratio), symbol, event["effective_date"],
+            )
+
+    # 2558.T、2559.T 的 Yahoo 資料曾在分割後回傳單日低 10 倍價格。只在
+    # 前、後一日都顯示同一倍率時修復，避免把真正的大跌誤判為資料異常。
+    for pos in range(1, len(repaired) - 1):
+        current = repaired.iloc[pos]
+        if current <= 0:
+            continue
+        previous_ratio = repaired.iloc[pos - 1] / current
+        next_ratio = repaired.iloc[pos + 1] / current
+        if ratio * 0.8 <= previous_ratio <= ratio * 1.2 and ratio * 0.8 <= next_ratio <= ratio * 1.2:
+            repaired.iloc[pos] *= ratio
+            logger.warning(
+                "[MarketData] Repaired isolated %s-for-1 price anomaly for %s on %s",
+                int(ratio), symbol, repaired.index[pos].date(),
+            )
+
+    return repaired
 
 
 def get_symbol_currency(symbol: str) -> str:
@@ -625,8 +687,14 @@ async def get_historical_prices(
                     f"[MarketData] ALERT: Stock split lag detected for {symbol} (yfinance): {lag_info['details']}"
                 )
         
+        prices = hist[price_col]
+        # 回測與績效計算需要連續的總報酬價格；原始收盤價查詢則保留交易所
+        # 當時的價格單位，以便 RSI 圖表與券商報價相符。
+        if adjusted and _is_japan_etf(symbol):
+            prices = _repair_japan_etf_split_prices(symbol, prices)
+
         logger.info(f"[MarketData] yfinance fetched {len(hist)} days for {symbol} (adjusted={adjusted}, {duration:.2f}s)")
-        return hist[price_col].rename(symbol)
+        return prices.rename(symbol)
     except Exception as e:
         logger.error(f"[MarketData] yfinance error for {symbol}: {e}")
         
