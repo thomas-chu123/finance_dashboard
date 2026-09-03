@@ -195,7 +195,7 @@
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">初始金額 ({{ preference.displayCurrency }})</label>
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('analysis.initialAmount') }} ({{ preference.displayCurrency }})</label>
                   <div class="relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
                     <input v-model.number="config.initial_amount" type="number" 
@@ -205,12 +205,12 @@
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬年數</label>
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.simulationYears') }}</label>
                     <input v-model.number="config.years" type="number" 
                       class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
                   </div>
                   <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">模擬次數</label>
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('analysis.simulations') }}</label>
                     <select v-model.number="config.simulations" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)] h-11">
                       <option :value="1000">1,000 次</option>
                       <option :value="5000">5,000 次</option>
@@ -221,12 +221,12 @@
 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年投入金額 (+)</label>
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.annualContribution') }} (+)</label>
                     <input v-model.number="config.annual_contribution" type="number" 
                       class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
                   </div>
                   <div class="space-y-1.5">
-                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">年取百分比 (%)</label>
+                    <label class="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.annualWithdrawal') }} (%)</label>
                     <div class="relative">
                       <input v-model.number="config.annual_withdrawal" type="number" step="0.1"
                         class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 pr-8 pl-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
@@ -238,7 +238,7 @@
 
               <div class="pt-6 border-t border-[var(--border-color)] space-y-4">
                 <div class="flex items-center justify-between">
-                  <label class="text-sm font-bold text-[var(--text-primary)]">考慮通膨影響</label>
+                  <label class="text-sm font-bold text-[var(--text-primary)]">{{ $t('simulationUi.considerInflation') }}</label>
                   <label class="flex items-center cursor-pointer gap-2">
                     <input type="checkbox" v-model="config.adjust_for_inflation" class="w-5 h-5 rounded-md accent-brand-500 cursor-pointer" />
                   </label>
@@ -246,7 +246,7 @@
                 
                 <div v-if="config.adjust_for_inflation" class="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">平均通膨率</label>
+                    <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{{ $t('simulationUi.inflationMean') }}</label>
                     <div class="relative">
                       <input v-model.number="config.inflation_mean" type="number" step="0.01"
                         class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
@@ -254,7 +254,7 @@
                     </div>
                   </div>
                   <div class="space-y-1.5">
-                    <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">通膨波動度</label>
+                    <label class="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">{{ $t('simulationUi.inflationStd') }}</label>
                     <div class="relative">
                       <input v-model.number="config.inflation_std" type="number" step="0.01"
                         class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] rounded-xl py-2.5 px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all text-[var(--text-primary)]" />
@@ -338,7 +338,7 @@
               ]"
               @click="selectedItems.length > 0 && equalizeWeights()"
             >
-              <Scale class="w-4 h-4" />平均分配
+              <Scale class="w-4 h-4" />{{ $t('analysis.equalWeight') }}
             </button>
             <button
               :disabled="selectedItems.length === 0"
@@ -350,7 +350,7 @@
               ]"
               @click="selectedItems.length > 0 && (showSaveModal = true)"
             >
-              <Save class="w-4 h-4" />儲存組合
+              <Save class="w-4 h-4" />{{ $t('analysis.savePortfolio') }}
             </button>
           </div>
 
@@ -367,7 +367,7 @@
           >
             <Loader2 v-if="loading" class="w-4 h-4 animate-spin" />
             <Play v-else class="w-4 h-4 fill-current" />
-            {{ loading ? '模擬運算中...' : '開始模擬分析' }}
+            {{ loading ? $t('analysis.runningSimulation') : $t('analysis.runSimulation') }}
           </button>
         </div>
       </div>

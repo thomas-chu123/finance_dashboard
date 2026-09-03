@@ -200,11 +200,11 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="space-y-1.5 mb-2 min-w-0">
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">最佳化分析起點</label>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.optimizationStart') }}</label>
                 <input v-model="optConfig.start_date" type="date" class="w-full max-w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 transition-all" />
               </div>
               <div class="space-y-1.5 mb-2 min-w-0">
-                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">結束日期</label>
+                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.endDate') }}</label>
                 <input v-model="optConfig.end_date" type="date" class="w-full max-w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 transition-all" />
               </div>
             </div>
@@ -283,7 +283,7 @@
             ]"
             @click="selectedItems.length > 0 && equalizeWeights()"
           >
-            <Scale class="w-4 h-4" />平均分配
+            <Scale class="w-4 h-4" />{{ $t('analysis.equalWeight') }}
           </button>
           <button
             :disabled="selectedItems.length === 0"
@@ -295,7 +295,7 @@
             ]"
             @click="selectedItems.length > 0 && (showSaveModal = true)"
           >
-            <Save class="w-4 h-4" />儲存組合
+            <Save class="w-4 h-4" />{{ $t('analysis.savePortfolio') }}
           </button>
         </div>
 
@@ -312,7 +312,7 @@
         >
           <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
           <Play v-else class="w-4 h-4 fill-current" />
-          {{ runLoading ? '優化計算中...' : '開始優化' }}
+          {{ runLoading ? $t('analysis.runningOptimize') : $t('analysis.runOptimize') }}
         </button>
       </div>
     </div>

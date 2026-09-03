@@ -219,7 +219,7 @@
               <div class="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center">
                 <BarChart3 class="w-5 h-5 text-brand-500" />
               </div>
-              <h3 class="font-bold text-[var(--text-primary)]">時間範圍與金額</h3>
+              <h3 class="font-bold text-[var(--text-primary)]">{{ $t('simulationUi.dateRangeAmount') }}</h3>
             </div>
             <div class="p-5">
               <!-- 幣值選擇器 -->
@@ -228,11 +228,11 @@
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="space-y-1.5 mb-2 min-w-0">
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">開始日期</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.startDate') }}</label>
                   <input v-model="btConfig.start_date" type="date" class="w-full max-w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 transition-all" />
                 </div>
                 <div class="space-y-1.5 mb-2 min-w-0">
-                  <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">結束日期</label>
+                  <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">{{ $t('simulationUi.endDate') }}</label>
                   <input v-model="btConfig.end_date" type="date" class="w-full max-w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 transition-all" />
                 </div>
               </div>
@@ -242,7 +242,7 @@
                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">$</span>
                    <input v-model.number="btConfig.initial_amount" type="number" class="w-full bg-[var(--bg-sidebar)] border border-[var(--border-color)] text-[var(--text-primary)] text-sm rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 block p-2.5 pl-7 transition-all" />
                 </div>
-                <div class="text-[10px] text-[var(--text-secondary)] mt-2 italic">註：若包含台灣資產，系統將自動依歷史匯率換算。</div>
+                <div class="text-[10px] text-[var(--text-secondary)] mt-2 italic">{{ $t('simulationUi.currencyNote') }}</div>
               </div>
             </div>
           </div>
@@ -317,7 +317,7 @@
               ]"
               @click="selectedItems.length > 0 && equalizeWeights()"
             >
-              <Scale class="w-4 h-4" />平均分配
+              <Scale class="w-4 h-4" />{{ $t('analysis.equalWeight') }}
             </button>
             <button
               :disabled="selectedItems.length === 0"
@@ -329,7 +329,7 @@
               ]"
               @click="selectedItems.length > 0 && (showSaveModal = true)"
             >
-              <Save class="w-4 h-4" />儲存組合
+              <Save class="w-4 h-4" />{{ $t('analysis.savePortfolio') }}
             </button>
           </div>
 
@@ -340,7 +340,7 @@
           <div v-if="runLoading" class="bg-[var(--bg-main)]/50 border border-[var(--border-color)] rounded-xl p-3 shadow-sm animate-pulse">
             <div class="flex justify-between items-center mb-2">
               <span class="text-sm fw-600 text-[var(--text-primary)]">
-                <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? '正在計算結果...' : '計算完成！' }}
+                <Play v-if="runProgress === 0 || runProgress === 100" class="w-4 h-4 mr-2 inline" /><Loader2 v-else class="w-4 h-4 mr-2 inline animate-spin" />{{ runProgress < 100 ? $t('analysis.calculating') : $t('analysis.completed') }}
               </span>
               <span class="text-xs text-accent fw-700">{{ Math.floor(runProgress) }}%</span>
             </div>
@@ -363,7 +363,7 @@
           >
             <Loader2 v-if="runLoading" class="w-4 h-4 animate-spin" />
             <Play v-else class="w-4 h-4 fill-current" />
-            {{ runLoading ? '回測計算中...' : '執行回測' }}
+            {{ runLoading ? $t('analysis.runningBacktest') : $t('analysis.runBacktest') }}
           </button>
         </div>
       </div>
