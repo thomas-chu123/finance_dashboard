@@ -16,7 +16,7 @@ from app.database import get_supabase
 logger = logging.getLogger(__name__)
 
 JPX_ETF_URL = "https://www.jpx.co.jp/english/equities/products/etfs/issues/01.html"
-JPX_ETF_JA_URL = "https://www.jpx.co.jp/markets/etfs/issues/01.html"
+JPX_ETF_JA_URL = "https://www.jpx.co.jp/equities/products/etfs/issues/01.html"
 HEADERS = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
